@@ -1,0 +1,103 @@
+{
+  "version": "1.0.0",
+  "description": "Knowledge registry for Ask rbGyanX enhanced assistant",
+  "domains": {
+    "radiobiology": {
+      "topics": [
+        "TCP models",
+        "NTCP models",
+        "LQ model",
+        "EUD/gEUD",
+        "BED/EQD2",
+        "Hypofractionation",
+        "Re-irradiation",
+        "UTCP",
+        "Normal tissue tolerance (QUANTEC)"
+      ],
+      "scope": "educational_only",
+      "clinical_decision_making": false
+    },
+    "machine_learning": {
+      "topics": [
+        "ANN",
+        "XGBoost",
+        "Random Forest",
+        "Logistic Regression",
+        "Bias-variance tradeoff",
+        "Overfitting",
+        "Cross-validation",
+        "ROC/AUC",
+        "Calibration curves",
+        "Feature importance"
+      ],
+      "scope": "educational_only",
+      "autonomous_recommendations": false
+    },
+    "deep_learning": {
+      "topics": [
+        "CNNs for DVH anomaly detection",
+        "Autoencoders for QA",
+        "Limitations of DL in clinical radiotherapy",
+        "Why DL ≠ clinical truth"
+      ],
+      "scope": "conceptual_future_ready",
+      "clinical_application": false
+    },
+    "statistics_mathematics": {
+      "topics": [
+        "Probability theory",
+        "Logistic functions",
+        "Likelihood",
+        "Confidence intervals",
+        "Hypothesis testing",
+        "Correlation vs causation"
+      ],
+      "scope": "educational_only"
+    },
+    "software_usage": {
+      "topics": [
+        "rbGyanX workflow",
+        "DVH preprocessing",
+        "Clinical data input",
+        "Output interpretation",
+        "QA warnings"
+      ],
+      "scope": "software_help"
+    }
+  },
+  "capabilities": {
+    "can_do": [
+      "Explain concepts",
+      "Interpret rbGyanX outputs",
+      "Help draft text, tables, figures",
+      "Suggest keywords for literature search",
+      "Explain QA warnings",
+      "Assist in research writing (anonymized)",
+      "Mathematical calculations",
+      "Equation rendering"
+    ],
+    "cannot_do": [
+      "Prescribe treatment",
+      "Predict patient outcome",
+      "Override clinician judgment",
+      "Access raw patient data",
+      "Access DVH or clinical Excel files",
+      "Make autonomous decisions"
+    ]
+  },
+  "safety_guards": {
+    "data_access_blocked": [
+      "DVH files",
+      "Clinical Excel files",
+      "Patient identifiers"
+    ],
+    "required_disclaimer": "This is educational support, not clinical decision making.",
+    "external_llm": {
+      "enabled": false,
+      "user_opt_in_only": true,
+      "read_only": true,
+      "no_data_upload": true
+    }
+  }
+}
+

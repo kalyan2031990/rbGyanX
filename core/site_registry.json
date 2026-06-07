@@ -1,0 +1,198 @@
+{
+  "HeadNeck": {
+    "display_name": "Head & Neck",
+    "oars": [
+      "Parotid",
+      "Submandibular",
+      "SpinalCord",
+      "Brainstem",
+      "Larynx",
+      "Pharynx",
+      "OralCavity",
+      "Mandible",
+      "Cochlea",
+      "OpticNerve",
+      "OpticChiasm"
+    ],
+    "constraints": {
+      "Parotid": {
+        "mean_dose_gy": 26,
+        "v30_gy": 50
+      },
+      "SpinalCord": {
+        "max_dose_gy": 45,
+        "d0_1cc_gy": 50
+      },
+      "Brainstem": {
+        "max_dose_gy": 54,
+        "d0_1cc_gy": 60
+      }
+    },
+    "endpoints": [
+      "xerostomia",
+      "dysphagia",
+      "spinal_cord_myelopathy",
+      "brainstem_necrosis"
+    ],
+    "validation_status": "validated",
+    "evidence_level": "strong"
+  },
+  "Lung": {
+    "display_name": "Lung",
+    "oars": [
+      "Lung",
+      "Heart",
+      "Esophagus",
+      "SpinalCord",
+      "BrachialPlexus",
+      "ChestWall"
+    ],
+    "constraints": {
+      "Lung": {
+        "mean_dose_gy": 20,
+        "v20_percent": 35,
+        "v5_percent": 60
+      },
+      "Heart": {
+        "mean_dose_gy": 26,
+        "v30_percent": 46
+      },
+      "Esophagus": {
+        "mean_dose_gy": 34,
+        "max_dose_gy": 105
+      }
+    },
+    "endpoints": [
+      "pneumonitis",
+      "esophagitis",
+      "cardiac_toxicity"
+    ],
+    "validation_status": "supported",
+    "evidence_level": "moderate"
+  },
+  "Prostate": {
+    "display_name": "Prostate",
+    "oars": [
+      "Rectum",
+      "Bladder",
+      "FemoralHeads",
+      "PenileBulb",
+      "Bowel"
+    ],
+    "constraints": {
+      "Rectum": {
+        "v70_gy": 15,
+        "v65_gy": 25,
+        "v60_gy": 35,
+        "max_dose_gy": 78
+      },
+      "Bladder": {
+        "v80_gy": 15,
+        "v75_gy": 25,
+        "v65_gy": 50
+      }
+    },
+    "endpoints": [
+      "rectal_bleeding",
+      "urinary_incontinence",
+      "erectile_dysfunction"
+    ],
+    "validation_status": "supported",
+    "evidence_level": "moderate"
+  },
+  "Breast": {
+    "display_name": "Breast",
+    "oars": [
+      "Heart",
+      "Lung",
+      "ContralateralBreast",
+      "IpsilateralLung"
+    ],
+    "constraints": {
+      "Heart": {
+        "mean_dose_gy": 4,
+        "v25_gy": 10
+      },
+      "Lung": {
+        "v20_percent": 30,
+        "mean_dose_gy": 13
+      },
+      "ContralateralBreast": {
+        "mean_dose_gy": 1,
+        "max_dose_gy": 3
+      }
+    },
+    "endpoints": [
+      "cardiac_toxicity",
+      "pneumonitis",
+      "contralateral_breast_cancer"
+    ],
+    "validation_status": "supported",
+    "evidence_level": "moderate"
+  },
+  "Brain": {
+    "display_name": "Brain/CNS",
+    "oars": [
+      "Brainstem",
+      "OpticNerve",
+      "OpticChiasm",
+      "Cochlea",
+      "Hippocampus",
+      "Brain"
+    ],
+    "constraints": {
+      "Brainstem": {
+        "max_dose_gy": 54,
+        "d0_1cc_gy": 60
+      },
+      "OpticNerve": {
+        "max_dose_gy": 50,
+        "d0_1cc_gy": 55
+      },
+      "Cochlea": {
+        "mean_dose_gy": 45
+      }
+    },
+    "endpoints": [
+      "brainstem_necrosis",
+      "optic_neuropathy",
+      "hearing_loss",
+      "cognitive_decline"
+    ],
+    "validation_status": "supported",
+    "evidence_level": "moderate"
+  },
+  "Gastrointestinal": {
+    "display_name": "Gastrointestinal",
+    "oars": [
+      "SmallBowel",
+      "LargeBowel",
+      "Stomach",
+      "Liver",
+      "Kidney",
+      "SpinalCord"
+    ],
+    "constraints": {
+      "SmallBowel": {
+        "v45_gy": 195,
+        "max_dose_gy": 55
+      },
+      "Liver": {
+        "mean_dose_gy": 30,
+        "v30_percent": 50
+      },
+      "Kidney": {
+        "mean_dose_gy": 18,
+        "v23_gy": 50
+      }
+    },
+    "endpoints": [
+      "enteritis",
+      "hepatitis",
+      "nephritis"
+    ],
+    "validation_status": "supported",
+    "evidence_level": "moderate"
+  }
+}
+

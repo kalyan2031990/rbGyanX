@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="version" content="1.0.0">
+    <meta name="edition" content="BASIC">
+    <title>rbGyanX BASIC User Manual</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        header {
+            background: linear-gradient(135deg, #000080 0%, #4169E1 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 0.5rem;
+        }
+        
+        header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .meta {
+            background: #f8f9fa;
+            padding: 1rem 2rem;
+            border-bottom: 2px solid #000080;
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        nav {
+            background: #2c3e50;
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-right: 2rem;
+            padding: 0.5rem 1rem;
+            display: inline-block;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+        
+        nav a:hover {
+            background: #34495e;
+        }
+        
+        .content {
+            padding: 2rem;
+        }
+        
+        .section {
+            margin-bottom: 3rem;
+            scroll-margin-top: 80px;
+        }
+        
+        .section h2 {
+            color: #000080;
+            font-size: 2em;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid #000080;
+        }
+        
+        .section h3 {
+            color: #4169E1;
+            font-size: 1.5em;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .section h4 {
+            color: #555;
+            font-size: 1.2em;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        .disclaimer-box {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .workflow-box {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .step {
+            background: #f8f9fa;
+            border: 2px solid #000080;
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .step:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .step-number {
+            display: inline-block;
+            background: #000080;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+        
+        .mode-card {
+            background: white;
+            border: 2px solid #4169E1;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        
+        .mode-card h4 {
+            color: #000080;
+            margin-top: 0;
+        }
+        
+        .tab-card {
+            background: #f8f9fa;
+            border-left: 4px solid #4169E1;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        .tab-card h4 {
+            color: #000080;
+            margin-top: 0;
+        }
+        
+        pre {
+            background: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 1rem;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        ul, ol {
+            margin-left: 2rem;
+            margin-top: 0.5rem;
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 0.75rem;
+            text-align: left;
+        }
+        
+        table th {
+            background: #000080;
+            color: white;
+        }
+        
+        table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .model-list {
+            list-style: none;
+            margin-left: 0;
+        }
+        
+        .model-list li {
+            background: #f8f9fa;
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            border-left: 3px solid #4169E1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>rbGyanX (BASIC)</h1>
+            <div class="subtitle">Radiobiology-guided Clinical Decision Support System (CDSS) Framework</div>
+            <div class="subtitle" style="font-size: 0.9em; margin-top: 0.5rem;">Version 1.0.0 | Edition: BASIC</div>
+            <div class="subtitle" style="font-size: 0.8em; margin-top: 0.5rem; opacity: 0.8;">Generated: 2026-06-03</div>
+        </header>
+        
+        <div class="meta">
+            <strong>Edition:</strong> BASIC | <strong>Version:</strong> 1.0.0 | <strong>Generated:</strong> 2026-06-03 23:38:26 | 
+            <strong>Manual Type:</strong> Auto-generated from codebase
+        </div>
+        
+        <nav>
+            <a href="#overview">Overview</a>
+            <a href="#analysis-modes">Analysis Modes</a>
+            <a href="#workflow">Workflow</a>
+            <a href="#tabs">GUI Tabs</a>
+            <a href="#radiobiology">Radiobiology Context</a>
+            <a href="#inputs">Input Requirements</a>
+            <a href="#outputs">Output Structure</a>
+            <a href="#limitations">Limitations</a>
+        </nav>
+        
+        <div class="content">
+            <section id="overview" class="section">
+                <h2>1. What is rbGyanX_basic?</h2>
+                
+                <div class="disclaimer-box">
+                    <strong>⚠️ IMPORTANT DISCLAIMER:</strong><br>
+                    This tool provides decision support and should not replace clinical judgment. All results should be reviewed by qualified medical physicists and radiation oncologists.<br>
+                    This software is intended for research and educational purposes. 
+                    Clinical decisions should be made by qualified medical professionals.
+                </div>
+                
+                <p><strong>rbGyanX_basic</strong> is a radiobiology-guided clinical decision support framework 
+                designed for medical physicists, radiation oncologists, and clinical researchers. 
+                It provides comprehensive tools for:</p>
+                
+                <ul>
+                    <li><strong>DVH Preprocessing:</strong> Intelligent parsing and canonicalization of 
+                    Dose-Volume Histogram files from multiple treatment planning systems</li>
+                    <li><strong>Physical Dose Metrics:</strong> Automated calculation of standard 
+                    dose metrics for both target structures (PTV/GTV/CTV) and organs at risk (OARs)</li>
+                    <li><strong>Radiobiological Modeling:</strong> Traditional models (LKB, RS, Poisson) 
+                    and machine learning models (ANN, XGBoost) for TCP and NTCP prediction</li>
+                    <li><strong>Clinical Factors Analysis:</strong> Exploration of relationships between 
+                    clinical variables and treatment outcomes</li>
+                    <li><strong>Quality Assurance:</strong> Automated checks for model reliability, 
+                    overfitting detection, and data quality</li>
+                    <li><strong>Therapeutic Ratio Analysis:</strong> Integration of TCP and NTCP for 
+                    comprehensive treatment plan evaluation</li>
+                </ul>
+                
+                <div class="info-box">
+                    <strong>Scope:</strong> rbGyanX_basic focuses on retrospective analysis and research applications. 
+                    It does not provide real-time clinical decision support or integrate with treatment planning systems.
+                </div>
+                
+                <div class="disclaimer-box" style="margin-top: 1.5rem;">
+                    <strong>⚠️ RESEARCH USE ONLY - NOT FOR CLINICAL DECISIONS</strong><br>
+                    This software is intended for research and educational purposes only. 
+                    It does NOT provide clinical advice, treatment recommendations, or autonomous decision-making capabilities.
+                    All clinical decisions must be made by qualified healthcare professionals based on their clinical judgment.
+                </div>
+            </section>
+            
+            <section id="analysis-modes" class="section">
+                <h2>2. Supported Analysis Modes</h2>
+                
+                <p>rbGyanX_basic supports three analysis modes, each tailored for specific use cases:</p>
+
+                <div class="mode-card">
+                    <h4>TCP Only</h4>
+                    <p><strong>Description:</strong> Tumor Control Probability analysis for target structures (PTV/GTV/CTV)</p>
+                    <p><strong>Use Case:</strong> Evaluate probability of tumor control based on dose distribution to targets</p>
+                    <p><strong>Required Inputs:</strong> Target DVH files (PTV, GTV, CTV structures)</p>
+                    <p><strong>Outputs:</strong> TCP predictions, dose-response curves, ML performance metrics (if enabled)</p>
+                </div>
+
+                <div class="mode-card">
+                    <h4>NTCP Only</h4>
+                    <p><strong>Description:</strong> Normal Tissue Complication Probability analysis for OAR structures</p>
+                    <p><strong>Use Case:</strong> Evaluate probability of normal tissue complications based on dose to OARs</p>
+                    <p><strong>Required Inputs:</strong> OAR DVH files (Parotid, Spinal Cord, etc.)</p>
+                    <p><strong>Outputs:</strong> NTCP predictions, dose-response curves, ML performance metrics (if enabled)</p>
+                </div>
+
+                <div class="mode-card">
+                    <h4>TCP + NTCP (Combined)</h4>
+                    <p><strong>Description:</strong> Both TCP and NTCP analyses with therapeutic ratio integration</p>
+                    <p><strong>Use Case:</strong> Comprehensive evaluation of treatment plan balancing tumor control and toxicity risk</p>
+                    <p><strong>Required Inputs:</strong> Both target and OAR DVH files</p>
+                    <p><strong>Outputs:</strong> TCP and NTCP predictions, therapeutic ratios (UTCP, P+, CFTC), integration plots</p>
+                </div>
+
+            </section>
+            
+            <section id="workflow" class="section">
+                <h2>3. Step-by-Step Workflow</h2>
+                
+                <p>The rbGyanX pipeline follows a standardized 6-step workflow. Each step builds upon 
+                the previous one, and steps can be run individually or automatically via "Run All" mode.</p>
+                
+                <div class="workflow-box">
+
+                    <div class="step">
+                        <span class="step-number">Step 1</span>
+                        <strong>DVH Preprocessing</strong><br>
+                        <p style="margin-top: 0.5rem;">Import and preprocess differential/cumulative DVH files</p>
+                        <p style="margin-top: 0.5rem; font-size: 0.9em; color: #666;">
+                            <strong>Output:</strong> Processed DVH data
+                        </p>
+                    </div>
+
+                    <div class="step">
+                        <span class="step-number">Step 2</span>
+                        <strong>Dose Metrics & Plots</strong><br>
+                        <p style="margin-top: 0.5rem;">Calculate dose metrics and generate DVH plots</p>
+                        <p style="margin-top: 0.5rem; font-size: 0.9em; color: #666;">
+                            <strong>Output:</strong> Dose metrics, DVH visualizations
+                        </p>
+                    </div>
+
+                    <div class="step">
+                        <span class="step-number">Step 3</span>
+                        <strong>TCP/NTCP Analysis</strong><br>
+                        <p style="margin-top: 0.5rem;">Calculate TCP or NTCP using traditional and ML models</p>
+                        <p style="margin-top: 0.5rem; font-size: 0.9em; color: #666;">
+                            <strong>Output:</strong> TCP/NTCP predictions, performance metrics
+                        </p>
+                    </div>
+
+                    <div class="step">
+                        <span class="step-number">Step 4</span>
+                        <strong>Clinical Factors Analysis</strong><br>
+                        <p style="margin-top: 0.5rem;">Analyze clinical factors and their impact on outcomes</p>
+                        <p style="margin-top: 0.5rem; font-size: 0.9em; color: #666;">
+                            <strong>Output:</strong> Factor analysis, correlations
+                        </p>
+                    </div>
+
+                    <div class="step">
+                        <span class="step-number">Step 5</span>
+                        <strong>Quality Assurance</strong><br>
+                        <p style="margin-top: 0.5rem;">Comprehensive QA checks including overfitting inspection</p>
+                        <p style="margin-top: 0.5rem; font-size: 0.9em; color: #666;">
+                            <strong>Output:</strong> QA report, warnings, flags
+                        </p>
+                    </div>
+
+                    <div class="step">
+                        <span class="step-number">Step 6</span>
+                        <strong>TCP-NTCP Integration</strong><br>
+                        <p style="margin-top: 0.5rem;">Integrate TCP and NTCP for therapeutic ratio analysis</p>
+                        <p style="margin-top: 0.5rem; font-size: 0.9em; color: #666;">
+                            <strong>Output:</strong> Therapeutic ratio, integrated metrics
+                        </p>
+                    </div>
+
+                </div>
+                
+                <div class="info-box">
+                    <strong>Execution Order:</strong> Steps must be executed sequentially (Step 1 → Step 2 → Step 3 → Step 4 → Step 5 → Step 6). 
+                    Step 6 (TCP-NTCP Integration) is only available when both TCP and NTCP analyses are enabled.
+                </div>
+            </section>
+            
+            <section id="tabs" class="section">
+                <h2>4. GUI Tabs Explanation</h2>
+                
+                <p>The rbGyanX GUI provides multiple visualization and analysis tabs. Each tab serves a specific 
+                purpose and requires completion of specific workflow steps.</p>
+
+                <div class="tab-card">
+                    <h4>Patient Cohort</h4>
+                    <p><strong>What it does:</strong> Displays patient cohort summary statistics and demographics</p>
+                    <p><strong>Why it exists:</strong> Provides overview of analyzed patient population</p>
+                    <p><strong>Required inputs:</strong> Requires Step 1 completion (DVH preprocessing)</p>
+                    <p><strong>Outputs produced:</strong> Cohort summary tables and statistics</p>
+                </div>
+
+                <div class="tab-card">
+                    <h4>DVH Plots</h4>
+                    <p><strong>What it does:</strong> Visualizes Dose-Volume Histograms for all structures</p>
+                    <p><strong>Why it exists:</strong> Graphical representation of dose distribution across volumes</p>
+                    <p><strong>Required inputs:</strong> Requires Step 2 completion (dose metrics calculation)</p>
+                    <p><strong>Outputs produced:</strong> Publication-quality DVH plots (600 DPI)</p>
+                </div>
+
+                <div class="tab-card">
+                    <h4>Dose-Response</h4>
+                    <p><strong>What it does:</strong> Shows dose-response curves for TCP/NTCP models</p>
+                    <p><strong>Why it exists:</strong> Visualize relationship between dose and probability outcomes</p>
+                    <p><strong>Required inputs:</strong> Requires Step 3 completion (TCP/NTCP analysis)</p>
+                    <p><strong>Outputs produced:</strong> Dose-response curves for selected models</p>
+                </div>
+
+                <div class="tab-card">
+                    <h4>ROC/Calibration</h4>
+                    <p><strong>What it does:</strong> Receiver Operating Characteristic and calibration plots for ML models</p>
+                    <p><strong>Why it exists:</strong> Evaluate ML model performance and calibration</p>
+                    <p><strong>Required inputs:</strong> Requires Step 3 with ML models enabled</p>
+                    <p><strong>Outputs produced:</strong> ROC curves, calibration plots, performance metrics</p>
+                </div>
+
+                <div class="tab-card">
+                    <h4>Factor Plots</h4>
+                    <p><strong>What it does:</strong> Clinical factors analysis and correlation visualizations</p>
+                    <p><strong>Why it exists:</strong> Explore relationships between clinical factors and outcomes</p>
+                    <p><strong>Required inputs:</strong> Requires Step 4 completion (clinical factors analysis)</p>
+                    <p><strong>Outputs produced:</strong> Correlation plots, factor importance charts</p>
+                </div>
+
+                <div class="tab-card">
+                    <h4>Therapeutic Window</h4>
+                    <p><strong>What it does:</strong> TCP-NTCP integration showing therapeutic ratio analysis</p>
+                    <p><strong>Why it exists:</strong> Visualize balance between tumor control and normal tissue complications</p>
+                    <p><strong>Required inputs:</strong> Requires Step 6 completion (TCP-NTCP integration)</p>
+                    <p><strong>Outputs produced:</strong> UTCP plots, Pareto frontier, therapeutic window visualizations</p>
+                </div>
+
+                <div class="tab-card">
+                    <h4>Validation & QA</h4>
+                    <p><strong>What it does:</strong> Quality assurance metrics and validation flags</p>
+                    <p><strong>Why it exists:</strong> Display physics consistency checks and QA warnings</p>
+                    <p><strong>Required inputs:</strong> Requires Step 1 and Step 5 completion</p>
+                    <p><strong>Outputs produced:</strong> Validation metrics, QA flags, overfitting warnings</p>
+                </div>
+
+            </section>
+            
+            <section id="ask-rbgyanx" class="section">
+                <h2>5. Ask rbGyanX - Educational Assistant</h2>
+                
+                <div class="warning-box" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; margin: 1rem 0;">
+                    <strong>⚠️ EDUCATIONAL USE ONLY - NOT FOR CLINICAL DECISIONS</strong><br>
+                    Ask rbGyanX provides educational information only. It does NOT provide clinical advice or treatment recommendations.
+                    All clinical decisions must be made by qualified healthcare professionals.
+                </div>
+                
+                <h3>5.1 What the feature does</h3>
+                <p><strong>Purpose:</strong> Ask rbGyanX provides educational support and helps interpret rbGyanX outputs. 
+                It is designed to assist users in understanding radiobiological concepts and analysis results.</p>
+                
+                <p><strong>Required inputs:</strong> User questions (text-based queries). No access to patient data or files.</p>
+                
+                <p><strong>Output interpretation:</strong> Educational explanations, concept clarifications, and guidance on interpreting results. 
+                All responses include disclaimers that this is educational support, not clinical decision-making.</p>
+                
+                <h4>Capabilities:</h4>
+                <ul>
+                    <li><strong>Explain Concepts:</strong> Radiobiology theory, TCP/NTCP models, physics concepts, statistics</li>
+                    <li><strong>Interpret rbGyanX Outputs:</strong> Help understand analysis results, QA warnings, and visualizations</li>
+                    <li><strong>Help Draft Text, Tables, Figures:</strong> Assist in research writing (anonymized)</li>
+                    <li><strong>Suggest Keywords:</strong> Provide literature search keywords for PubMed and databases</li>
+                    <li><strong>Explain QA Warnings:</strong> Clarify quality assurance messages and their meanings</li>
+                    <li><strong>Mathematical Calculations:</strong> Scientific calculator for equations and formulas</li>
+                    <li><strong>Equation Rendering:</strong> Help draft equations for papers (LaTeX-style)</li>
+                </ul>
+                
+                <p><strong>Limitations:</strong> Ask rbGyanX cannot access patient data, make clinical recommendations, or predict patient outcomes.</p>
+                
+                <h3>5.2 What Ask rbGyanX CANNOT Do</h3>
+                <ul>
+                    <li><strong>Prescribe Treatment:</strong> Cannot recommend treatment plans or doses</li>
+                    <li><strong>Predict Patient Outcome:</strong> Cannot predict outcomes for specific patients</li>
+                    <li><strong>Override Clinician Judgment:</strong> Cannot make autonomous clinical decisions</li>
+                    <li><strong>Access Raw Patient Data:</strong> Cannot read DVH files, clinical Excel files, or patient identifiers</li>
+                    <li><strong>Make Autonomous Decisions:</strong> Cannot replace human judgment in clinical settings</li>
+                </ul>
+                
+                <h3>5.3 Knowledge Domains</h3>
+                <p>Ask rbGyanX covers the following educational topics:</p>
+                
+                <h4>Radiobiology</h4>
+                <ul>
+                    <li>TCP/NTCP theory and models</li>
+                    <li>LQ model (limitations, extensions)</li>
+                    <li>EUD/gEUD (conceptual)</li>
+                    <li>BED/EQD2 (conceptual)</li>
+                    <li>Hypofractionation principles</li>
+                    <li>Re-irradiation concepts</li>
+                    <li>Dose-response modeling</li>
+                    <li>Therapeutic window concept</li>
+                    <li>UTCP concept</li>
+                    <li>Normal tissue tolerance (QUANTEC-style)</li>
+                </ul>
+                
+                <h4>Machine Learning (Educational)</h4>
+                <ul>
+                    <li>ANN, XGBoost, Random Forest, Logistic Regression</li>
+                    <li>Bias-variance tradeoff</li>
+                    <li>Overfitting & data leakage</li>
+                    <li>Cross-validation strategies</li>
+                    <li>Internal vs external validation</li>
+                    <li>ROC, AUC, calibration curves</li>
+                    <li>Feature importance vs causality</li>
+                </ul>
+                
+                <h4>Deep Learning (Conceptual, Future-Ready)</h4>
+                <ul>
+                    <li>CNNs for DVH anomaly detection</li>
+                    <li>Autoencoders for QA</li>
+                    <li>Limitations of DL in clinical radiotherapy</li>
+                    <li>Why DL ≠ clinical truth</li>
+                </ul>
+                
+                <h4>Statistics & Mathematics</h4>
+                <ul>
+                    <li>Probability theory (basic)</li>
+                    <li>Logistic functions</li>
+                    <li>Likelihood</li>
+                    <li>Confidence intervals</li>
+                    <li>Hypothesis testing</li>
+                    <li>Correlation vs causation</li>
+                </ul>
+                
+                <h3>5.4 Built-in Tools</h3>
+                
+                <h4>Scientific Calculator</h4>
+                <p>Ask rbGyanX includes a scientific calculator that works on user-provided numbers only:</p>
+                <ul>
+                    <li>Arithmetic operations (add, subtract, multiply, divide)</li>
+                    <li>Log, exp, power, roots</li>
+                    <li>Sigmoid functions</li>
+                    <li>Percentages</li>
+                </ul>
+                <div class="info-box">
+                    <strong>Note:</strong> Calculator works on user-provided numbers only. It does NOT read patient files or access data.
+                </div>
+                
+                <h4>Math / Equation Helper</h4>
+                <p>Helps with equation rendering and drafting:</p>
+                <ul>
+                    <li>LaTeX-style equation rendering</li>
+                    <li>Symbolic expressions</li>
+                    <li>Equation drafting for papers</li>
+                </ul>
+                <p><strong>Example allowed:</strong> "Write logistic TCP equation"</p>
+                <p><strong>Example forbidden:</strong> "Calculate TCP for patient X"</p>
+                
+                <h3>5.5 Safety & Ethics</h3>
+                <div class="warning-box" style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 1rem; margin: 1rem 0;">
+                    <strong>Hard Guards:</strong>
+                    <ul style="margin-top: 0.5rem;">
+                        <li>Ask rbGyanX cannot access DVH files, clinical Excel files, or patient identifiers</li>
+                        <li>All AI responses include: "This is educational support, not clinical decision making."</li>
+                        <li>External LLM APIs: Disabled by default, user-opt-in only, read-only, no data upload</li>
+                    </ul>
+                </div>
+                
+                <h3>5.6 Usage</h3>
+                <p>Access Ask rbGyanX from the menu: <strong>Help → Ask rbGyanX</strong></p>
+                <p>If you ask out-of-scope questions, Ask rbGyanX will respond with educational guidance and suggest external study sources (textbooks, reviews, PubMed keywords).</p>
+            </section>
+            
+            <section id="radiobiology" class="section">
+                <h2>6. Radiobiology & Physics Context</h2>
+                
+                <h3>5.1 Traditional Radiobiological Models</h3>
+                
+                <h4>NTCP Models</h4>
+                <ul class="model-list">
+
+                    <li>
+                        <strong>LKB_LogLogistic:</strong> Lyman-Kutcher-Burman Log-Logistic model for normal tissue complication probability
+                        <br><em>Reference: Lyman (1985)</em>
+                    </li>
+
+                    <li>
+                        <strong>LKB_Probit:</strong> Lyman-Kutcher-Burman Probit model variant
+                        <br><em>Reference: Lyman (1985)</em>
+                    </li>
+
+                    <li>
+                        <strong>RS_Poisson:</strong> Relative Seriality Poisson model
+                        <br><em>Reference: Källman et al. (1992)</em>
+                    </li>
+
+                </ul>
+                
+                <h4>TCP Models</h4>
+                <ul class="model-list">
+
+                    <li>
+                        <strong>Poisson_TCP:</strong> Poisson TCP model based on clonogen survival
+                        <br><em>Reference: Webb & Nahum (1993)</em>
+                    </li>
+
+                    <li>
+                        <strong>LKB_TCP:</strong> LKB-adapted TCP model
+                        <br><em>Reference: Okunieff et al. (1995)</em>
+                    </li>
+
+                    <li>
+                        <strong>Logistic_TCP:</strong> Logistic TCP model
+                        <br><em>Reference: Brahme (1984)</em>
+                    </li>
+
+                    <li>
+                        <strong>EUD_TCP:</strong> EUD-based TCP model
+                        <br><em>Reference: Niemierko (1997)</em>
+                    </li>
+
+                </ul>
+                
+                <h3>5.2 Machine Learning Models</h3>
+
+                
+                <h3>5.3 Novel Features (rbGyanX CDSS Framework)</h3>
+                
+                <p>rbGyanX includes advanced radiobiological features that extend beyond standard TCP/NTCP calculators:</p>
+                
+                <h4>FDVH (Fractionation-Aware DVH)</h4>
+                <div class="info-box">
+                    <strong>What it does:</strong> Converts physical DVH to biologically effective dose (BED)-normalized DVH<br>
+                    <strong>Why use it:</strong> Enables hypofractionation modeling (SBRT/SRS), cross-fractionation scheme comparison, and re-irradiation assessment<br>
+                    <strong>When to use:</strong> When analyzing non-standard fractionation schemes or comparing different fractionation protocols<br>
+                    <strong>Mathematical basis:</strong> BED = n · d · (1 + d/(α/β)) where n = fractions, d = dose per fraction, α/β = tissue parameter<br>
+                    <strong>Output:</strong> BED-normalized DVH with columns labeled "BED-DVH" and "DVH_Type = FDVH"
+                </div>
+                
+                <h4>uTCP (Uncertainty-Aware TCP)</h4>
+                <div class="info-box">
+                    <strong>What it does:</strong> Propagates parameter uncertainty through TCP models to provide confidence bounds<br>
+                    <strong>Why use it:</strong> Reports TCP = 0.78 ± 0.11 instead of false precision, enabling honest uncertainty quantification<br>
+                    <strong>When to use:</strong> When you need to understand prediction reliability and parameter sensitivity<br>
+                    <strong>Mathematical basis:</strong> Monte Carlo sampling of parameter distributions to estimate prediction variance<br>
+                    <strong>Output:</strong> Additional columns: TCP_mean, TCP_std, TCP_95CI_low, TCP_95CI_high<br>
+                    <strong>Note:</strong> uTCP reflects parameter uncertainty, not clinical outcome variance
+                </div>
+                
+                <h4>TWI (Therapeutic Window Index)</h4>
+                <div class="info-box">
+                    <strong>What it does:</strong> Intelligent plan comparison with organ-specific risk weighting<br>
+                    <strong>Why use it:</strong> Provides a single metric that balances tumor control (TCP) against weighted normal tissue risk (NTCP)<br>
+                    <strong>When to use:</strong> When comparing multiple treatment plans or evaluating plan quality<br>
+                    <strong>Mathematical basis:</strong> TWI = TCP - Σ(λ_k · NTCP_k) where λ_k = organ-specific risk weight<br>
+                    <strong>Risk weights:</strong> Spinal Cord (1.0), Brainstem (1.0), Lung (0.8), Heart (0.9), Pharynx (0.5), Parotid (0.3)<br>
+                    <strong>Output:</strong> therapeutic_ratios.xlsx with TWI column and TWI_Interpretation (Favorable/Moderate/Unfavorable)<br>
+                    <strong>Limitation:</strong> Decision support only – no automated clinical decisions
+                </div>
+                
+                <h4>CCS (Cohort Consistency Score - ML Safety Gate)</h4>
+                <div class="warning-box" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; margin: 1rem 0;">
+                    <strong>What it does:</strong> Prevents unsafe ML extrapolation by detecting out-of-distribution (OOD) patients<br>
+                    <strong>Why use it:</strong> ML models can be overconfident on patients who differ from training data. CCS prevents this.<br>
+                    <strong>When to use:</strong> When using ML models, especially with institutional or external training data<br>
+                    <strong>Mathematical basis:</strong> CCS = exp(-0.5 · Mahalanobis²) where Mahalanobis distance measures deviation from training cohort<br>
+                    <strong>Safety gate:</strong> If CCS < threshold (default 0.1), ML predictions are disabled and traditional models are used<br>
+                    <strong>Output:</strong> CCS value in ML output table, warnings when patients are OOD<br>
+                    <strong>Action:</strong> ML prediction suppressed due to cohort mismatch → use traditional models only
+                </div>
+                
+                <div class="disclaimer-box" style="margin-top: 1.5rem;">
+                    <strong>⚠️ What rbGyanX DOES NOT do:</strong>
+                    <ul style="margin-top: 0.5rem;">
+                        <li>No treatment optimization</li>
+                        <li>No autonomous decisions</li>
+                        <li>No outcome prediction guarantee</li>
+                        <li>No real-time clinical decision support</li>
+                    </ul>
+                </div>
+
+                <div class="info-box">
+                    <strong>ML Models Enabled:</strong> ANN, XGBoost<br>
+                    <strong>Description:</strong> Machine learning models for enhanced prediction accuracy
+<br><strong>SHAP Explainability:</strong> Enabled for model interpretability
+                </div>
+
+                <h3>5.3 Physical Dose Metrics</h3>
+                
+                <h4>Target Structure Metrics (PTV/GTV/CTV)</h4>
+                <ul>
+                    <li><strong>Dmax:</strong> Maximum dose to target</li>
+                    <li><strong>D0.03cc, D1cc:</strong> Hotspot metrics</li>
+                    <li><strong>D95, D98:</strong> Dose covering 95% and 98% of target volume</li>
+                    <li><strong>V95, V100, V107:</strong> Volume receiving ≥95%, ≥100%, ≥107% of prescription dose</li>
+                    <li><strong>HI1, HI2:</strong> Homogeneity Indices</li>
+                    <li><strong>CI_RTOG:</strong> RTOG Conformity Index</li>
+                    <li><strong>GI:</strong> Gradient Index</li>
+                </ul>
+                
+                <h4>OAR Metrics</h4>
+                <ul>
+                    <li><strong>Dmax:</strong> Maximum dose to organ</li>
+                    <li><strong>V5-V50:</strong> Volume receiving ≥5Gy to ≥50Gy (in 5Gy increments)</li>
+                    <li><strong>Mean Dose:</strong> Average dose to organ</li>
+                </ul>
+            </section>
+            
+            <section id="inputs" class="section">
+                <h2>7. Input Requirements</h2>
+                
+                <h3>6.1 DVH Files</h3>
+                <p>rbGyanX accepts DVH files in multiple formats:</p>
+                <ul>
+                    <li><strong>Format:</strong> CSV, TXT, or directory containing multiple DVH files</li>
+                    <li><strong>DVH Type:</strong> Cumulative or differential (auto-detected)</li>
+                    <li><strong>Required Columns:</strong> Dose[Gy] and Volume[cm³] or Volume[%]</li>
+                    <li><strong>Structure Names:</strong> Automatically detected (PTV/GTV/CTV = TARGET; others = OAR)</li>
+                </ul>
+                
+                <div class="info-box">
+                    <strong>File Naming Convention:</strong> Files should be named with patient ID and structure name, 
+                    e.g., <code>Patient_001_PTV.csv</code> or <code>Patient_001_Parotid.csv</code>
+                </div>
+
+                <h3>6.3 Clinical Data Schema</h3>
+                <p>Clinical data should follow the schema defined in <code>clinical/clinical_schema.json</code>.</p>
+                <div class="info-box">
+                    <strong>Note:</strong> The schema defines required and optional fields for clinical data files.
+                </div>
+
+                <h3>6.4 Clinical Data (Optional but Recommended)</h3>
+                <p>Required for ML models and clinical factors analysis:</p>
+                <ul>
+                    <li><strong>Format:</strong> Excel (.xlsx) or CSV (.csv)</li>
+                    <li><strong>Required Column:</strong> PatientID (must match DVH file naming)</li>
+                    <li><strong>Optional Columns:</strong> Age, Gender, TumorStage, Treatment, Outcome, etc.</li>
+                    <li><strong>Outcome Column:</strong> For supervised ML, include binary outcome (0/1 or No/Yes)</li>
+                </ul>
+            </section>
+            
+            <section id="outputs" class="section">
+                <h2>7. Output Folder Structure</h2>
+                
+                <p>All outputs follow a uniform directory structure. The exact folders created depend on the 
+                selected analysis mode.</p>
+                
+                <h3>7.1 Common Structure (All Modes)</h3>
+                <pre><code>output_root/
+processed_DVH/
+  ├── cDVH_csv/          # Cumulative DVH files
+  ├── dDVH_csv/          # Differential DVH files
+  └── processed_dvh.xlsx # Summary workbook
+dose_metrics/
+  ├── tables/            # Excel files with metrics
+  └── plots/             # DVH plots (600 DPI)
+qa/
+  └── qa_summary_tables.xlsx
+logs/                   # Execution logs
+</code></pre>
+
+                <h3>7.2 TCP-Only Mode</h3>
+                <pre><code>output_root/
+processed_DVH/
+  ├── cDVH_csv/          # Cumulative DVH files
+  ├── dDVH_csv/          # Differential DVH files
+  └── processed_dvh.xlsx # Summary workbook
+dose_metrics/
+  ├── tables/            # Excel files with metrics
+  └── plots/             # DVH plots (600 DPI)
+qa/
+  └── qa_summary_tables.xlsx
+logs/                   # Execution logs
+tcp_analysis/
+  ├── tcp_predictions.xlsx
+  ├── tcp_parameters.xlsx
+  ├── tcp_ml_performance.xlsx (if ML enabled)
+  └── plots/
+</code></pre>
+
+                <h3>7.3 NTCP-Only Mode</h3>
+                <pre><code>output_root/
+processed_DVH/
+  ├── cDVH_csv/          # Cumulative DVH files
+  ├── dDVH_csv/          # Differential DVH files
+  └── processed_dvh.xlsx # Summary workbook
+dose_metrics/
+  ├── tables/            # Excel files with metrics
+  └── plots/             # DVH plots (600 DPI)
+qa/
+  └── qa_summary_tables.xlsx
+logs/                   # Execution logs
+ntcp_analysis/
+  ├── enhanced_ntcp_calculations.csv
+  ├── ntcp_ml_performance.xlsx (if ML enabled)
+  └── plots/
+</code></pre>
+
+                <h3>7.4 TCP + NTCP Mode</h3>
+                <pre><code>output_root/
+processed_DVH/
+  ├── cDVH_csv/          # Cumulative DVH files
+  ├── dDVH_csv/          # Differential DVH files
+  └── processed_dvh.xlsx # Summary workbook
+dose_metrics/
+  ├── tables/            # Excel files with metrics
+  └── plots/             # DVH plots (600 DPI)
+qa/
+  └── qa_summary_tables.xlsx
+logs/                   # Execution logs
+tcp_analysis/
+  ├── tcp_predictions.xlsx
+  ├── tcp_parameters.xlsx
+  └── plots/
+ntcp_analysis/
+  ├── enhanced_ntcp_calculations.csv
+  └── plots/
+integration/
+  ├── therapeutic_metrics.xlsx
+  └── plots/
+</code></pre>
+
+            </section>
+            
+            <section id="limitations" class="section">
+                <h2>8. Limitations & Cautions</h2>
+                
+                <div class="disclaimer-box">
+                    <h3>⚠️ CRITICAL DISCLAIMERS</h3>
+                    <p><strong>rbGyanX_basic is NOT a clinical decision support system (CDSS) for direct patient care.</strong></p>
+                    <ul>
+                        <li><strong>Research Use Only:</strong> All results are for research and educational purposes only. This tool is not intended for clinical decision-making.</li>
+                        <li><strong>No Autonomous Decisions:</strong> rbGyanX_basic does NOT make autonomous clinical decisions. All treatment decisions must be made by qualified healthcare professionals.</li>
+                        <li><strong>User Responsibility:</strong> Users are solely responsible for interpretation of results and any clinical decisions made based on this tool.</li>
+                        <li><strong>Population-Based Estimates:</strong> Model predictions are estimates based on population data and may not apply to individual patients.</li>
+                        <li><strong>No Warranty:</strong> No warranty or guarantee of accuracy is provided. Use at your own risk.</li>
+                        <li><strong>Not FDA Approved:</strong> This software is not FDA-approved for clinical use.</li>
+                        <li><strong>Validation Required:</strong> All model predictions should be validated against clinical outcomes before use.</li>
+                    </ul>
+                </div>
+                
+                <div class="warning-box">
+                    <h3>⚠️ Important Limitations</h3>
+                    <p><strong>rbGyanX_basic has the following limitations:</strong></p>
+                    <ul>
+                        <li><strong>Sample Size:</strong> ML models require adequate sample sizes. Small datasets may lead to overfitting.</li>
+                        <li><strong>Model Generalization:</strong> Models trained on one population may not generalize to others.</li>
+                        <li><strong>DICOM RT:</strong> Primary clinic path — folder with RTPLAN, RTDOSE, and RTSTRUCT. Step 3 (TCP+NTCP) runs rbgyanx-engine on DICOM.</li>
+                        <li><strong>TPS text DVH:</strong> Optional legacy path (Steps 1–2 + subprocess scripts); use ADVANCED when ML/SHAP/FDVH are needed.</li>
+                        <li><strong>Validation:</strong> Users should validate model predictions against clinical outcomes.</li>
+                        <li><strong>Clinical Factors:</strong> Not all clinical factors may be captured in the analysis.</li>
+                        <li><strong>Missing Data:</strong> Missing clinical factors are logged but analysis proceeds with available data.</li>
+                    </ul>
+                </div>
+                
+                <h3>8.1 Known Limitations</h3>
+                <ul>
+                    <li><strong>Sample Size:</strong> ML models require adequate sample sizes (minimum 20 samples, 5 events). Small datasets may lead to overfitting.</li>
+                    <li><strong>Model Generalization:</strong> Models trained on one population may not generalize to others.</li>
+                    <li><strong>DICOM Support:</strong> DICOM RT file support is planned for future versions.</li>
+                    <li><strong>Real-time Integration:</strong> No integration with treatment planning systems in this version.</li>
+                    <li><strong>Validation:</strong> Users should validate model predictions against clinical outcomes.</li>
+                    <li><strong>Clinical Factors:</strong> Missing clinical factors are logged but do not block analysis.</li>
+                    <li><strong>Structure Role Detection:</strong> Automatic detection of TARGET vs OAR based on structure names (PTV/GTV/CTV = TARGET).</li>
+                </ul>
+                
+                <h3>8.2 Best Practices</h3>
+                <ul>
+                    <li><strong>Always review QA reports</strong> before using results</li>
+                    <li><strong>Validate model predictions</strong> against known outcomes when possible</li>
+                    <li><strong>Use appropriate sample sizes</strong> for ML model training (≥20 samples, ≥5 events)</li>
+                    <li><strong>Document all analysis parameters</strong> and assumptions</li>
+                    <li><strong>Consult with medical physicists and radiation oncologists</strong> for interpretation</li>
+                    <li><strong>Check structure role mapping</strong> to ensure TARGET structures are correctly identified</li>
+                    <li><strong>Review clinical factors availability</strong> before running factor analysis</li>
+                    <li><strong>Verify output file locations</strong> match expected directory structure</li>
+                </ul>
+                
+                <h3>8.3 Output Interpretation Guidelines</h3>
+                <ul>
+                    <li><strong>TCP Predictions:</strong> Range from 0 to 1. Higher values indicate higher probability of tumor control.</li>
+                    <li><strong>NTCP Predictions:</strong> Range from 0 to 1. Higher values indicate higher probability of normal tissue complications.</li>
+                    <li><strong>Therapeutic Metrics:</strong> UTCP, P+, CFTC provide integrated measures balancing tumor control and toxicity.</li>
+                    <li><strong>ML Performance:</strong> AUC, Brier score, calibration plots indicate model reliability. Review QA reports for overfitting warnings.</li>
+                    <li><strong>Clinical Factors:</strong> Correlation coefficients and p-values indicate factor significance. Missing factors are logged but do not block analysis.</li>
+                </ul>
+            </section>
+        </div>
+        
+        <footer>
+            <p><strong>{app_name} v{app_version}</strong></p>
+            <p>Radiobiology-guided Clinical Decision Support Framework</p>
+            <p style="font-size: 0.9em; margin-top: 1rem;">
+                This manual is auto-generated from the codebase. 
+                Last updated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

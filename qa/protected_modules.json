@@ -1,0 +1,119 @@
+{
+  "version": "1.0.0",
+  "description": "Protected modules registry - files that auto-correction must NEVER modify",
+  "last_updated": "2025-12-30",
+  "protected_modules": {
+    "scientific_code": {
+      "description": "Core scientific computation code - equations, models, metrics",
+      "files": [
+        "code1_dvh_preprocess.py",
+        "code2_dvh_plot_and_summary.py",
+        "code3_ntcp_analysis_ml.py",
+        "code4_ntcp_output_QA_reporter.py",
+        "code5_ntcp_factors_analysis.py",
+        "code6_tcp_analysis.py",
+        "code7_tcp_ntcp_integration.py"
+      ],
+      "protection_level": "absolute",
+      "reason": "Contains TCP/NTCP equations, ML pipelines, and clinical logic"
+    },
+    "model_definitions": {
+      "description": "Radiobiological model implementations",
+      "files": [
+        "models/ntcp_models.py",
+        "models/tcp_models.py",
+        "utils/ntcp_models.py",
+        "utils/tcp_models.py"
+      ],
+      "protection_level": "absolute",
+      "reason": "Contains model equations and parameter definitions"
+    },
+    "metric_definitions": {
+      "description": "Dose metric calculation logic",
+      "files": [
+        "utils/dvh_utils.py",
+        "utils/ml_models.py"
+      ],
+      "protection_level": "absolute",
+      "reason": "Contains metric calculation algorithms"
+    },
+    "validation_methodology": {
+      "description": "QA and validation logic",
+      "files": [
+        "plots/dose_response.py",
+        "stats/basic_stats.py",
+        "qa/qa_overfitting.py"
+      ],
+      "protection_level": "absolute",
+      "reason": "Contains validation and statistical methodology"
+    },
+    "clinical_logic": {
+      "description": "Clinical decision support logic",
+      "files": [
+        "clinical/clinical_adapter.py"
+      ],
+      "protection_level": "absolute",
+      "reason": "Contains clinical data processing logic"
+    }
+  },
+  "auto_correction_allowed": {
+    "description": "Files that auto-correction MAY modify (infrastructure only)",
+    "categories": {
+      "imports": {
+        "description": "Import statements and guards",
+        "allowed_actions": ["add_try_except", "add_import_guard"],
+        "files": ["rbgyanx_gui.py", "utils/error_handler.py"]
+      },
+      "paths": {
+        "description": "Path and directory management",
+        "allowed_actions": ["create_directory", "fix_path"],
+        "files": []
+      },
+      "gui_layout": {
+        "description": "GUI layout and geometry",
+        "allowed_actions": ["adjust_window_size", "fix_layout"],
+        "files": ["rbgyanx_gui.py"]
+      },
+      "logging": {
+        "description": "Logging configuration",
+        "allowed_actions": ["fix_logging", "add_log_guard"],
+        "files": ["utils/error_handler.py"]
+      },
+      "config": {
+        "description": "Configuration files",
+        "allowed_actions": ["create_placeholder", "fix_config_path"],
+        "files": ["config/*.yaml", "config/*.json"]
+      }
+    }
+  },
+  "escalation_triggers": {
+    "description": "Conditions that require developer intervention",
+    "triggers": [
+      {
+        "type": "scientific_logic_error",
+        "description": "Error in scientific computation code",
+        "action": "escalate_to_developer",
+        "message": "This issue requires developer intervention. Please switch to rbGyanX_advanced or use Cursor / Copilot / Codex."
+      },
+      {
+        "type": "model_equation_error",
+        "description": "Error in model equations or parameters",
+        "action": "escalate_to_developer",
+        "message": "This issue requires developer intervention. Please switch to rbGyanX_advanced or use Cursor / Copilot / Codex."
+      },
+      {
+        "type": "validation_methodology_error",
+        "description": "Error in validation or QA methodology",
+        "action": "escalate_to_developer",
+        "message": "This issue requires developer intervention. Please switch to rbGyanX_advanced or use Cursor / Copilot / Codex."
+      },
+      {
+        "type": "clinical_logic_error",
+        "description": "Error in clinical data processing",
+        "action": "escalate_to_developer",
+        "message": "This issue requires developer intervention. Please switch to rbGyanX_advanced or use Cursor / Copilot / Codex."
+      }
+    ]
+  }
+}
+

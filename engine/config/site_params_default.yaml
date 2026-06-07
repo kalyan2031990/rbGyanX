@@ -1,0 +1,157 @@
+# py_tcpx radiobiological parameters
+# Keys = tumor site / histology (NOT treatment technique: IMRT, VMAT, SRS, SBRT).
+#
+# | YAML key     | Meaning                                      |
+# |--------------|----------------------------------------------|
+# | BRAIN_GBM    | Primary brain tumour (e.g. glioblastoma)     |
+# | BRAIN_METS   | Brain metastases                             |
+# | HN           | Head & neck squamous cell carcinoma          |
+# | LUNG         | Thoracic / NSCLC (any fractionation)        |
+# | BREAST       | Breast carcinoma                             |
+#
+# Override per-parameter in site_params_user.yaml.
+
+BRAIN_GBM:
+  alpha_gy_inv: 0.30
+  beta_gy_inv2: 0.033
+  alpha_beta_gy: 9.0
+  N0_gtv: 1.0e8
+  N0_ctv: 1.0e5
+  Tpot_days: 8.0
+  Tk_days: 21.0
+  TCD50_gy: 60.0
+  gamma50: 1.8
+  geud_a: -10.0
+  D50_logistic_gy: 60.0
+  k_logistic: 1.8
+  lq_valid_max_dpf_gy: 10.0
+  repopulation_relevant: true
+
+BRAIN_METS:
+  alpha_gy_inv: 0.30
+  beta_gy_inv2: 0.030
+  alpha_beta_gy: 10.0
+  N0_gtv: 1.0e6
+  N0_ctv: 1.0e4
+  Tpot_days: 10.0
+  Tk_days: null
+  TCD50_gy: 19.0
+  gamma50: 2.5
+  geud_a: -10.0
+  D50_logistic_gy: 18.0
+  k_logistic: 2.5
+  lq_valid_max_dpf_gy: 10.0
+  repopulation_relevant: false
+
+HN:
+  alpha_gy_inv: 0.35
+  beta_gy_inv2: 0.035
+  alpha_beta_gy: 10.0
+  N0_gtv: 1.0e7
+  N0_ctv: 1.0e5
+  Tpot_days: 4.0
+  Tk_days: 21.0
+  TCD50_gy: 60.0
+  gamma50: 2.0
+  geud_a: -10.0
+  D50_logistic_gy: 60.0
+  k_logistic: 2.0
+  lq_valid_max_dpf_gy: 10.0
+  repopulation_relevant: true
+
+LUNG:
+  alpha_gy_inv: 0.30
+  beta_gy_inv2: 0.034
+  alpha_beta_gy: 8.8
+  N0_gtv: 1.0e6
+  N0_ctv: 1.0e4
+  Tpot_days: 7.0
+  Tk_days: null
+  TCD50_gy: 84.5
+  gamma50: 1.8
+  geud_a: -10.0
+  D50_logistic_gy: 84.5
+  k_logistic: 1.8
+  lq_valid_max_dpf_gy: 10.0
+  repopulation_relevant: false
+
+# Deprecated alias — same parameters as LUNG (kept for older user YAML files).
+LUNG_SBRT:
+  alpha_gy_inv: 0.30
+  beta_gy_inv2: 0.034
+  alpha_beta_gy: 8.8
+  N0_gtv: 1.0e6
+  N0_ctv: 1.0e4
+  Tpot_days: 7.0
+  Tk_days: null
+  TCD50_gy: 84.5
+  gamma50: 1.8
+  geud_a: -10.0
+  D50_logistic_gy: 84.5
+  k_logistic: 1.8
+  lq_valid_max_dpf_gy: 10.0
+  repopulation_relevant: false
+
+BREAST:
+  alpha_gy_inv: 0.20
+  beta_gy_inv2: 0.057
+  alpha_beta_gy: 3.5
+  N0_gtv: 5.0e5
+  N0_ctv: 1.0e4
+  Tpot_days: 12.0
+  Tk_days: null
+  TCD50_gy: 68.0
+  gamma50: 1.5
+  geud_a: -9.0
+  D50_logistic_gy: 68.0
+  k_logistic: 1.8
+  lq_valid_max_dpf_gy: 10.0
+  repopulation_relevant: false
+
+PROSTATE:
+  alpha_gy_inv: 0.15
+  beta_gy_inv2: 0.10
+  alpha_beta_gy: 1.5
+  N0_gtv: 1.0e8
+  N0_ctv: 1.0e7
+  Tpot_days: 42.0
+  Tk_days: 21.0
+  TCD50_gy: 72.0
+  gamma50: 2.2
+  geud_a: -13.0
+  D50_logistic_gy: 72.0
+  k_logistic: 2.2
+  lq_valid_max_dpf_gy: 6.0
+  repopulation_relevant: false
+
+PROSTATE_SBRT:
+  alpha_gy_inv: 0.15
+  beta_gy_inv2: 0.10
+  alpha_beta_gy: 1.5
+  N0_gtv: 1.0e8
+  N0_ctv: 1.0e7
+  Tpot_days: 42.0
+  Tk_days: 21.0
+  TCD50_gy: 36.25
+  gamma50: 2.5
+  geud_a: -13.0
+  D50_logistic_gy: 36.25
+  k_logistic: 2.5
+  lq_valid_max_dpf_gy: 6.0
+  repopulation_relevant: false
+
+LIVER:
+  alpha_gy_inv: 0.22
+  beta_gy_inv2: 0.088
+  alpha_beta_gy: 2.5
+  N0_gtv: 1.0e7
+  N0_ctv: 1.0e5
+  Tpot_days: 30.0
+  Tk_days: null
+  TCD50_gy: 40.0
+  gamma50: 2.0
+  geud_a: -8.0
+  D50_logistic_gy: 40.0
+  k_logistic: 2.0
+  lq_valid_max_dpf_gy: 10.0
+  repopulation_relevant: false

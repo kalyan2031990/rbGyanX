@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rbgyanx-engine"
+version = "0.1.0a0"
+description = "Open-source TCP/NTCP radiobiology engine for rbGyanX CDSS (DICOM + multi-site)"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+authors = [{name = "rbGyanX Team"}]
+keywords = ["radiotherapy", "TCP", "NTCP", "DVH", "DICOM", "CDSS", "radiobiology"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Healthcare Industry",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "pydicom>=2.4.0",
+    "dicompyler-core>=0.5.5",
+    "dicom>=0.9.9.post1",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "openpyxl>=3.1.0",
+    "scipy>=1.10.0",
+    "pyyaml>=6.0",
+    "scikit-learn>=1.3",
+    "lifelines>=0.27",
+    "xgboost>=1.7",
+    "shap>=0.41",
+    "joblib>=1.2",
+    "matplotlib>=3.7",
+    "lime>=0.2",
+    "tabulate>=0.9",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0.0", "black>=23.0.0", "ruff>=0.1.0"]
+
+[project.scripts]
+rbgyanx-engine = "rbgyanx_engine.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/kalyan2031990/rbGyanX_cdss"
+Documentation = "https://github.com/kalyan2031990/rbGyanX_cdss#readme"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+    "rbgyanx_engine*",
+    "dicom_io*",
+    "config*",
+    "radiobiology*",
+    "uncertainty*",
+    "statistical_models*",
+    "ml_models*",
+    "xai*",
+    "validation*",
+    "outputs*",
+]
+exclude = ["tests*", "examples*", "archive*", "quantification*", "src*"]
+
+[tool.setuptools.package-data]
+config = ["*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

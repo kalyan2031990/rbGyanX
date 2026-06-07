@@ -1,0 +1,18 @@
+[project]
+name = "rbgyanx-advanced-f"
+version = "2.0.0"
+description = "ADVANCED-mode Part F: Bayesian NTCP inference and PINN training"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "scipy>=1.11",
+]
+
+[project.optional-dependencies]
+bayesian = ["pymc>=5.0", "arviz>=0.16"]
+pinn = ["torch>=2.1.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "../engine", "../engine_advanced"]

@@ -1,0 +1,3 @@
+# TensorFlow stack for rbGyanX full installer (Python 3.10–3.12 only).
+-r requirements-build.txt
+tensorflow==2.15.1

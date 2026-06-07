@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rbGyanX User Manual</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(135deg, #FF9933 0%, #FFFFFF 50%, #138808 100%);
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            color: #000080;
+            font-size: 2.5em;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            color: #555;
+            font-size: 1.1em;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #000080;
+            border-bottom: 3px solid #138808;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+        h3 {
+            color: #FF9933;
+            margin-top: 30px;
+        }
+        .section {
+            margin: 30px 0;
+        }
+        .workflow-box {
+            background: #f0f8ff;
+            border-left: 4px solid #000080;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .step {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .step-number {
+            background: #000080;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .info-box {
+            background: #d1ecf1;
+            border: 1px solid #0c5460;
+            border-left: 4px solid #0c5460;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        ul, ol {
+            margin: 10px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #000080;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .toc {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 30px 0;
+        }
+        .toc ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin: 8px 0;
+        }
+        .toc a {
+            color: #000080;
+            text-decoration: none;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>rbGyanX</h1>
+        <p>A radiobiology-guided clinical decision support framework</p>
+        <p style="font-size: 0.9em; margin-top: 5px;">User Manual v1.0</p>
+    </div>
+
+    <div class="container">
+        <div class="toc">
+            <h2>Table of Contents</h2>
+            <ul>
+                <li><a href="#overview">1. Overview</a></li>
+                <li><a href="#workflow">2. Workflow</a></li>
+                <li><a href="#input-requirements">3. Input Requirements</a></li>
+                <li><a href="#analysis-modes">4. Analysis Modes</a></li>
+                <li><a href="#step-by-step">5. Step-by-Step Guide</a></li>
+                <li><a href="#output-structure">6. Output Structure</a></li>
+                <li><a href="#examples">7. Example Folder Structures</a></li>
+                <li><a href="#troubleshooting">8. Troubleshooting</a></li>
+                <li><a href="#disclaimer">9. Disclaimer and Usage Cautions</a></li>
+            </ul>
+        </div>
+
+        <section id="overview" class="section">
+            <h2>1. Overview</h2>
+            <p>rbGyanX is a radiobiology-guided clinical decision support framework designed for treatment plan evaluation in radiation oncology. It integrates:</p>
+            <ul>
+                <li><strong>Physical Dosimetry</strong>: Dose-volume histogram (DVH) processing and dose metric extraction</li>
+                <li><strong>Radiobiological Modeling</strong>: TCP (Tumor Control Probability) and NTCP (Normal Tissue Complication Probability) models</li>
+                <li><strong>Machine Learning</strong>: ANN and XGBoost models with SHAP explainability</li>
+                <li><strong>Therapeutic Integration</strong>: UTCP, therapeutic window, and risk-benefit analysis</li>
+            </ul>
+            <div class="info-box">
+                <strong>Note:</strong> rbGyanX is intended for research and academic use. It should be used as a decision support tool, not as a replacement for clinical judgment.
+            </div>
+        </section>
+
+        <section id="workflow" class="section">
+            <h2>2. Workflow</h2>
+            <p>The rbGyanX pipeline follows a standardized 6-step workflow:</p>
+            <div class="workflow-box">
+                <div class="step">
+                    <span class="step-number">Step 1</span>
+                    <strong>DVH Detection + Canonicalization</strong><br>
+                    Preprocess and validate DVH files. Detects structure types (TARGET vs OAR) automatically.
+                </div>
+                <div class="step">
+                    <span class="step-number">Step 2</span>
+                    <strong>Physical Dose Metrics</strong><br>
+                    Calculate physical dose metrics. OAR metrics (V5-V50, Dmax) and Target metrics (D95, D98, V95, V100, V107, HI, CI, GI).
+                </div>
+                <div class="step">
+                    <span class="step-number">Step 3</span>
+                    <strong>TCP and/or NTCP Modeling</strong><br>
+                    Run traditional and/or ML models for TCP (targets) and/or NTCP (OARs) based on selected analysis mode.
+                </div>
+                <div class="step">
+                    <span class="step-number">Step 4</span>
+                    <strong>Clinical Factor Analysis</strong><br>
+                    Analyze relationships between clinical factors and outcomes (requires clinical data).
+                </div>
+                <div class="step">
+                    <span class="step-number">Step 5</span>
+                    <strong>QA & Validation</strong><br>
+                    Generate quality assurance reports (advisory only, non-blocking).
+                </div>
+                <div class="step">
+                    <span class="step-number">Step 6</span>
+                    <strong>TCP–NTCP Integration</strong><br>
+                    Calculate therapeutic ratios (UTCP, P+, CFTC) when both TCP and NTCP are executed.
+                </div>
+            </div>
+        </section>
+
+        <section id="input-requirements" class="section">
+            <h2>3. Input Requirements</h2>
+            <h3>3.1 DVH Files</h3>
+            <p>rbGyanX accepts DVH files in multiple formats:</p>
+            <ul>
+                <li><strong>Format:</strong> CSV, TXT, or directory containing multiple DVH files</li>
+                <li><strong>DVH Type:</strong> Cumulative or differential (auto-detected)</li>
+                <li><strong>Required Columns:</strong> Dose[Gy] and Volume[cm³] or Volume[%]</li>
+                <li><strong>Structure Names:</strong> Automatically detected (PTV/GTV/CTV = TARGET; others = OAR)</li>
+            </ul>
+            <div class="info-box">
+                <strong>File Naming Convention:</strong> Files should be named with patient ID and structure name, e.g., <code>Patient_001_PTV.csv</code> or <code>Patient_001_Parotid.csv</code>
+            </div>
+
+            <h3>3.2 Clinical Data (Optional but Recommended)</h3>
+            <p>Required for ML models and clinical factors analysis:</p>
+            <ul>
+                <li><strong>Format:</strong> Excel (.xlsx) or CSV (.csv)</li>
+                <li><strong>Required Column:</strong> PatientID (must match DVH file naming)</li>
+                <li><strong>Optional Columns:</strong> Age, Gender, TumorStage, Treatment, Outcome, etc.</li>
+                <li><strong>Outcome Column:</strong> For supervised ML, include binary outcome (0/1 or No/Yes)</li>
+            </ul>
+        </section>
+
+        <section id="analysis-modes" class="section">
+            <h2>4. Analysis Modes</h2>
+            <p>Select ONE analysis mode before starting:</p>
+            <table>
+                <tr>
+                    <th>Mode</th>
+                    <th>Description</th>
+                    <th>Requirements</th>
+                    <th>Outputs</th>
+                </tr>
+                <tr>
+                    <td><strong>TCP only</strong></td>
+                    <td>Tumor Control Probability analysis</td>
+                    <td>Target structures (PTV/GTV/CTV)</td>
+                    <td>tcp_analysis/</td>
+                </tr>
+                <tr>
+                    <td><strong>NTCP only</strong></td>
+                    <td>Normal Tissue Complication Probability analysis</td>
+                    <td>OAR structures (e.g., Parotid, SpinalCord)</td>
+                    <td>ntcp_analysis/</td>
+                </tr>
+                <tr>
+                    <td><strong>TCP + NTCP</strong></td>
+                    <td>Both analyses with therapeutic integration</td>
+                    <td>Both target and OAR structures</td>
+                    <td>tcp_analysis/, ntcp_analysis/, integration/</td>
+                </tr>
+            </table>
+            <div class="warning-box">
+                <strong>Important:</strong> Mode selection determines which analysis branches run. Step 6 (integration) only activates in TCP + NTCP mode.
+            </div>
+        </section>
+
+        <section id="step-by-step" class="section">
+            <h2>5. Step-by-Step Guide</h2>
+
+            <h3>5.1 Global Settings</h3>
+            <ol>
+                <li>Select <strong>Analysis Mode</strong> (TCP only, NTCP only, or TCP + NTCP)</li>
+                <li>Set <strong>Output Directory</strong> (all results will be saved here)</li>
+                <li>(Optional) Browse for <strong>Clinical Data</strong> file (required for ML models)</li>
+            </ol>
+
+            <h3>5.2 Step 1: DVH Preprocessing</h3>
+            <ol>
+                <li>Select input format (Single File or Directory)</li>
+                <li>Browse and select your DVH input</li>
+                <li>Select DVH type (Auto-detect recommended)</li>
+                <li>Click "Run Step 1"</li>
+            </ol>
+            <div class="info-box">
+                Step 1 automatically detects structure types (TARGET vs OAR) and validates DVH physics. Results are saved to <code>processed_DVH/</code>.
+            </div>
+
+            <h3>5.3 Step 2: Physical Dose Metrics</h3>
+            <ol>
+                <li>Click "Run Step 2"</li>
+                <li>Metrics are automatically calculated from Step 1 output</li>
+            </ol>
+            <p><strong>Outputs:</strong></p>
+            <ul>
+                <li>OAR metrics: <code>dose_metrics/tables/NTCP_physical_metrics.xlsx</code></li>
+                <li>Target metrics: <code>dose_metrics/tables/TCP_physical_metrics.xlsx</code></li>
+                <li>DVH plots: <code>dose_metrics/plots/</code></li>
+            </ul>
+
+            <h3>5.4 Step 3: TCP/NTCP Analysis</h3>
+            <p><strong>Traditional Models Tab:</strong></p>
+            <ol>
+                <li>Select which models to run (multiple selections allowed)</li>
+                <li>Verify tumor site/diagnosis (auto-detected from DVH metadata)</li>
+                <li>Select structures to analyze (populated after Step 1)</li>
+            </ol>
+            <p><strong>Edit Parameters Tab:</strong></p>
+            <ol>
+                <li>Select a model from dropdown</li>
+                <li>Adjust parameters if needed (defaults from literature)</li>
+                <li>Click "Apply Changes" to save</li>
+            </ol>
+            <p><strong>ML Options:</strong></p>
+            <ul>
+                <li>Enable "ML Models" checkbox (requires clinical data)</li>
+                <li>Enable "SHAP Explainability" for feature importance analysis</li>
+            </ul>
+            <p>Click "Run Step 3" to execute analysis.</p>
+
+            <h3>5.5 Step 4: Clinical Factors Analysis</h3>
+            <ol>
+                <li>Click "Run Step 4" (requires clinical data file)</li>
+                <li>Analysis runs for both TCP and NTCP if both were executed</li>
+            </ol>
+            <div class="info-box">
+                Clinical factors analysis identifies relationships between patient/clinical variables and outcomes.
+            </div>
+
+            <h3>5.6 Step 5: Quality Assurance</h3>
+            <ol>
+                <li>Click "Run Step 5" (runs automatically after Step 4 if "Run All" was used)</li>
+                <li>QA reports are generated (advisory only, non-blocking)</li>
+            </ol>
+            <div class="warning-box">
+                QA is advisory only. Warnings and flags do not indicate execution failure.
+            </div>
+
+            <h3>5.7 Step 6: TCP-NTCP Integration</h3>
+            <ol>
+                <li>Only available when <strong>TCP + NTCP</strong> mode is selected</li>
+                <li>Runs automatically after Step 5 completes (if "Run All" was used)</li>
+                <li>Can be run manually by clicking "Run Step 6"</li>
+            </ol>
+            <p><strong>Outputs:</strong></p>
+            <ul>
+                <li>UTCP (Uncomplicated TCP) calculations</li>
+                <li>Therapeutic window analysis</li>
+                <li>Risk-benefit summary</li>
+                <li>Pareto frontier plots</li>
+            </ul>
+        </section>
+
+        <section id="output-structure" class="section">
+            <h2>6. Output Structure</h2>
+            <p>All outputs follow a uniform directory structure:</p>
+            <pre><code>output_root/
+ ├── processed_DVH/          # Step 1: Canonicalized DVH files
+ │   ├── dDVH_csv/           # Differential DVH files
+ │   └── processed_dvh.xlsx  # Summary file
+ ├── dose_metrics/            # Step 2: Physical dose metrics
+ │   ├── tables/              # Excel files with metrics
+ │   └── plots/               # DVH plots
+ ├── tcp_analysis/            # Step 3: TCP results (if TCP enabled)
+ │   ├── tcp_predictions.xlsx
+ │   ├── tcp_parameters.xlsx
+ │   ├── tcp_ml_performance.xlsx (if ML enabled)
+ │   └── plots/
+ ├── ntcp_analysis/           # Step 3: NTCP results (if NTCP enabled)
+ │   ├── enhanced_ntcp_calculations.csv
+ │   ├── ntcp_ml_performance.xlsx (if ML enabled)
+ │   └── plots/
+ ├── integration/             # Step 6: TCP-NTCP integration (if BOTH mode)
+ │   ├── therapeutic_metrics.xlsx
+ │   └── plots/
+ ├── qa/                      # Step 5: Quality assurance reports
+ │   └── qa_summary_tables.xlsx
+ └── logs/                    # Execution logs</code></pre>
+        </section>
+
+        <section id="examples" class="section">
+            <h2>7. Example Folder Structures</h2>
+
+            <h3>7.1 TCP-Only Analysis</h3>
+            <p><strong>Input:</strong></p>
+            <pre><code>dvh_data/
+ ├── Patient_001_PTV.csv
+ ├── Patient_002_PTV.csv
+ └── Patient_003_PTV.csv</code></pre>
+            <p><strong>Clinical Data (optional):</strong></p>
+            <pre><code>clinical_data.xlsx
+Columns: PatientID, Age, TumorStage, Outcome</code></pre>
+
+            <h3>7.2 NTCP-Only Analysis</h3>
+            <p><strong>Input:</strong></p>
+            <pre><code>dvh_data/
+ ├── Patient_001_Parotid.csv
+ ├── Patient_001_SpinalCord.csv
+ ├── Patient_002_Parotid.csv
+ └── Patient_002_SpinalCord.csv</code></pre>
+
+            <h3>7.3 TCP + NTCP Analysis</h3>
+            <p><strong>Input:</strong></p>
+            <pre><code>dvh_data/
+ ├── Patient_001_PTV.csv
+ ├── Patient_001_Parotid.csv
+ ├── Patient_001_SpinalCord.csv
+ ├── Patient_002_PTV.csv
+ ├── Patient_002_Parotid.csv
+ └── Patient_002_SpinalCord.csv</code></pre>
+        </section>
+
+        <section id="troubleshooting" class="section">
+            <h2>8. Troubleshooting</h2>
+
+            <h3>Common Issues</h3>
+            <table>
+                <tr>
+                    <th>Issue</th>
+                    <th>Solution</th>
+                </tr>
+                <tr>
+                    <td>Step 1 fails with "No DVH files found"</td>
+                    <td>Check input path and file format. Ensure files contain Dose[Gy] and Volume columns.</td>
+                </tr>
+                <tr>
+                    <td>Step 3 reports "No structures detected"</td>
+                    <td>Run Step 1 first. Verify structure names in DVH files match expected patterns (PTV/GTV/CTV for targets).</td>
+                </tr>
+                <tr>
+                    <td>ML models not training</td>
+                    <td>Ensure clinical data file is provided and contains PatientID column matching DVH file names.</td>
+                </tr>
+                <tr>
+                    <td>Step 6 integration not available</td>
+                    <td>Step 6 only runs in TCP + NTCP mode. Ensure both TCP and NTCP Step 3 completed successfully.</td>
+                </tr>
+                <tr>
+                    <td>QA warnings appear</td>
+                    <td>QA is advisory only. Warnings do not indicate errors. Review QA reports for details.</td>
+                </tr>
+            </table>
+
+            <h3>Validation Errors</h3>
+            <p>DVH validation in Step 1 may flag issues but does not block execution. Check:</p>
+            <ul>
+                <li>Monotonicity: Dose should be ascending, volume should be descending (cumulative) or non-negative (differential)</li>
+                <li>Physical constraints: Doses and volumes should be positive and within expected ranges</li>
+            </ul>
+        </section>
+
+        <section id="disclaimer" class="section">
+            <h2>9. Disclaimer and Usage Cautions</h2>
+
+            <div class="warning-box">
+                <h3>⚠️ Important Disclaimers</h3>
+                <ul>
+                    <li><strong>Research Tool Only:</strong> rbGyanX is intended for research and academic use. It should not be used as the sole basis for clinical decision-making.</li>
+                    <li><strong>Not a Medical Device:</strong> This software is not FDA-approved or certified as a medical device.</li>
+                    <li><strong>Clinical Validation Required:</strong> Model parameters and predictions should be validated against local clinical data before clinical use.</li>
+                    <li><strong>No Warranty:</strong> The software is provided "as is" without warranty of any kind.</li>
+                    <li><strong>User Responsibility:</strong> Users are responsible for ensuring appropriate use and interpretation of results.</li>
+                </ul>
+            </div>
+
+            <h3>Best Practices</h3>
+            <ul>
+                <li><strong>Data Quality:</strong> Ensure DVH data is accurate and complete. Validate against treatment planning system.</li>
+                <li><strong>Model Parameters:</strong> Use literature-based parameters as defaults. Custom parameters should be clinically validated.</li>
+                <li><strong>ML Models:</strong> ML model performance depends on training data quality. Ensure adequate sample size and proper cross-validation.</li>
+                <li><strong>Interpretation:</strong> Consider multiple models and clinical context when interpreting predictions.</li>
+                <li><strong>Documentation:</strong> Document all analysis parameters and workflow steps for reproducibility.</li>
+            </ul>
+
+            <h3>Limitations</h3>
+            <ul>
+                <li>Models assume idealized dose distributions and may not account for all biological complexities</li>
+                <li>TCP/NTCP predictions are probabilistic and subject to uncertainty</li>
+                <li>ML models may exhibit overfitting with small datasets</li>
+                <li>Integration metrics (UTCP, P+) are simplified and should be interpreted with caution</li>
+            </ul>
+
+            <div class="info-box">
+                <strong>For Support:</strong> Refer to the Help menu in rbGyanX or consult the documentation for detailed model descriptions and references.
+            </div>
+        </section>
+
+        <div class="footer">
+            <p><strong>rbGyanX v1.0</strong> - A radiobiology-guided clinical decision support framework</p>
+            <p>Generated: <script>document.write(new Date().toLocaleDateString());</script></p>
+            <p style="font-size: 0.8em; color: #999;">© rbGyanX Team. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+

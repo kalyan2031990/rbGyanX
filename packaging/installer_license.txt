@@ -1,0 +1,18 @@
+rbGyanX 1.0 — Radiobiological Clinical Decision Support System
+================================================================
+
+Copyright (c) rbGyanX Team. All rights reserved.
+
+IMPORTANT — CLINICAL USE
+
+rbGyanX provides decision support for radiotherapy and radiosurgery plan
+evaluation. It is NOT a substitute for qualified clinical judgment.
+
+• Outputs (TCP, NTCP, UTCP, QUANTEC flags, ML predictions) are for
+  research and decision support only unless validated for your local workflow.
+• Machine-learning features require adequate outcome data; follow in-app
+  safety annotations in ADVANCED mode.
+• De-identify patient data according to your institution's policies.
+
+By installing this software you agree to use it responsibly and in
+compliance with applicable regulations at your site.

@@ -1,0 +1,32 @@
+# TCP_NTCP Pipeline v2.0 - Requirements
+# =====================================
+# Updated: 2025-01-XX
+# Version: v2.0.0
+
+# Existing dependencies (keep exact versions from v1.0.1)
+numpy>=1.24.0
+pandas>=2.0.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+scipy>=1.10.0
+scikit-learn>=1.3.0
+xgboost>=2.0.0
+python-docx>=0.8.11
+openpyxl>=3.1.0
+
+# CRITICAL ADD: SHAP (currently missing but used in shap_suppl.py!)
+shap>=0.44.0
+
+# Medical imaging & RT data
+pydicom>=2.4.0
+rt-utils>=1.2.0
+# SimpleITK / PyMedPhys — optional legacy; not needed for engine DICOM path
+
+# Statistical modeling
+statsmodels>=0.14.0
+
+# Experiment tracking (optional — not required for desktop app)
+# mlflow>=2.9.0
+
+# Deep-learning stacks are NOT required for rbGyanX 1.0 (PyInstaller excludes them).
+# On Python 3.10–3.12 only: pip install -r packaging/requirements-optional-advanced.txt

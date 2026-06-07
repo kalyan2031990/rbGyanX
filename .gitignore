@@ -1,0 +1,47 @@
+# Build / runtime
+dist/
+build/
+engine_bundle/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+.eggs/
+venv/
+.venv-build/
+
+# Patient / local data (never commit DICOM or outcomes)
+test_data/*
+!test_data/README.md
+!test_data/dicom_input/
+test_data/dicom_input/*
+!test_data/dicom_input/.gitkeep
+*.dcm
+out/
+output/
+*_smoke*/
+rbgyanx_smoke_dicom/
+
+# Outputs
+reports/
+plots/
+backups/
+!reports/.gitkeep
+!plots/.gitkeep
+!backups/.gitkeep
+
+# Runtime / IDE
+.rbgyanx_selftest_state.json
+rbgyanx_gui.log
+*.code-workspace
+.cursor/
+.vscode/
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Secrets
+.env
+*.env.local
+**/config/*api*.json

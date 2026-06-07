@@ -1,0 +1,18 @@
+[project]
+name = "rbgyanx-advanced"
+version = "1.1.0"
+description = "ADVANCED-mode extensions: covariates, dosiomics, PINN stubs, 3D dose"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "scipy>=1.11",
+]
+
+[project.optional-dependencies]
+pinn = ["torch>=2.1.0"]
+dose3d = ["pydicom>=2.4", "scikit-image>=0.22"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "../engine"]

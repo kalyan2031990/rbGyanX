@@ -1,0 +1,115 @@
+# Site / technique plan-quality index packs (physical dosimetry).
+# Used for reporting columns and optional WARNING checks — separate from QUANTEC NTCP limits.
+
+HN:
+  oar_canonicals:
+    - Parotid_L
+    - Parotid_R
+    - Submandibular_L
+    - Submandibular_R
+    - Mandible
+    - SpinalCord
+    - Larynx
+    - OralCavity
+  technique_profiles:
+    conventional:
+      report_metrics:
+        TARGET: [D95_gy, D98_gy, D50_gy, D2_gy, HI, CI, V95pct, V100pct, integral_dose_gy_cm3]
+        OAR: [Dmean_gy, Dmax_gy, V20Gy_cc, integral_dose_gy_cm3]
+      checks:
+        - {role: TARGET, metric: D95_gy, min_percent_rx: 95.0, severity: WARNING}
+        - {role: TARGET, metric: HI, max_value: 0.15, severity: WARNING}
+    hypofractionated:
+      report_metrics:
+        TARGET: [D95_gy, D98_gy, D2_gy, HI, CI, V100pct, integral_dose_gy_cm3]
+        OAR: [Dmean_gy, Dmax_gy, integral_dose_gy_cm3]
+      checks:
+        - {role: TARGET, metric: D95_gy, min_percent_rx: 90.0, severity: WARNING}
+
+LUNG:
+  oar_canonicals:
+    - Lung_R
+    - Lung_L
+    - LungTotal
+    - Esophagus
+    - Heart
+    - SpinalCord
+  technique_profiles:
+    conventional:
+      report_metrics:
+        TARGET: [D95_gy, D98_gy, Dmean_gy, HI, CI, V95pct, integral_dose_gy_cm3]
+        OAR: [Dmean_gy, Dmax_gy, V20Gy_cc, V5Gy_cc, integral_dose_gy_cm3]
+      checks:
+        - {role: TARGET, metric: D95_gy, min_percent_rx: 95.0, severity: WARNING}
+    hypofractionated:
+      report_metrics:
+        TARGET: [D95_gy, D98_gy, HI, integral_dose_gy_cm3]
+        OAR: [Dmean_gy, Dmax_gy, V20Gy_cc, integral_dose_gy_cm3]
+
+LUNG_SBRT:
+  oar_canonicals:
+    - Lung_R
+    - Lung_L
+    - LungTotal
+    - Esophagus
+    - ChestWall
+    - SpinalCord
+    - Trachea
+  technique_profiles:
+    sbrt:
+      report_metrics:
+        TARGET: [D95_gy, D98_gy, D50_gy, D2_gy, Dmax_gy, HI, GI_pct, CI, V100pct, integral_dose_gy_cm3]
+        OAR: [Dmean_gy, Dmax_gy, V20Gy_cc, V5Gy_cc, integral_dose_gy_cm3]
+      checks:
+        - {role: TARGET, metric: D95_gy, min_percent_rx: 90.0, severity: WARNING}
+        - {role: TARGET, metric: GI_pct, max_value: 50.0, severity: WARNING}
+
+BREAST:
+  oar_canonicals:
+    - Breast_Contra
+    - LAD
+    - Lung_Ipsi
+    - Heart
+    - SpinalCord
+  technique_profiles:
+    conventional:
+      report_metrics:
+        TARGET: [D95_gy, D98_gy, Dmean_gy, HI, CI, V95pct, integral_dose_gy_cm3]
+        OAR: [Dmean_gy, Dmax_gy, V20Gy_cc, integral_dose_gy_cm3]
+      checks:
+        - {role: TARGET, metric: D95_gy, min_percent_rx: 95.0, severity: WARNING}
+    hypofractionated:
+      report_metrics:
+        TARGET: [D95_gy, D98_gy, HI, integral_dose_gy_cm3]
+        OAR: [Dmean_gy, Dmax_gy, integral_dose_gy_cm3]
+
+BRAIN:
+  oar_canonicals:
+    - Brain
+    - Hippocampus_L
+    - Hippocampus_R
+    - OpticNerve_L
+    - OpticNerve_R
+    - OpticChiasm
+    - Brainstem
+    - Cochlea_L
+    - Cochlea_R
+  technique_profiles:
+    conventional:
+      report_metrics:
+        TARGET: [D95_gy, D98_gy, Dmean_gy, HI, CI, integral_dose_gy_cm3]
+        OAR: [Dmean_gy, Dmax_gy, integral_dose_gy_cm3]
+    sbrt:
+      report_metrics:
+        TARGET: [D95_gy, D98_gy, D2_gy, GI_pct, integral_dose_gy_cm3]
+        OAR: [Dmean_gy, Dmax_gy, integral_dose_gy_cm3]
+      checks:
+        - {role: TARGET, metric: D95_gy, min_percent_rx: 90.0, severity: WARNING}
+
+DEFAULT:
+  oar_canonicals: []
+  technique_profiles:
+    conventional:
+      report_metrics:
+        TARGET: [D95_gy, D98_gy, Dmean_gy, HI, CI, integral_dose_gy_cm3]
+        OAR: [Dmean_gy, Dmax_gy, integral_dose_gy_cm3]

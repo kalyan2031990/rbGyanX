@@ -1,0 +1,5 @@
+# Phase R2: local rbgyanx-engine (open-source CDSS core)
+# Install: pip install -e "C:/Users/Sampa/OneDrive/Desktop/rbGyanX_cdss"
+# Or set RBGYANX_ENGINE_PATH to the repo root.
+
+-e C:/Users/Sampa/OneDrive/Desktop/rbGyanX_cdss

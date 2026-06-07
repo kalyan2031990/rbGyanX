@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Mondal
+    given-names: Kalyan
+title: "rbGyanX: A radiobiology-guided clinical decision support framework"
+version: "2.0.0"
+date-released: 2026-06-07
+doi: ""
+url: "https://github.com/kalyan2031990/rbGyanX"
+repository-code: "https://github.com/kalyan2031990/rbGyanX"
+license: MIT
+keywords:
+  - radiobiology
+  - clinical decision support
+  - TCP
+  - NTCP
+  - radiotherapy
+  - medical physics
+abstract: "rbGyanX is a radiobiology-guided clinical decision support framework designed to integrate physical dosimetry, radiobiological modeling, and explainable machine learning for treatment plan evaluation in radiation oncology."

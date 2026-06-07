@@ -1,0 +1,245 @@
+# NTCP organ parameters by tumour site key (matches TCP site_params_key).
+# Literature defaults for v0.1.0-alpha; override in site_params_ntcp_user.yaml.
+
+HN:
+  organs:
+    Parotid_L:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 28.4, gamma50: 0.6}
+      RS: {D50_gy: 28.4, gamma: 1.0, s: 0.25}
+    Parotid_R:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 28.4, gamma50: 0.6}
+      RS: {D50_gy: 28.4, gamma: 1.0, s: 0.25}
+    SpinalCord:
+      geud_a: 20.0
+      alpha_beta_gy: 3.0
+      LKB_probit: {TD50_gy: 45.0, m: 0.18, n: 0.05}
+      RS: {D50_gy: 45.0, gamma: 2.0, s: 1.0}
+    Brainstem:
+      geud_a: 20.0
+      alpha_beta_gy: 2.0
+      LKB_probit: {TD50_gy: 53.0, m: 0.18, n: 0.05}
+    OralCavity:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 39.0, gamma50: 0.8}
+    Larynx:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 44.0, gamma50: 0.7}
+    Submandibular_L:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 39.0, gamma50: 0.6}
+    Submandibular_R:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 39.0, gamma50: 0.6}
+    Mandible:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 70.0, gamma50: 0.5}
+    PharynxConstrictor:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 41.0, gamma50: 0.4}
+    Esophagus:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 34.0, gamma50: 0.7}
+
+LUNG:
+  organs:
+    LungTotal:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 24.5, gamma50: 0.7}
+      RS: {D50_gy: 24.5, gamma: 1.0, s: 0.01}
+    Heart:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 48.0, gamma50: 0.5}
+    Esophagus:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 34.0, gamma50: 0.7}
+    Lung_L:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 24.5, gamma50: 0.7}
+    Lung_R:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 24.5, gamma50: 0.7}
+    BrachialPlexus:
+      geud_a: 20.0
+      alpha_beta_gy: 3.0
+      LKB_probit: {TD50_gy: 54.0, m: 0.18, n: 0.05}
+    ChestWall:
+      geud_a: 20.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 35.0, gamma50: 0.6}
+    Rib:
+      geud_a: 20.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 50.0, gamma50: 0.5}
+
+BREAST:
+  organs:
+    Heart:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 48.0, gamma50: 0.5}
+    Lung_Ipsi:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 24.5, gamma50: 0.7}
+    LAD:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 50.0, gamma50: 0.5}
+    Esophagus:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 34.0, gamma50: 0.7}
+    Thyroid:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 37.7, gamma50: 0.7}
+    BrachialPlexus:
+      geud_a: 20.0
+      alpha_beta_gy: 3.0
+      LKB_probit: {TD50_gy: 54.0, m: 0.18, n: 0.05}
+    Lung_Contra:
+      geud_a: 3.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 24.5, gamma50: 0.7}
+    SpinalCord:
+      geud_a: 20.0
+      alpha_beta_gy: 3.0
+      LKB_probit: {TD50_gy: 45.0, m: 0.18, n: 0.05}
+
+BRAIN_GBM:
+  organs:
+    Brainstem:
+      geud_a: 20.0
+      alpha_beta_gy: 2.0
+      LKB_probit: {TD50_gy: 53.0, m: 0.18, n: 0.05}
+    OpticChiasm:
+      geud_a: 20.0
+      alpha_beta_gy: 2.0
+      LKB_probit: {TD50_gy: 55.0, m: 0.18, n: 0.05}
+    OpticNerve_L:
+      geud_a: 20.0
+      alpha_beta_gy: 2.0
+      LKB_probit: {TD50_gy: 54.0, m: 0.18, n: 0.05}
+    OpticNerve_R:
+      geud_a: 20.0
+      alpha_beta_gy: 2.0
+      LKB_probit: {TD50_gy: 54.0, m: 0.18, n: 0.05}
+    NormalBrain:
+      geud_a: 3.0
+      alpha_beta_gy: 2.0
+      LKB_loglogit: {TD50_gy: 60.0, gamma50: 0.5}
+    Pituitary:
+      geud_a: 3.0
+      alpha_beta_gy: 2.0
+      LKB_loglogit: {TD50_gy: 45.0, gamma50: 0.5}
+    Hippocampus_L:
+      geud_a: 3.0
+      alpha_beta_gy: 2.0
+      LKB_loglogit: {TD50_gy: 22.0, gamma50: 0.8}
+    Hippocampus_R:
+      geud_a: 3.0
+      alpha_beta_gy: 2.0
+      LKB_loglogit: {TD50_gy: 22.0, gamma50: 0.8}
+    Cochlea_L:
+      geud_a: 1.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 45.0, gamma50: 0.6}
+    Cochlea_R:
+      geud_a: 1.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 45.0, gamma50: 0.6}
+
+BRAIN_METS:
+  organs:
+    Brainstem:
+      geud_a: 20.0
+      alpha_beta_gy: 2.0
+      LKB_probit: {TD50_gy: 53.0, m: 0.18, n: 0.05}
+    Hippocampus_L:
+      geud_a: 1.0
+      alpha_beta_gy: 2.0
+      LKB_loglogit: {TD50_gy: 22.0, gamma50: 0.8}
+    Hippocampus_R:
+      geud_a: 1.0
+      alpha_beta_gy: 2.0
+      LKB_loglogit: {TD50_gy: 22.0, gamma50: 0.8}
+    OpticChiasm:
+      geud_a: 20.0
+      alpha_beta_gy: 2.0
+      LKB_probit: {TD50_gy: 55.0, m: 0.18, n: 0.05}
+    OpticNerve_L:
+      geud_a: 20.0
+      alpha_beta_gy: 2.0
+      LKB_probit: {TD50_gy: 54.0, m: 0.18, n: 0.05}
+    OpticNerve_R:
+      geud_a: 20.0
+      alpha_beta_gy: 2.0
+      LKB_probit: {TD50_gy: 54.0, m: 0.18, n: 0.05}
+    Cochlea_L:
+      geud_a: 1.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 45.0, gamma50: 0.6}
+    Cochlea_R:
+      geud_a: 1.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 45.0, gamma50: 0.6}
+
+PROSTATE:
+  organs:
+    Rectum:
+      geud_a: 8.33
+      alpha_beta_gy: 4.0
+      LKB_loglogit: {TD50_gy: 76.9, gamma50: 4.0}
+      LKB_probit: {TD50_gy: 76.9, m: 0.14, n: 0.12}
+    Bladder:
+      geud_a: 2.0
+      alpha_beta_gy: 5.0
+      LKB_loglogit: {TD50_gy: 80.0, gamma50: 3.5}
+    FemoralHead_L:
+      geud_a: 4.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 52.0, gamma50: 3.0}
+    FemoralHead_R:
+      geud_a: 4.0
+      alpha_beta_gy: 3.0
+      LKB_loglogit: {TD50_gy: 52.0, gamma50: 3.0}
+    Urethra:
+      geud_a: 4.0
+      alpha_beta_gy: 5.0
+      LKB_loglogit: {TD50_gy: 80.0, gamma50: 3.0}
+
+LIVER:
+  organs:
+    Liver:
+      geud_a: 0.97
+      alpha_beta_gy: 2.5
+      LKB_loglogit: {TD50_gy: 40.0, gamma50: 3.2}
+      LKB_probit: {TD50_gy: 40.0, m: 0.15, n: 0.97}
+    Duodenum:
+      geud_a: 4.0
+      alpha_beta_gy: 5.0
+      LKB_loglogit: {TD50_gy: 55.0, gamma50: 3.0}
+    Stomach:
+      geud_a: 4.0
+      alpha_beta_gy: 5.0
+      LKB_loglogit: {TD50_gy: 68.0, gamma50: 3.0}
+    SpinalCord:
+      geud_a: 20.0
+      alpha_beta_gy: 2.0
+      LKB_loglogit: {TD50_gy: 66.5, gamma50: 4.0}
