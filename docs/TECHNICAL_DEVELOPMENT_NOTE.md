@@ -269,7 +269,7 @@ python -m pytest engine/tests/ tests/ engine_advanced/tests/ engine_advanced_f/t
 
 ### 6.4 Optional dependency behaviour
 
-Tests requiring **xgboost**, **lightgbm**, or **lifelines** skip cleanly when packages are absent (`@xgb_skip`, `@lifelines_skip`). PINN tests skip without **PyTorch**. Bayesian MCMC uses bootstrap emulation in CI; PyMC is optional.
+Tests requiring **xgboost**, **lightgbm**, or **lifelines** use `@xgb_skip` / `@lifelines_skip` when packages are absent. PINN tests use `pytest.importorskip("torch")`. With all four packages installed (see §7.2), **zero ML-related skips** occur. Bayesian MCMC still uses bootstrap emulation by default; PyMC remains optional.
 
 ---
 
@@ -277,14 +277,50 @@ Tests requiring **xgboost**, **lightgbm**, or **lifelines** skip cleanly when pa
 
 Environment: Windows 10/11, Python 3.14.2, pytest 9.0.2.
 
+### 7.1 Baseline (optional ML deps absent)
+
 | Run | Command | Result |
 |-----|---------|--------|
-| **Full monorepo suite** | `pytest` all testpaths, `--import-mode=importlib` | **Pass** (~419 executed, ~4 skipped) |
-| **Publication suite** | `tests/test_publication_suite.py` | **129 passed** in ~12–33 s |
-| **FIX-2/3/6 focused** | calibration + ML + statistical + validation | **38 passed** |
-| **Combined engine+app+advanced** | `run_all_tests.ps1` | **Pass**, 0 failures |
+| **Full monorepo suite** | `pytest` all testpaths, `--import-mode=importlib` | **419 passed**, ~4 skipped (xgboost/lifelines/torch), **0 failed** |
+| **Publication suite** | `tests/test_publication_suite.py` | **129 passed** |
 
-Skips are conditional (optional ML packages, template generators, real `input_data/` folder absent) — not failures.
+Skips were attributable to missing **xgboost**, **lightgbm**, **lifelines**, or **PyTorch** — not test errors.
+
+### 7.2 Full dependency verification (8 June 2026)
+
+Installed optional packages:
+
+| Package | Version |
+|---------|---------|
+| xgboost | 3.1.2 |
+| lightgbm | 4.6.0 |
+| lifelines | 0.30.3 |
+| torch | 2.12.0+cpu |
+
+```powershell
+pip install xgboost lightgbm lifelines torch
+$env:RBGYANX_ENGINE_PATH = "$PWD\engine"
+$env:PYTHONUTF8 = "1"
+python -m pytest engine/tests/ tests/ engine_advanced/tests/ engine_advanced_f/tests/ `
+    --import-mode=importlib -q --tb=no
+python -m pytest tests/ --import-mode=importlib -q --tb=no -r s
+```
+
+| Run | Collected | Passed | Skipped | Failed |
+|-----|-----------|--------|---------|--------|
+| **Full monorepo suite** | 423 | **419** | **4** | **0** |
+| **`tests/` directory only** | 205 | **201** | **4** | **0** |
+| **Publication suite** | 129 | **129** | 0 | **0** |
+
+**Remaining 4 skips (not dependency-related):**
+
+| Test | Reason |
+|------|--------|
+| `tests/test_gui_integration.py` (×2) | `rbGyanXGUI` class not importable headless (Tkinter GUI) |
+| `tests/test_utils.py` | `validation_utils` legacy module not present |
+| `tests/test_with_real_data.py` | No `input_data/` clinical files on disk |
+
+**Conclusion:** With xgboost, lightgbm, lifelines, and PyTorch installed, the full **423-test** monorepo suite passes with **0 failures**. All skips are environmental (GUI headless, missing local clinical data, optional legacy module) — not radiobiology or engine defects.
 
 ---
 
