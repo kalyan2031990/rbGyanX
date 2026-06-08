@@ -308,21 +308,102 @@ python -m pytest tests/ --import-mode=importlib -q --tb=no -r s
 
 | Run | Collected | Passed | Skipped | Failed |
 |-----|-----------|--------|---------|--------|
-| **Full monorepo suite** | 423 | **419** | **4** | **0** |
-| **`tests/` directory only** | 205 | **201** | **4** | **0** |
+| **Full monorepo suite** | 423 | **420** | **3** | **0** |
+| **`tests/` directory only** | 205 | **202** | **3** | **0** |
 | **Publication suite** | 129 | **129** | 0 | **0** |
+| **ML + stats + XAI** | 46 | **46** | 0 | **0** |
+| **Legacy code3/code6 (synthetic)** | 5 | **5** | 0 | **0** |
 
-**Remaining 4 skips (not dependency-related):**
+**Remaining 3 skips (not dependency-related):**
 
 | Test | Reason |
 |------|--------|
 | `tests/test_gui_integration.py` (×2) | `rbGyanXGUI` class not importable headless (Tkinter GUI) |
 | `tests/test_utils.py` | `validation_utils` legacy module not present |
-| `tests/test_with_real_data.py` | No `input_data/` clinical files on disk |
 
-**Conclusion:** With xgboost, lightgbm, lifelines, and PyTorch installed, the full **423-test** monorepo suite passes with **0 failures**. All skips are environmental (GUI headless, missing local clinical data, optional legacy module) — not radiobiology or engine defects.
+`tests/test_with_real_data.py` now passes against `input_folders/rbgyanx_test_data/clinical_data/`.
+
+**Conclusion:** With xgboost, lightgbm, lifelines, PyTorch, and shap installed, the full **423-test** monorepo suite passes with **0 failures**. Real-data integration (11 scenarios), engine ADVANCED DICOM NTCP, and traditional NTCP on 114 HN57 DVHs all succeed. Real HN57 ML+SHAP is **partial**: ML feature matrix is empty after dose-metric join (legacy code3 path); synthetic ML/XAI tests pass fully.
 
 ---
+
+<!-- VALIDATION_REPORT_START -->
+*Last automated validation: 2026-06-08 04:48:21 UTC via `scripts/run_validation_report.py`.*
+*Real data root (local only): `C:\Users\Sampa\OneDrive\Desktop\input_folders`*
+
+### 7.3 Real data inventory (`input_folders`)
+
+| Dataset | Type | Feasible tests |
+|---------|------|----------------|
+| `DICOM_samples` | dicom | Engine BASIC/ADVANCED, site detect, TCP, NTCP, QUANTEC, plan-quality (3 .dcm) |
+| `DICOM_samples_dicom` | dicom | Engine BASIC/ADVANCED, site detect, TCP, NTCP, QUANTEC, plan-quality (0 .dcm) |
+| `HN57_OAR_Eclipse` | tps_txt | Step1 ingest, code3 NTCP+ML+SHAP, clinical adapter (130 files) |
+| `HN57_dDVH_CSV` | tps_txt | Step1 ingest, code3 NTCP+ML+SHAP, clinical adapter (115 files) |
+| `PTV_OAR_DVH_TCP_NTCP_combined_input` | tps_txt | Step1 ingest, code3 NTCP+ML+SHAP, clinical adapter (145 files) |
+| `kalpak_dcm_files` | dicom | Engine BASIC/ADVANCED, site detect, TCP, NTCP, QUANTEC, plan-quality (8 .dcm) |
+| `dicom_input` | dicom | Engine BASIC/ADVANCED, site detect, TCP, NTCP, QUANTEC, plan-quality (5 .dcm) |
+| `input_data` | clinical | Clinical adapter |
+| `HN_OAR_PTV_cDVH_input_NTCP` | tps_txt | Step1 ingest, code3 NTCP+ML+SHAP, clinical adapter (163 files) |
+
+**Clinical spreadsheets** (`rbgyanx_test_data/clinical_data/`):
+
+- `clinical_sample_input.xlsx`
+- `synthetic_clinical_data_from_PTV.xlsx`
+- `test_toxicity_clinical_HN_rbgyanx_input.xlsx`
+- `treatment_params_toxicity_HN57_input.xlsx`
+- `treatment_params_toxicity_HN_input_data.xlsx`
+
+### 7.4 Synthetic cohort (generated for legacy ML tests)
+
+Generated **30 patients** at `C:\Users\Sampa\OneDrive\Desktop\project_rbGyanx\test_data\synthetic_cohort` (450 DVH CSVs + `clinical_data_TCP.xlsx` + `clinical_data_NTCP.xlsx`).
+
+In-repo fixtures (`engine/tests/synthetic_data/dvh_fixtures.py`, publication suite helpers) remain the primary CI anchors; the generated cohort supplements code3/code6 workflow tests.
+
+### 7.5 Automated validation runs
+
+**Environment:** Python 3.14.2
+
+| Run | Status | Summary |
+|-----|--------|---------|
+| Full monorepo pytest | **PASS** | ~420 passed, 3 skipped (quiet mode) |
+| Publication suite | **PASS** | 129 passed (quiet mode) |
+| ML + statistical + XAI | **PASS** | 46 passed, 1316 warnings in 347.24s (0:05:47) |
+| Legacy code3/code6 synthetic | **PASS** | 5 passed (quiet mode) |
+| verify_all_phases.py | **PASS** | ALL 6 PHASES VERIFIED |
+| Real data integration (11 scenarios) | **PASS** |        step1: {'processed': 3, 'total': 3, 'failed': 0, 'input_kind': 'dicom'} |
+| Real HN57 NTCP ML + SHAP | **PARTIAL** | Step1 114 DVH; traditional NTCP OK; ML/XAI: feature matrix empty for Parotid ML |
+| Engine ADVANCED DICOM NTCP | **PASS** | NTCP rows: 5 |
+| Synthetic cohort generation | **PASS** | 30 patients |
+
+#### Real ML/XAI — HN57 Eclipse + `code3_ntcp_analysis_ml.py`
+
+- Clinical adapter status: usable
+- Step1 processed: 114 / ? DVH files
+- code3 exit: 0; ML+XAI OK: False
+- Prediction workbooks: 0
+- SHAP directories: 0
+- Tail errors:     raise ValueError(; ValueError: With n_samples=0, test_size=0.3 and train_size=None, the resulting train set will be empty. Adjust any of the aforementioned parameters.
+
+#### Engine ADVANCED — DICOM_samples NTCP
+
+- exit_code: 0; NTCP rows: 5; dose arrays: True
+
+#### Real integration scenarios: **11/11 OK**
+
+| Scenario | Step1 | Engine | Clinical |
+|----------|-------|--------|----------|
+| TPS_Eclipse_HN57_basic_NTCP_ONLY | OK | — | usable |
+| TPS_Eclipse_HN57_basic_TCP_NTCP | OK | — | partial |
+| TPS_Eclipse_HN57_advanced_NTCP_ONLY | OK | — | usable |
+| TPS_Eclipse_HN57_advanced_TCP_NTCP | OK | — | partial |
+| TPS_CSV_HN57_advanced_NTCP_ONLY | OK | — | usable |
+| DICOM_samples_basic_TCP_NTCP | OK | OK | — |
+| DICOM_samples_basic_NTCP_ONLY | OK | OK | — |
+| DICOM_samples_basic_TCP_ONLY | OK | OK | — |
+| DICOM_samples_advanced_TCP_NTCP | OK | OK | — |
+| DICOM_samples_advanced_NTCP_ONLY | OK | OK | — |
+| DICOM_samples_advanced_TCP_ONLY | OK | OK | — |
+<!-- VALIDATION_REPORT_END -->
 
 ## 8. Known limitations
 

@@ -16,6 +16,8 @@ test_data/*
 !test_data/dicom_input/
 test_data/dicom_input/*
 !test_data/dicom_input/.gitkeep
+# generated synthetic cohort (run_validation_report.py)
+test_data/synthetic_cohort/
 *.dcm
 out/
 output/

@@ -1,18 +1,26 @@
-"""Integration tests with real clinical data from input_data/"""
+"""Integration tests with real clinical data from input_folders."""
+import os
 import pytest
 from pathlib import Path
 import pandas as pd
 
-# This test uses real data from C:\Users\Sampa\OneDrive\Desktop\rbgyanx_dual\input_data
+_INPUT_ROOT = Path(
+    os.environ.get(
+        "RBGYANX_INPUT_FOLDERS",
+        r"C:\Users\Sampa\OneDrive\Desktop\input_folders",
+    )
+)
+_CLINICAL_DIR = _INPUT_ROOT / "rbgyanx_test_data" / "clinical_data"
 
 
-@pytest.mark.skipif(not Path("input_data").exists(), 
-                    reason="Real data not available")
+@pytest.mark.skipif(
+    not _CLINICAL_DIR.is_dir(),
+    reason="Real clinical data not available under input_folders",
+)
 def test_with_real_clinical_data():
     """Test complete workflow with real clinical data"""
     
-    # Find real clinical file
-    input_dir = Path("input_data")
+    input_dir = _CLINICAL_DIR
     clinical_files = list(input_dir.glob("*.xlsx")) + list(input_dir.glob("*.csv"))
     
     if not clinical_files:

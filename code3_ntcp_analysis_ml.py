@@ -2977,6 +2977,12 @@ def validate_ntcp_clinical_data(clinical_file):
     else:
         df = pd.read_csv(clinical_file)
     
+    # Normalize common patient ID column aliases (real hospital exports use PatientId)
+    for alias in ('PatientId', 'patient_id', 'Patient_ID', 'patientid'):
+        if alias in df.columns and 'PatientID' not in df.columns:
+            df = df.rename(columns={alias: 'PatientID'})
+            break
+
     # Check required columns
     required = ['PatientID', 'Organ']
     missing = [col for col in required if col not in df.columns]

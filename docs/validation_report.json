@@ -1,0 +1,605 @@
+{
+  "generated_utc": "2026-06-08T04:48:21.334960+00:00",
+  "python": "3.14.2",
+  "input_folders": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders",
+  "inventory": {
+    "root": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders",
+    "datasets": [
+      {
+        "path": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\DICOM_samples",
+        "kind": "dicom",
+        "description": "3 anonymised RT plans (TCP+NTCP)",
+        "exists": true,
+        "feasible": true,
+        "dcm_count": 3
+      },
+      {
+        "path": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\DICOM_samples_dicom",
+        "kind": "dicom",
+        "description": "alternate DICOM layout",
+        "exists": true,
+        "feasible": true,
+        "dcm_count": 0
+      },
+      {
+        "path": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\HN57_OAR_Eclipse",
+        "kind": "tps_txt",
+        "description": "57-patient H&N Eclipse OAR DVH",
+        "exists": true,
+        "feasible": true,
+        "file_count": 130
+      },
+      {
+        "path": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\HN57_dDVH_CSV",
+        "kind": "tps_txt",
+        "description": "57-patient differential DVH CSV",
+        "exists": true,
+        "feasible": true,
+        "file_count": 115
+      },
+      {
+        "path": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\PTV_OAR_DVH_TCP_NTCP_combined_input",
+        "kind": "tps_txt",
+        "description": "combined TCP+NTCP DVH",
+        "exists": true,
+        "feasible": true,
+        "file_count": 145
+      },
+      {
+        "path": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\kalpak_dcm_files",
+        "kind": "dicom",
+        "description": "single-case DICOM",
+        "exists": true,
+        "feasible": true,
+        "dcm_count": 8
+      },
+      {
+        "path": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\dicom_input",
+        "kind": "dicom",
+        "description": "legacy dicom_input folder",
+        "exists": true,
+        "feasible": true,
+        "dcm_count": 5
+      },
+      {
+        "path": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\input_data",
+        "kind": "clinical",
+        "description": "legacy clinical folder",
+        "exists": true,
+        "feasible": true
+      },
+      {
+        "path": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\HN_OAR_PTV_cDVH_input_NTCP",
+        "kind": "tps_txt",
+        "description": "HN OAR+PTV cumulative DVH",
+        "exists": true,
+        "feasible": true,
+        "file_count": 163
+      }
+    ],
+    "clinical_files": [
+      "clinical_sample_input.xlsx",
+      "synthetic_clinical_data_from_PTV.xlsx",
+      "test_toxicity_clinical_HN_rbgyanx_input.xlsx",
+      "treatment_params_toxicity_HN57_input.xlsx",
+      "treatment_params_toxicity_HN_input_data.xlsx"
+    ],
+    "primary_clinical_hn57": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\clinical_data\\treatment_params_toxicity_HN57_input.xlsx"
+  },
+  "runs": {
+    "synthetic_generate": {
+      "exit_code": 0,
+      "path": "C:\\Users\\Sampa\\OneDrive\\Desktop\\project_rbGyanx\\test_data\\synthetic_cohort",
+      "n_patients": 30,
+      "files": [
+        "C:\\Users\\Sampa\\OneDrive\\Desktop\\project_rbGyanx\\test_data\\synthetic_cohort\\clinical_data_NTCP.xlsx",
+        "C:\\Users\\Sampa\\OneDrive\\Desktop\\project_rbGyanx\\test_data\\synthetic_cohort\\clinical_data_TCP.xlsx"
+      ]
+    },
+    "pytest_full": {
+      "exit_code": 0,
+      "summary": "",
+      "tail": [
+        "........................................................................ [ 16%]",
+        "........................................................................ [ 33%]",
+        "........................................................................ [ 50%]",
+        ".....ss................................................................. [ 67%]",
+        "........................................................................ [ 84%]",
+        "......................................................s.........         [100%]",
+        "=========================== short test summary info ===========================",
+        "SKIPPED [1] tests\\test_gui_integration.py:25: GUI not available: cannot import name 'rbGyanXGUI' from 'rbgyanx_gui' (C:\\Users\\Sampa\\OneDrive\\Desktop\\project_rbGyanx\\rbgyanx_gui.py)",
+        "SKIPPED [1] tests\\test_gui_integration.py:52: GUI not available: cannot import name 'rbGyanXGUI' from 'rbgyanx_gui' (C:\\Users\\Sampa\\OneDrive\\Desktop\\project_rbGyanx\\rbgyanx_gui.py)",
+        "SKIPPED [1] tests\\test_utils.py:47: validation_utils module not available"
+      ],
+      "stdout": "........................................................................ [ 16%]\n........................................................................ [ 33%]\n........................................................................ [ 50%]\n.....ss................................................................. [ 67%]\n........................................................................ [ 84%]\n......................................................s.........         [100%]\n=========================== short test summary info ===========================\nSKIPPED [1] tests\\test_gui_integration.py:25: GUI not available: cannot import name 'rbGyanXGUI' from 'rbgyanx_gui' (C:\\Users\\Sampa\\OneDrive\\Desktop\\project_rbGyanx\\rbgyanx_gui.py)\nSKIPPED [1] tests\\test_gui_integration.py:52: GUI not available: cannot import name 'rbGyanXGUI' from 'rbgyanx_gui' (C:\\Users\\Sampa\\OneDrive\\Desktop\\project_rbGyanx\\rbgyanx_gui.py)\nSKIPPED [1] tests\\test_utils.py:47: validation_utils module not available\n",
+      "stderr": ""
+    },
+    "pytest_publication": {
+      "exit_code": 0,
+      "summary": "",
+      "tail": [
+        "........................................................................ [ 55%]",
+        ".........................................................                [100%]"
+      ],
+      "stdout": "........................................................................ [ 55%]\n.........................................................                [100%]\n",
+      "stderr": ""
+    },
+    "pytest_ml_xai": {
+      "exit_code": 0,
+      "summary": "46 passed, 1316 warnings in 347.24s (0:05:47)",
+      "tail": [
+        "..............................................                           [100%]",
+        "============================== warnings summary ===============================",
+        "tests/test_statistical_models.py: 516 warnings",
+        "  C:\\Users\\Sampa\\AppData\\Roaming\\Python\\Python314\\site-packages\\sklearn\\linear_model\\_logistic.py:1135: FutureWarning: 'penalty' was deprecated in version 1.8 and will be removed in 1.10. To avoid this warning, leave 'penalty' set to its default value and use 'l1_ratio' or 'C' instead. Use l1_ratio=0 instead of penalty='l2', l1_ratio=1 instead of penalty='l1', and C=np.inf instead of penalty=None.",
+        "    warnings.warn(",
+        "",
+        "tests/test_statistical_models.py: 800 warnings",
+        "  C:\\Users\\Sampa\\AppData\\Roaming\\Python\\Python314\\site-packages\\lifelines\\utils\\__init__.py:933: UserWarning: DataFrame Index is not unique, defaulting to incrementing index instead.",
+        "    warnings.warn(\"DataFrame Index is not unique, defaulting to incrementing index instead.\")",
+        "",
+        "-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html",
+        "46 passed, 1316 warnings in 347.24s (0:05:47)"
+      ],
+      "stdout": "..............................................                           [100%]\n============================== warnings summary ===============================\ntests/test_statistical_models.py: 516 warnings\n  C:\\Users\\Sampa\\AppData\\Roaming\\Python\\Python314\\site-packages\\sklearn\\linear_model\\_logistic.py:1135: FutureWarning: 'penalty' was deprecated in version 1.8 and will be removed in 1.10. To avoid this warning, leave 'penalty' set to its default value and use 'l1_ratio' or 'C' instead. Use l1_ratio=0 instead of penalty='l2', l1_ratio=1 instead of penalty='l1', and C=np.inf instead of penalty=None.\n    warnings.warn(\n\ntests/test_statistical_models.py: 800 warnings\n  C:\\Users\\Sampa\\AppData\\Roaming\\Python\\Python314\\site-packages\\lifelines\\utils\\__init__.py:933: UserWarning: DataFrame Index is not unique, defaulting to incrementing index instead.\n    warnings.warn(\"DataFrame Index is not unique, defaulting to incrementing index instead.\")\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n46 passed, 1316 warnings in 347.24s (0:05:47)\n",
+      "stderr": ""
+    },
+    "pytest_legacy_ml": {
+      "exit_code": 0,
+      "summary": "",
+      "tail": [
+        ".....                                                                    [100%]"
+      ],
+      "stdout": ".....                                                                    [100%]\n",
+      "stderr": ""
+    },
+    "verify_all_phases": {
+      "exit_code": 0,
+      "summary": "ALL 6 PHASES VERIFIED",
+      "tail": [
+        "| 2019-1823       | HN     |        1      |   1      |     0.7434 |         0.5713 |                   nan |",
+        "| 2019-1823       | HN     |        0.9973 |   0.9996 |     0.4828 |         0.5118 |                   nan |",
+        "| 2019-1823       | HN     |        0.9977 |   0.9996 |     0.5106 |         0.5227 |                   nan |",
+        "+-----------------+--------+---------------+----------+------------+----------------+-----------------------+",
+        "[PASS] Phase 5: DICOM engine \u2014 tcp=8",
+        "[PASS] Phase 5: safe_copy same-path",
+        "[PASS] Phase 6: GUI uses input router",
+        "[PASS] Phase 6: GUI patient registry",
+        "[PASS] Phase 6: integration test script",
+        "---",
+        "ALL 6 PHASES VERIFIED",
+        "[OK] Loaded Excel file: 1 sheet(s) found",
+        "  - HN_data: 115 rows",
+        "[OK] Inferred sheet 'HN_data' -> treatment (from columns)",
+        "[OK] Split combined sheet -> patient_core",
+        "[OK] Split combined sheet -> treatment",
+        "[OK] Split combined sheet -> ntcp_outcome",
+        "Patient 2019-1823: site=HN (HN) confidence=USER",
+        "Physical plan-quality: 13 structures, workbook C:\\Users\\Sampa\\AppData\\Local\\Temp\\tmpg474kgpa\\eng\\plan_quality_summary.xlsx",
+        "rbgyanx-engine finished: C:\\Users\\Sampa\\AppData\\Local\\Temp\\tmpg474kgpa\\eng"
+      ],
+      "stdout": "d_Combined (file: Parotid)\n  Type: OAR\n  DVH Type: differential\n  [NORMALIZE] Correcting unrealistically large volume (34793.6 cm\u00b3) to 37.1 cm\u00b3 using TPS metadata\n  [OK] Saved: 2019-1842_Parotid.csv\n\nProcessing: 2019-1842 - Larynx\n  Format: Unknown\n  Patient: 2019-1842\n  Structure: LARYNX -> Larynx (file: Larynx)\n  Type: OAR\n  DVH Type: differential\n  [NORMALIZE] Correcting unrealistically large volume (33109.1 cm\u00b3) to 17.7 cm\u00b3 using TPS metadata\n  [OK] Saved: 2019-1842_Larynx.csv\n\nProcessing: 2020-865 - Parotid\n  Format: Unknown\n  Patient: 2020-865\n  Structure: COMBINED PRTD -> Parotid_Combined (file: Parotid)\n  Type: OAR\n  DVH Type: differential\n  [NORMALIZE] Correcting unrealistically large volume (362828.2 cm\u00b3) to 42.9 cm\u00b3 using TPS metadata\n  [OK] Saved: 2020-865_Parotid.csv\n\nProcessing: 2020-876 - Parotid\n  Format: Unknown\n  Patient: 2020-876\n  Structure: COMB PRTD -> Parotid_Combined (file: Parotid)\n  Type: OAR\n  DVH Type: differential\n  [NORMALIZE] Correcting unrealistically large volume (3570053.0 cm\u00b3) to 28.3 cm\u00b3 using TPS metadata\n  [OK] Saved: 2020-876_Parotid.csv\n\nProcessing: 2020-876 - Larynx\n  Format: Unknown\n  Patient: 2020-876\n  Structure: LARYNX -> Larynx (file: Larynx)\n  Type: OAR\n  DVH Type: differential\n  [NORMALIZE] Correcting unrealistically large volume (3464475.0 cm\u00b3) to 44.4 cm\u00b3 using TPS metadata\n  [OK] Saved: 2020-876_Larynx.csv\n\nProcessing: 2021-316 - Parotid\n  Format: Unknown\n  Patient: 2021-316\n  Structure: Rt Parotid -> Parotid_Right (file: Parotid)\n  Type: OAR\n  DVH Type: differential\n  [NORMALIZE] Correcting unrealistically large volume (2874930.8 cm\u00b3) to 20.0 cm\u00b3 using TPS metadata\n  [OK] Saved: 2021-316_Parotid.csv\n\nProcessing: 2021-316 - Larynx\n  Format: Unknown\n  Patient: 2021-316\n  Structure: LARYNX -> Larynx (file: Larynx)\n  Type: OAR\n  DVH Type: differential\n  [NORMALIZE] Correcting unrealistically large volume (2787892.9 cm\u00b3) to 19.9 cm\u00b3 using TPS metadata\n  [OK] Saved: 2021-316_Larynx.csv\n\nProcessing: 2020-791 - Parotid\n  Format: Unknown\n  Patient: 2020-791\n  Structure: Rt Parotid -> Parotid_Right (file: Parotid)\n  Type: OAR\n  DVH Type: differential\n  [NORMALIZE] Correcting unrealistically large volume (1068913.5 cm\u00b3) to 16.9 cm\u00b3 using TPS metadata\n  [OK] Saved: 2020-791_Parotid.csv\n\nProcessing: 2020-791 - Larynx\n  Format: Unknown\n  Patient: 2020-791\n  Structure: LARYNX -> Larynx (file: Larynx)\n  Type: OAR\n  DVH Type: differential\n  [NORMALIZE] Correcting unrealistically large volume (7776419.9 cm\u00b3) to 20.5 cm\u00b3 using TPS metadata\n  [OK] Saved: 2020-791_Larynx.csv\n\nProcessing: 2020-830 - Parotid\n  Format: Unknown\n  Patient: 2020-830\n  Structure: Comb prtd -> Parotid_Combined (file: Parotid)\n  Type: OAR\n  DVH Type: differential\n  [NORMALIZE] Correcting unrealistically large volume (1767090.9 cm\u00b3) to 44.8 cm\u00b3 using TPS metadata\n  [OK] Saved: 2020-830_Parotid.csv\n\nProcessing: 2020-830 - Larynx\n  Format: Unknown\n  Patient: 2020-830\n  Structure: Larynx (file: Larynx)\n  Type: OAR\n  DVH Type: differential\n  [NORMALIZE] Correcting unrealistically large volume (3414256.0 cm\u00b3) to 61.2 cm\u00b3 using TPS metadata\n  [OK] Saved: 2020-830_Larynx.csv\n\nProcessing: 2019-1934 - Parotid\n  Format: Unknown\n  Patient: 2019-1934\n  Structure: COMB PRTD -> Parotid_Combined (file: Parotid)\n  Type: OAR\n  DVH Type: differential\n  [NORMALIZE] Correcting unrealistically large volume (23991.2 cm\u00b3) to 27.3 cm\u00b3 using TPS metadata\n  [OK] Saved: 2019-1934_Parotid.csv\n\nProcessing: 2019-1934 - SpinalCord\n  Format: Unknown\n  Patient: 2019-1934\n  Structure: Spinal Cord -> SpinalCord (file: SpinalCord)\n  Type: OAR\n  DVH Type: differential\n  [NORMALIZE] Correcting unrealistically large volume (124002.9 cm\u00b3) to 11.5 cm\u00b3 using TPS metadata\n  [OK] Saved: 2019-1934_SpinalCord.csv\n\nProcessing: 2020-841 - Parotid\n  Format: Unknown\n  Patient: 2020-841\n  Structure: COMB_PRTD -> Parotid_Combined (file: Parotid)\n  Type: OAR\n  DVH Type: cumulative\n  [OK] Saved: 2020-841_Parotid.csv\n\nProcessing: 2020-841 - SpinalCord\n  Format: Unknown\n  Patient: 2020-841\n  Structure: Spinal Cord -> SpinalCord (file: SpinalCord)\n  Type: OAR\n  DVH Type: cumulative\n  [OK] Saved: 2020-841_SpinalCord.csv\n\nProcessing: 2020-841 - Larynx\n  Format: Unknown\n  Patient: 2020-841\n  Structure: LARYNX -> Larynx (file: Larynx)\n  Type: OAR\n  DVH Type: cumulative\n  [OK] Saved: 2020-841_Larynx.csv\n\nProcessing: 2021-111 - Parotid\n  Format: Unknown\n  Patient: 2021-111\n  Structure: COMB PRTD -> Parotid_Combined (file: Parotid)\n  Type: OAR\n  DVH Type: differential\n  [NORMALIZE] Correcting unrealistically large volume (3416256.3 cm\u00b3) to 34.4 cm\u00b3 using TPS metadata\n  [OK] Saved: 2021-111_Parotid.csv\n\nProcessing: 2021-111 - Larynx\n  Format: Unknown\n  Patient: 2021-111\n  Structure: Larynx (file: Larynx)\n  Type: OAR\n  DVH Type: differential\n  [NORMALIZE] Correcting unrealistically large volume (3546384.8 cm\u00b3) to 73.5 cm\u00b3 using TPS metadata\n  [OK] Saved: 2021-111_Larynx.csv\n\nProcessing: 2017-1233 - Parotid\n  Format: Unknown\n  Patient: 2017-1233\n  Structure: COMB_PRTD -> Parotid_Combined (file: Parotid)\n  Type: OAR\n  DVH Type: cumulative\n  [OK] Saved: 2017-1233_Parotid.csv\n\nProcessing: 2020-734 - Parotid\n  Format: Unknown\n  Patient: 2020-734\n  Structure: Comb Parotd -> Parotid_Combined (file: Parotid)\n  Type: OAR\n  DVH Type: differential\n  [NORMALIZE] Correcting unrealistically large volume (2935698.3 cm\u00b3) to 58.5 cm\u00b3 using TPS metadata\n  [OK] Saved: 2020-734_Parotid.csv\n\nProcessing: 2020-734 - Larynx\n  Format: Unknown\n  Patient: 2020-734\n  Structure: Larynx (file: Larynx)\n  Type: OAR\n  DVH Type: differential\n  [NORMALIZE] Correcting unrealistically large volume (3222634.0 cm\u00b3) to 49.3 cm\u00b3 using TPS metadata\n  [OK] Saved: 2020-734_Larynx.csv\n\n\n======================================================================\nPREPROCESSING SUMMARY\n======================================================================\nTotal files: 130\nProcessed: 114 [OK]\nDuplicates skipped: 10\nExcluded (PRV): 1\nFailed: 0 [X]\nUnique patients: 57\n\nStandardized structures:\n  - Parotid: 54 patients\n  - Larynx: 31 patients\n  - SpinalCord: 29 patients\n\nFormats processed:\n  - Unknown: 114 files\n======================================================================\n\n\n[OK] Creating Excel summary for Step 2...\n[OK] Summary file created: C:\\Users\\Sampa\\AppData\\Local\\Temp\\tmppfib97lc\\processed_dvh.xlsx\n[OK] Summary contains 114 DVH entries\n[OK] Structures: ['Larynx', 'Parotid', 'SpinalCord']\n[PASS] Phase 4: patient ID registry \u2014 DVH=57 clinical=57\n+-----------------+--------+---------------+----------+------------+----------------+-----------------------+\n| AnonPatientID   | Site   |   TCP_Poisson |   TCP_ZM |   TCP_gEUD |   TCP_Logistic |   TCP_Poisson_Hypoxia |\n|-----------------+--------+---------------+----------+------------+----------------+-----------------------|\n| 2019-1823       | HN     |        0.9999 |   1      |     0.8083 |         0.589  |                   nan |\n| 2019-1823       | HN     |        1      |   1      |     0.8064 |         0.5884 |                   nan |\n| 2019-1823       | HN     |        0.9997 |   0.9999 |     0.5296 |         0.5222 |                   nan |\n| 2019-1823       | HN     |        1      |   1      |     0.8024 |         0.587  |                   nan |\n| 2019-1823       | HN     |        1      |   1      |     0.7938 |         0.5841 |                   nan |\n| 2019-1823       | HN     |        1      |   1      |     0.7434 |         0.5713 |                   nan |\n| 2019-1823       | HN     |        0.9973 |   0.9996 |     0.4828 |         0.5118 |                   nan |\n| 2019-1823       | HN     |        0.9977 |   0.9996 |     0.5106 |         0.5227 |                   nan |\n+-----------------+--------+---------------+----------+------------+----------------+-----------------------+\n[PASS] Phase 5: DICOM engine \u2014 tcp=8\n[PASS] Phase 5: safe_copy same-path\n[PASS] Phase 6: GUI uses input router\n[PASS] Phase 6: GUI patient registry\n[PASS] Phase 6: integration test script\n---\nALL 6 PHASES VERIFIED\n",
+      "stderr": "[OK] Loaded Excel file: 1 sheet(s) found\n  - HN_data: 115 rows\n[OK] Inferred sheet 'HN_data' -> treatment (from columns)\n[OK] Split combined sheet -> patient_core\n[OK] Split combined sheet -> treatment\n[OK] Split combined sheet -> ntcp_outcome\nPatient 2019-1823: site=HN (HN) confidence=USER\nPhysical plan-quality: 13 structures, workbook C:\\Users\\Sampa\\AppData\\Local\\Temp\\tmpg474kgpa\\eng\\plan_quality_summary.xlsx\nrbgyanx-engine finished: C:\\Users\\Sampa\\AppData\\Local\\Temp\\tmpg474kgpa\\eng\n"
+    },
+    "real_data_integration": {
+      "exit_code": 0,
+      "summary": "       step1: {'processed': 3, 'total': 3, 'failed': 0, 'input_kind': 'dicom'}",
+      "tail": [
+        "[OK] DICOM ingest: 3 .dcm file(s) detected",
+        "[OK] Step 1 complete (engine path - skip TPS DVH preprocessing)",
+        "Patient 2019-1823: site=HN (HN) confidence=USER",
+        "Physical plan-quality: 13 structures, workbook C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_TCP_NTCP\\engine_out\\plan_quality_summary.xlsx",
+        "rbgyanx-engine finished: C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_TCP_NTCP\\engine_out",
+        "Physical plan-quality: 13 structures, workbook C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_NTCP_ONLY\\engine_out\\plan_quality_summary.xlsx",
+        "rbgyanx-engine finished: C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_NTCP_ONLY\\engine_out",
+        "Patient 2019-1823: site=HN (HN) confidence=USER",
+        "Physical plan-quality: 13 structures, workbook C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_TCP_ONLY\\engine_out\\plan_quality_summary.xlsx",
+        "rbgyanx-engine finished: C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_TCP_ONLY\\engine_out",
+        "Patient 2019-1823: site=HN (HN) confidence=USER",
+        "Physical plan-quality: 13 structures, workbook C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_TCP_NTCP\\engine_out\\plan_quality_summary.xlsx",
+        "Registered TCP model: PINN_STUB",
+        "rbgyanx-engine finished: C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_TCP_NTCP\\engine_out",
+        "Physical plan-quality: 13 structures, workbook C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_NTCP_ONLY\\engine_out\\plan_quality_summary.xlsx",
+        "Registered TCP model: PINN_STUB",
+        "rbgyanx-engine finished: C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_NTCP_ONLY\\engine_out",
+        "Patient 2019-1823: site=HN (HN) confidence=USER",
+        "Physical plan-quality: 13 structures, workbook C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_TCP_ONLY\\engine_out\\plan_quality_summary.xlsx",
+        "rbgyanx-engine finished: C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_TCP_ONLY\\engine_out"
+      ],
+      "stdout": "---+-----------------------+\n| AnonPatientID   | Site   |   TCP_Poisson |   TCP_ZM |   TCP_gEUD |   TCP_Logistic |   TCP_Poisson_Hypoxia |\n|-----------------+--------+---------------+----------+------------+----------------+-----------------------|\n| 2019-1823       | HN     |        0.9999 |   1      |     0.8083 |         0.589  |                   nan |\n| 2019-1823       | HN     |        1      |   1      |     0.8064 |         0.5884 |                   nan |\n| 2019-1823       | HN     |        0.9997 |   0.9999 |     0.5296 |         0.5222 |                   nan |\n| 2019-1823       | HN     |        1      |   1      |     0.8024 |         0.587  |                   nan |\n| 2019-1823       | HN     |        1      |   1      |     0.7938 |         0.5841 |                   nan |\n| 2019-1823       | HN     |        1      |   1      |     0.7434 |         0.5713 |                   nan |\n| 2019-1823       | HN     |        0.9973 |   0.9996 |     0.4828 |         0.5118 |                   nan |\n| 2019-1823       | HN     |        0.9977 |   0.9996 |     0.5106 |         0.5227 |                   nan |\n+-----------------+--------+---------------+----------+------------+----------------+-----------------------+\n[OK] DICOM_samples_basic_TCP_ONLY\n       step1: {'processed': 3, 'total': 3, 'failed': 0, 'input_kind': 'dicom'}\n       engine: {'exit_code': 0, 'tcp_rows': 8, 'ntcp_rows': 0, 'logs': ['[engine] endpoint=tcp input=dicom mode=basic', '[engine] exit_code=0 tcp_rows=8 ntcp_rows=0', '[engine] site_detection=C:\\\\Users\\\\Sampa\\\\OneDrive\\\\Desktop\\\\input_folders\\\\rbgyanx_test_data\\\\_integration_test_output\\\\DICOM_samples_basic_TCP_ONLY\\\\engine_out\\\\site_detection.csv', '[engine] plan_quality=C:\\\\Users\\\\Sampa\\\\OneDrive\\\\Desktop\\\\input_folders\\\\rbgyanx_test_data\\\\_integration_test_output\\\\DICOM_samples_basic_TCP_ONLY\\\\engine_out\\\\plan_quality_summary.xlsx', '[engine] patient_pdf=C:\\\\Users\\\\Sampa\\\\OneDrive\\\\Desktop\\\\input_folders\\\\rbgyanx_test_data\\\\_integration_test_output\\\\DICOM_samples_basic_TCP_ONLY\\\\engine_out\\\\patient_plan_summary.pdf']}\n+-----------------+--------+---------------+----------+------------+----------------+-----------------------+\n| AnonPatientID   | Site   |   TCP_Poisson |   TCP_ZM |   TCP_gEUD |   TCP_Logistic |   TCP_Poisson_Hypoxia |\n|-----------------+--------+---------------+----------+------------+----------------+-----------------------|\n| 2019-1823       | HN     |        0.9999 |   1      |     0.8083 |         0.589  |                     0 |\n| 2019-1823       | HN     |        1      |   1      |     0.8064 |         0.5884 |                     0 |\n| 2019-1823       | HN     |        0.9997 |   0.9999 |     0.5296 |         0.5222 |                     0 |\n| 2019-1823       | HN     |        1      |   1      |     0.8024 |         0.587  |                     0 |\n| 2019-1823       | HN     |        1      |   1      |     0.7938 |         0.5841 |                     0 |\n| 2019-1823       | HN     |        1      |   1      |     0.7434 |         0.5713 |                     0 |\n| 2019-1823       | HN     |        0.9973 |   0.9996 |     0.4828 |         0.5118 |                     0 |\n| 2019-1823       | HN     |        0.9977 |   0.9996 |     0.5106 |         0.5227 |                     0 |\n+-----------------+--------+---------------+----------+------------+----------------+-----------------------+\n[OK] DICOM_samples_advanced_TCP_NTCP\n       step1: {'processed': 3, 'total': 3, 'failed': 0, 'input_kind': 'dicom'}\n       engine: {'exit_code': 0, 'tcp_rows': 8, 'ntcp_rows': 5, 'logs': ['[engine] site_detection=C:\\\\Users\\\\Sampa\\\\OneDrive\\\\Desktop\\\\input_folders\\\\rbgyanx_test_data\\\\_integration_test_output\\\\DICOM_samples_advanced_TCP_NTCP\\\\engine_out\\\\site_detection.csv', '[engine] ntcp_benchmark=C:\\\\Users\\\\Sampa\\\\OneDrive\\\\Desktop\\\\input_folders\\\\rbgyanx_test_data\\\\_integration_test_output\\\\DICOM_samples_advanced_TCP_NTCP\\\\engine_out\\\\ntcp_benchmarking.xlsx', '[engine] quantec_flags=C:\\\\Users\\\\Sampa\\\\OneDrive\\\\Desktop\\\\input_folders\\\\rbgyanx_test_data\\\\_integration_test_output\\\\DICOM_samples_advanced_TCP_NTCP\\\\engine_out\\\\quantec_flags.csv', '[engine] plan_quality=C:\\\\Users\\\\Sampa\\\\OneDrive\\\\Desktop\\\\input_folders\\\\rbgyanx_test_data\\\\_integration_test_output\\\\DICOM_samples_advanced_TCP_NTCP\\\\engine_out\\\\plan_quality_summary.xlsx', '[engine] patient_pdf=C:\\\\Users\\\\Sampa\\\\OneDrive\\\\Desktop\\\\input_folders\\\\rbgyanx_test_data\\\\_integration_test_output\\\\DICOM_samples_advanced_TCP_NTCP\\\\engine_out\\\\patient_plan_summary.pdf']}\n[OK] DICOM_samples_advanced_NTCP_ONLY\n       step1: {'processed': 3, 'total': 3, 'failed': 0, 'input_kind': 'dicom'}\n       engine: {'exit_code': 0, 'tcp_rows': 0, 'ntcp_rows': 5, 'logs': ['[engine] site_detection=C:\\\\Users\\\\Sampa\\\\OneDrive\\\\Desktop\\\\input_folders\\\\rbgyanx_test_data\\\\_integration_test_output\\\\DICOM_samples_advanced_NTCP_ONLY\\\\engine_out\\\\site_detection.csv', '[engine] ntcp_benchmark=C:\\\\Users\\\\Sampa\\\\OneDrive\\\\Desktop\\\\input_folders\\\\rbgyanx_test_data\\\\_integration_test_output\\\\DICOM_samples_advanced_NTCP_ONLY\\\\engine_out\\\\ntcp_benchmarking.xlsx', '[engine] quantec_flags=C:\\\\Users\\\\Sampa\\\\OneDrive\\\\Desktop\\\\input_folders\\\\rbgyanx_test_data\\\\_integration_test_output\\\\DICOM_samples_advanced_NTCP_ONLY\\\\engine_out\\\\quantec_flags.csv', '[engine] plan_quality=C:\\\\Users\\\\Sampa\\\\OneDrive\\\\Desktop\\\\input_folders\\\\rbgyanx_test_data\\\\_integration_test_output\\\\DICOM_samples_advanced_NTCP_ONLY\\\\engine_out\\\\plan_quality_summary.xlsx', '[engine] patient_pdf=C:\\\\Users\\\\Sampa\\\\OneDrive\\\\Desktop\\\\input_folders\\\\rbgyanx_test_data\\\\_integration_test_output\\\\DICOM_samples_advanced_NTCP_ONLY\\\\engine_out\\\\patient_plan_summary.pdf']}\n+-----------------+--------+---------------+----------+------------+----------------+-----------------------+\n| AnonPatientID   | Site   |   TCP_Poisson |   TCP_ZM |   TCP_gEUD |   TCP_Logistic |   TCP_Poisson_Hypoxia |\n|-----------------+--------+---------------+----------+------------+----------------+-----------------------|\n| 2019-1823       | HN     |        0.9999 |   1      |     0.8083 |         0.589  |                     0 |\n| 2019-1823       | HN     |        1      |   1      |     0.8064 |         0.5884 |                     0 |\n| 2019-1823       | HN     |        0.9997 |   0.9999 |     0.5296 |         0.5222 |                     0 |\n| 2019-1823       | HN     |        1      |   1      |     0.8024 |         0.587  |                     0 |\n| 2019-1823       | HN     |        1      |   1      |     0.7938 |         0.5841 |                     0 |\n| 2019-1823       | HN     |        1      |   1      |     0.7434 |         0.5713 |                     0 |\n| 2019-1823       | HN     |        0.9973 |   0.9996 |     0.4828 |         0.5118 |                     0 |\n| 2019-1823       | HN     |        0.9977 |   0.9996 |     0.5106 |         0.5227 |                     0 |\n+-----------------+--------+---------------+----------+------------+----------------+-----------------------+\n[OK] DICOM_samples_advanced_TCP_ONLY\n       step1: {'processed': 3, 'total': 3, 'failed': 0, 'input_kind': 'dicom'}\n       engine: {'exit_code': 0, 'tcp_rows': 8, 'ntcp_rows': 0, 'logs': ['[engine] endpoint=tcp input=dicom mode=advanced', '[engine] exit_code=0 tcp_rows=8 ntcp_rows=0', '[engine] site_detection=C:\\\\Users\\\\Sampa\\\\OneDrive\\\\Desktop\\\\input_folders\\\\rbgyanx_test_data\\\\_integration_test_output\\\\DICOM_samples_advanced_TCP_ONLY\\\\engine_out\\\\site_detection.csv', '[engine] plan_quality=C:\\\\Users\\\\Sampa\\\\OneDrive\\\\Desktop\\\\input_folders\\\\rbgyanx_test_data\\\\_integration_test_output\\\\DICOM_samples_advanced_TCP_ONLY\\\\engine_out\\\\plan_quality_summary.xlsx', '[engine] patient_pdf=C:\\\\Users\\\\Sampa\\\\OneDrive\\\\Desktop\\\\input_folders\\\\rbgyanx_test_data\\\\_integration_test_output\\\\DICOM_samples_advanced_TCP_ONLY\\\\engine_out\\\\patient_plan_summary.pdf']}\n\nReport: C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\integration_report.json\nFailures: 0\n",
+      "stderr": "sic_TCP_NTCP\\adapted_clinical\\adapted_treatment_params_toxicity_HN57_input.xlsx\n[OK] Loaded Excel file: 1 sheet(s) found\n  - HN_data: 115 rows\n[OK] Inferred sheet 'HN_data' -> treatment (from columns)\n[OK] Split combined sheet -> patient_core\n[OK] Split combined sheet -> treatment\n[OK] Split combined sheet -> ntcp_outcome\n[OK] Created standardized file: C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\TPS_Eclipse_HN57_advanced_NTCP_ONLY\\adapted_clinical\\adapted_treatment_params_toxicity_HN57_input.xlsx\n[OK] Loaded Excel file: 1 sheet(s) found\n  - HN_data: 115 rows\n[OK] Inferred sheet 'HN_data' -> treatment (from columns)\n[OK] Split combined sheet -> patient_core\n[OK] Split combined sheet -> treatment\n[OK] Split combined sheet -> ntcp_outcome\n[OK] Created standardized file: C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\TPS_Eclipse_HN57_advanced_TCP_NTCP\\adapted_clinical\\adapted_treatment_params_toxicity_HN57_input.xlsx\n[OK] Loaded Excel file: 1 sheet(s) found\n  - HN_data: 115 rows\n[OK] Inferred sheet 'HN_data' -> treatment (from columns)\n[OK] Split combined sheet -> patient_core\n[OK] Split combined sheet -> treatment\n[OK] Split combined sheet -> ntcp_outcome\n[OK] Created standardized file: C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\TPS_CSV_HN57_advanced_NTCP_ONLY\\adapted_clinical\\adapted_treatment_params_toxicity_HN57_input.xlsx\n[OK] DICOM ingest: 3 .dcm file(s) detected\n[OK] Step 1 complete (engine path - skip TPS DVH preprocessing)\nPatient 2019-1823: site=HN (HN) confidence=USER\nPhysical plan-quality: 13 structures, workbook C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_TCP_NTCP\\engine_out\\plan_quality_summary.xlsx\nrbgyanx-engine finished: C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_TCP_NTCP\\engine_out\nPhysical plan-quality: 13 structures, workbook C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_NTCP_ONLY\\engine_out\\plan_quality_summary.xlsx\nrbgyanx-engine finished: C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_NTCP_ONLY\\engine_out\nPatient 2019-1823: site=HN (HN) confidence=USER\nPhysical plan-quality: 13 structures, workbook C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_TCP_ONLY\\engine_out\\plan_quality_summary.xlsx\nrbgyanx-engine finished: C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_TCP_ONLY\\engine_out\nPatient 2019-1823: site=HN (HN) confidence=USER\nPhysical plan-quality: 13 structures, workbook C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_TCP_NTCP\\engine_out\\plan_quality_summary.xlsx\nRegistered TCP model: PINN_STUB\nrbgyanx-engine finished: C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_TCP_NTCP\\engine_out\nPhysical plan-quality: 13 structures, workbook C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_NTCP_ONLY\\engine_out\\plan_quality_summary.xlsx\nRegistered TCP model: PINN_STUB\nrbgyanx-engine finished: C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_NTCP_ONLY\\engine_out\nPatient 2019-1823: site=HN (HN) confidence=USER\nPhysical plan-quality: 13 structures, workbook C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_TCP_ONLY\\engine_out\\plan_quality_summary.xlsx\nrbgyanx-engine finished: C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_TCP_ONLY\\engine_out\n"
+    },
+    "real_ntcp_ml_xai": {
+      "exit_code": 0,
+      "summary": "",
+      "tail": [
+        "        X, y, test_size=0.3, random_state=self.random_state,",
+        "        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+        "        stratify=y if n_events >= 3 else None",
+        "        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+        "    )",
+        "    ^",
+        "  File \"C:\\Users\\Sampa\\AppData\\Roaming\\Python\\Python314\\site-packages\\sklearn\\utils\\_param_validation.py\", line 218, in wrapper",
+        "    return func(*args, **kwargs)",
+        "  File \"C:\\Users\\Sampa\\AppData\\Roaming\\Python\\Python314\\site-packages\\sklearn\\model_selection\\_split.py\", line 2924, in train_test_split",
+        "    n_train, n_test = _validate_shuffle_split(",
+        "                      ~~~~~~~~~~~~~~~~~~~~~~~^",
+        "        n_samples, test_size, train_size, default_test_size=0.25",
+        "        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+        "    )",
+        "    ^",
+        "  File \"C:\\Users\\Sampa\\AppData\\Roaming\\Python\\Python314\\site-packages\\sklearn\\model_selection\\_split.py\", line 2504, in _validate_shuffle_split",
+        "    raise ValueError(",
+        "    ...<3 lines>...",
+        "    )",
+        "ValueError: With n_samples=0, test_size=0.3 and train_size=None, the resulting train set will be empty. Adjust any of the aforementioned parameters."
+      ],
+      "stdout": " (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 25.7 Gy\n   gEUD (physical): 25.7 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Larynx: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\nProcessing 2020-886 - Larynx\n   Total volume: 1245294.7 cm3\n   Mean dose: 25.7 Gy (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 25.7 Gy\n   gEUD (physical): 25.7 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Larynx: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\nProcessing 2017-2393 - Parotid\n   Total volume: 2219951.0 cm3\n   Mean dose: 30.2 Gy (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 30.2 Gy\n   gEUD (physical): 37.8 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Parotid: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\nProcessing 2019-1842 - Larynx\n   Total volume: 7493.0 cm3\n   Mean dose: 26.6 Gy (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 26.6 Gy\n   gEUD (physical): 26.6 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Larynx: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\nProcessing 2020-865 - Parotid\n   Total volume: 197969.2 cm3\n   Mean dose: 28.4 Gy (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 28.4 Gy\n   gEUD (physical): 35.9 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Parotid: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\nProcessing 2020-876 - Larynx\n   Total volume: 1918198.6 cm3\n   Mean dose: 26.9 Gy (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 26.9 Gy\n   gEUD (physical): 26.9 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Larynx: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\nProcessing 2020-876 - Larynx\n   Total volume: 1918198.6 cm3\n   Mean dose: 26.9 Gy (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 26.9 Gy\n   gEUD (physical): 26.9 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Larynx: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\nProcessing 2021-316 - Larynx\n   Total volume: 704035.5 cm3\n   Mean dose: 23.0 Gy (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 23.0 Gy\n   gEUD (physical): 23.0 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Larynx: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\nProcessing 2020-791 - Larynx\n   Total volume: 880160.8 cm3\n   Mean dose: 26.7 Gy (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 26.7 Gy\n   gEUD (physical): 26.7 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Larynx: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\nProcessing 2020-830 - Larynx\n   Total volume: 2638128.0 cm3\n   Mean dose: 26.8 Gy (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 26.8 Gy\n   gEUD (physical): 26.8 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Larynx: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\nProcessing 2019-1934 - Parotid\n   Total volume: 10792.6 cm3\n   Mean dose: 25.2 Gy (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 25.2 Gy\n   gEUD (physical): 33.3 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Parotid: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\nProcessing 2019-1934 - Parotid\n   Total volume: 10792.6 cm3\n   Mean dose: 25.2 Gy (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 25.2 Gy\n   gEUD (physical): 33.3 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Parotid: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\nProcessing 2020-841 - Larynx\n   Total volume: 2530207.9 cm3\n   Mean dose: 33.2 Gy (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 33.2 Gy\n   gEUD (physical): 33.2 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Larynx: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\nProcessing 2020-841 - Larynx\n   Total volume: 2530207.9 cm3\n   Mean dose: 33.2 Gy (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 33.2 Gy\n   gEUD (physical): 33.2 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Larynx: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\nProcessing 2021-111 - Larynx\n   Total volume: 3352629.0 cm3\n   Mean dose: 28.1 Gy (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 28.1 Gy\n   gEUD (physical): 28.1 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Larynx: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\nProcessing 2021-111 - Larynx\n   Total volume: 3352629.0 cm3\n   Mean dose: 28.1 Gy (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 28.1 Gy\n   gEUD (physical): 28.1 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Larynx: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\nProcessing 2017-1233 - Parotid\n   Total volume: 1703591.8 cm3\n   Mean dose: 27.8 Gy (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 27.8 Gy\n   gEUD (physical): 37.9 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Parotid: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\nProcessing 2020-734 - Larynx\n   Total volume: 2043912.3 cm3\n   Mean dose: 26.0 Gy (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 26.0 Gy\n   gEUD (physical): 26.0 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Larynx: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\nProcessing 2020-734 - Larynx\n   Total volume: 2043912.3 cm3\n   Mean dose: 26.0 Gy (physical)\n   Max dose: 150.0 Gy (physical)\n   EQD2 mean: 26.0 Gy\n   gEUD (physical): 26.0 Gy\n   gEUD (EQD2): nan Gy\nError calculating LKB Probit for Larynx: calculate_ntcp_lkb_probit() takes 3 positional arguments but 4 were given\n  LKB_LogLogit: 0.000\n  LKB_Probit: 0.000\n  RS_Poisson: nan\n\n[OK] Processed 84 patient-organ combinations\n\n Training Machine Learning Models\n========================================\n\nML Analysis for Parotid...\n  Parotid: 32 samples, 16 events\n   Training ML models for Parotid...\n  \u26a0\ufe0f  Low sample count: 0 samples (proceeding anyway)\n     Features: 24, Samples: 0, Events: 0\n    \u26a0\ufe0f  Low event count: 0 events (proceeding anyway)\n    \u26a0\ufe0f  Low sample count: 0 samples (proceeding anyway)\n\nError: Error during enhanced analysis: With n_samples=0, test_size=0.3 and train_size=None, the resulting train set will be empty. Adjust any of the aforementioned parameters.\n\nFull error traceback:\n\nTroubleshooting tips:\n  - Ensure sufficient data for ML training (>=15 samples per organ)\n  - Check that all required Python packages are installed:\n    pip install scikit-learn xgboost pandas numpy matplotlib seaborn scipy openpyxl\n  - Verify DVH files and patient data formats\n  - Ensure unique patient IDs in DVH filenames\n",
+      "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\Sampa\\OneDrive\\Desktop\\project_rbGyanx\\code3_ntcp_analysis_ml.py\", line 3106, in main\n    results_df = process_all_patients(\n        args.dvh_dir, args.patient_data, args.output_dir,\n        enable_shap=args.enable_shap\n    )\n  File \"C:\\Users\\Sampa\\OneDrive\\Desktop\\project_rbGyanx\\code3_ntcp_analysis_ml.py\", line 2730, in process_all_patients\n    ml_organ_results = ml_models.train_and_evaluate_ml_models(\n        organ_data, organ,\n        output_dir=Path(output_dir),\n        enable_shap=enable_shap\n    )\n  File \"C:\\Users\\Sampa\\OneDrive\\Desktop\\project_rbGyanx\\code3_ntcp_analysis_ml.py\", line 601, in train_and_evaluate_ml_models\n    X_train, X_test, y_train, y_test = train_test_split(\n                                       ~~~~~~~~~~~~~~~~^\n        X, y, test_size=0.3, random_state=self.random_state,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        stratify=y if n_events >= 3 else None\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Sampa\\AppData\\Roaming\\Python\\Python314\\site-packages\\sklearn\\utils\\_param_validation.py\", line 218, in wrapper\n    return func(*args, **kwargs)\n  File \"C:\\Users\\Sampa\\AppData\\Roaming\\Python\\Python314\\site-packages\\sklearn\\model_selection\\_split.py\", line 2924, in train_test_split\n    n_train, n_test = _validate_shuffle_split(\n                      ~~~~~~~~~~~~~~~~~~~~~~~^\n        n_samples, test_size, train_size, default_test_size=0.25\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\Sampa\\AppData\\Roaming\\Python\\Python314\\site-packages\\sklearn\\model_selection\\_split.py\", line 2504, in _validate_shuffle_split\n    raise ValueError(\n    ...<3 lines>...\n    )\nValueError: With n_samples=0, test_size=0.3 and train_size=None, the resulting train set will be empty. Adjust any of the aforementioned parameters.\n",
+      "step1": {
+        "total_files": 130,
+        "processed": 114,
+        "failed": 0,
+        "duplicates_skipped": 10,
+        "excluded": 1,
+        "patients": [
+          "2017-1233",
+          "2017-1338",
+          "2017-1691",
+          "2017-1812",
+          "2017-1820",
+          "2017-2393",
+          "2017-880",
+          "2019-1221",
+          "2019-1258",
+          "2019-1278",
+          "2019-1328",
+          "2019-1377",
+          "2019-1379",
+          "2019-1405",
+          "2019-1584",
+          "2019-1624",
+          "2019-1627",
+          "2019-1649",
+          "2019-1660",
+          "2019-1667",
+          "2019-1698",
+          "2019-1842",
+          "2019-1853",
+          "2019-1889",
+          "2019-1927",
+          "2019-1933",
+          "2019-1934",
+          "2019-1989",
+          "2019-1999",
+          "2019-2025",
+          "2019-2065",
+          "2019-2108",
+          "2019-2150",
+          "2019-2154",
+          "2019-364",
+          "2019-867",
+          "2019-918",
+          "2019_1633",
+          "2020-145",
+          "2020-198",
+          "2020-652",
+          "2020-674",
+          "2020-691",
+          "2020-734",
+          "2020-769",
+          "2020-791",
+          "2020-830",
+          "2020-841",
+          "2020-865",
+          "2020-876",
+          "2020-886",
+          "2021-111",
+          "2021-236",
+          "2021-255",
+          "2021-305",
+          "2021-309",
+          "2021-316"
+        ],
+        "structures": {
+          "SpinalCord": 29,
+          "Parotid": 54,
+          "Larynx": 31
+        },
+        "formats": {
+          "Unknown": 114
+        },
+        "errors": [],
+        "warnings": [],
+        "summary_file": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_validation_ml_xai_out\\processed_DVH\\processed_dvh.xlsx",
+        "summary_entries": 114,
+        "input_kind": "dvh_txt"
+      },
+      "clinical_status": "usable",
+      "clinical_file": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_validation_ml_xai_out\\adapted_clinical\\adapted_treatment_params_toxicity_HN57_input.xlsx",
+      "prediction_files": [],
+      "shap_analysis_dirs": [],
+      "ml_xai_ok": false
+    },
+    "real_engine_advanced": {
+      "exit_code": 0,
+      "ntcp_rows": 5,
+      "dose_arrays": true,
+      "logs": [
+        "[engine] root=C:\\Users\\Sampa\\OneDrive\\Desktop\\project_rbGyanx\\engine",
+        "[engine] endpoint=ntcp input=dicom mode=advanced",
+        "[engine] exit_code=0 tcp_rows=0 ntcp_rows=5",
+        "[engine] site_detection=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_validation_engine_adv\\site_detection.csv",
+        "[engine] ntcp_benchmark=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_validation_engine_adv\\ntcp_benchmarking.xlsx",
+        "[engine] quantec_flags=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_validation_engine_adv\\quantec_flags.csv",
+        "[engine] plan_quality=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_validation_engine_adv\\plan_quality_summary.xlsx",
+        "[engine] patient_pdf=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_validation_engine_adv\\patient_plan_summary.pdf"
+      ]
+    }
+  },
+  "integration_scenarios": [
+    {
+      "scenario": "TPS_Eclipse_HN57_basic_NTCP_ONLY",
+      "input": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\HN57_OAR_Eclipse",
+      "gui_mode": "basic",
+      "analysis_mode": "NTCP_ONLY",
+      "step1": {
+        "processed": 114,
+        "total": 130,
+        "failed": 0,
+        "input_kind": "dvh_txt"
+      },
+      "clinical": {
+        "status": "usable",
+        "messages": [],
+        "mapped": {
+          "patient_core": true,
+          "treatment": true,
+          "tcp_outcome": false,
+          "ntcp_outcome": true
+        },
+        "standardized": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\TPS_Eclipse_HN57_basic_NTCP_ONLY\\adapted_clinical\\adapted_treatment_params_toxicity_HN57_input.xlsx"
+      }
+    },
+    {
+      "scenario": "TPS_Eclipse_HN57_basic_TCP_NTCP",
+      "input": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\HN57_OAR_Eclipse",
+      "gui_mode": "basic",
+      "analysis_mode": "TCP_NTCP",
+      "step1": {
+        "processed": 114,
+        "total": 130,
+        "failed": 0,
+        "input_kind": "dvh_txt"
+      },
+      "clinical": {
+        "status": "partial",
+        "messages": [
+          "Missing tcp_outcome sheet (required for TCP analysis)"
+        ],
+        "mapped": {
+          "patient_core": true,
+          "treatment": true,
+          "tcp_outcome": false,
+          "ntcp_outcome": true
+        },
+        "standardized": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\TPS_Eclipse_HN57_basic_TCP_NTCP\\adapted_clinical\\adapted_treatment_params_toxicity_HN57_input.xlsx"
+      }
+    },
+    {
+      "scenario": "TPS_Eclipse_HN57_advanced_NTCP_ONLY",
+      "input": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\HN57_OAR_Eclipse",
+      "gui_mode": "advanced",
+      "analysis_mode": "NTCP_ONLY",
+      "step1": {
+        "processed": 114,
+        "total": 130,
+        "failed": 0,
+        "input_kind": "dvh_txt"
+      },
+      "clinical": {
+        "status": "usable",
+        "messages": [],
+        "mapped": {
+          "patient_core": true,
+          "treatment": true,
+          "tcp_outcome": false,
+          "ntcp_outcome": true
+        },
+        "standardized": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\TPS_Eclipse_HN57_advanced_NTCP_ONLY\\adapted_clinical\\adapted_treatment_params_toxicity_HN57_input.xlsx"
+      }
+    },
+    {
+      "scenario": "TPS_Eclipse_HN57_advanced_TCP_NTCP",
+      "input": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\HN57_OAR_Eclipse",
+      "gui_mode": "advanced",
+      "analysis_mode": "TCP_NTCP",
+      "step1": {
+        "processed": 114,
+        "total": 130,
+        "failed": 0,
+        "input_kind": "dvh_txt"
+      },
+      "clinical": {
+        "status": "partial",
+        "messages": [
+          "Missing tcp_outcome sheet (required for TCP analysis)"
+        ],
+        "mapped": {
+          "patient_core": true,
+          "treatment": true,
+          "tcp_outcome": false,
+          "ntcp_outcome": true
+        },
+        "standardized": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\TPS_Eclipse_HN57_advanced_TCP_NTCP\\adapted_clinical\\adapted_treatment_params_toxicity_HN57_input.xlsx"
+      }
+    },
+    {
+      "scenario": "TPS_CSV_HN57_advanced_NTCP_ONLY",
+      "input": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\HN57_dDVH_CSV",
+      "gui_mode": "advanced",
+      "analysis_mode": "NTCP_ONLY",
+      "step1": {
+        "processed": 115,
+        "total": 115,
+        "failed": 0,
+        "input_kind": "dvh_txt"
+      },
+      "clinical": {
+        "status": "usable",
+        "messages": [],
+        "mapped": {
+          "patient_core": true,
+          "treatment": true,
+          "tcp_outcome": false,
+          "ntcp_outcome": true
+        },
+        "standardized": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\TPS_CSV_HN57_advanced_NTCP_ONLY\\adapted_clinical\\adapted_treatment_params_toxicity_HN57_input.xlsx"
+      }
+    },
+    {
+      "scenario": "DICOM_samples_basic_TCP_NTCP",
+      "input": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\DICOM_samples",
+      "gui_mode": "basic",
+      "analysis_mode": "TCP_NTCP",
+      "step1": {
+        "processed": 3,
+        "total": 3,
+        "failed": 0,
+        "input_kind": "dicom"
+      },
+      "engine": {
+        "exit_code": 0,
+        "tcp_rows": 8,
+        "ntcp_rows": 5,
+        "logs": [
+          "[engine] site_detection=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_TCP_NTCP\\engine_out\\site_detection.csv",
+          "[engine] ntcp_benchmark=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_TCP_NTCP\\engine_out\\ntcp_benchmarking.xlsx",
+          "[engine] quantec_flags=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_TCP_NTCP\\engine_out\\quantec_flags.csv",
+          "[engine] plan_quality=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_TCP_NTCP\\engine_out\\plan_quality_summary.xlsx",
+          "[engine] patient_pdf=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_TCP_NTCP\\engine_out\\patient_plan_summary.pdf"
+        ]
+      }
+    },
+    {
+      "scenario": "DICOM_samples_basic_NTCP_ONLY",
+      "input": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\DICOM_samples",
+      "gui_mode": "basic",
+      "analysis_mode": "NTCP_ONLY",
+      "step1": {
+        "processed": 3,
+        "total": 3,
+        "failed": 0,
+        "input_kind": "dicom"
+      },
+      "engine": {
+        "exit_code": 0,
+        "tcp_rows": 0,
+        "ntcp_rows": 5,
+        "logs": [
+          "[engine] site_detection=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_NTCP_ONLY\\engine_out\\site_detection.csv",
+          "[engine] ntcp_benchmark=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_NTCP_ONLY\\engine_out\\ntcp_benchmarking.xlsx",
+          "[engine] quantec_flags=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_NTCP_ONLY\\engine_out\\quantec_flags.csv",
+          "[engine] plan_quality=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_NTCP_ONLY\\engine_out\\plan_quality_summary.xlsx",
+          "[engine] patient_pdf=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_NTCP_ONLY\\engine_out\\patient_plan_summary.pdf"
+        ]
+      }
+    },
+    {
+      "scenario": "DICOM_samples_basic_TCP_ONLY",
+      "input": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\DICOM_samples",
+      "gui_mode": "basic",
+      "analysis_mode": "TCP_ONLY",
+      "step1": {
+        "processed": 3,
+        "total": 3,
+        "failed": 0,
+        "input_kind": "dicom"
+      },
+      "engine": {
+        "exit_code": 0,
+        "tcp_rows": 8,
+        "ntcp_rows": 0,
+        "logs": [
+          "[engine] endpoint=tcp input=dicom mode=basic",
+          "[engine] exit_code=0 tcp_rows=8 ntcp_rows=0",
+          "[engine] site_detection=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_TCP_ONLY\\engine_out\\site_detection.csv",
+          "[engine] plan_quality=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_TCP_ONLY\\engine_out\\plan_quality_summary.xlsx",
+          "[engine] patient_pdf=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_basic_TCP_ONLY\\engine_out\\patient_plan_summary.pdf"
+        ]
+      }
+    },
+    {
+      "scenario": "DICOM_samples_advanced_TCP_NTCP",
+      "input": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\DICOM_samples",
+      "gui_mode": "advanced",
+      "analysis_mode": "TCP_NTCP",
+      "step1": {
+        "processed": 3,
+        "total": 3,
+        "failed": 0,
+        "input_kind": "dicom"
+      },
+      "engine": {
+        "exit_code": 0,
+        "tcp_rows": 8,
+        "ntcp_rows": 5,
+        "logs": [
+          "[engine] site_detection=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_TCP_NTCP\\engine_out\\site_detection.csv",
+          "[engine] ntcp_benchmark=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_TCP_NTCP\\engine_out\\ntcp_benchmarking.xlsx",
+          "[engine] quantec_flags=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_TCP_NTCP\\engine_out\\quantec_flags.csv",
+          "[engine] plan_quality=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_TCP_NTCP\\engine_out\\plan_quality_summary.xlsx",
+          "[engine] patient_pdf=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_TCP_NTCP\\engine_out\\patient_plan_summary.pdf"
+        ]
+      }
+    },
+    {
+      "scenario": "DICOM_samples_advanced_NTCP_ONLY",
+      "input": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\DICOM_samples",
+      "gui_mode": "advanced",
+      "analysis_mode": "NTCP_ONLY",
+      "step1": {
+        "processed": 3,
+        "total": 3,
+        "failed": 0,
+        "input_kind": "dicom"
+      },
+      "engine": {
+        "exit_code": 0,
+        "tcp_rows": 0,
+        "ntcp_rows": 5,
+        "logs": [
+          "[engine] site_detection=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_NTCP_ONLY\\engine_out\\site_detection.csv",
+          "[engine] ntcp_benchmark=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_NTCP_ONLY\\engine_out\\ntcp_benchmarking.xlsx",
+          "[engine] quantec_flags=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_NTCP_ONLY\\engine_out\\quantec_flags.csv",
+          "[engine] plan_quality=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_NTCP_ONLY\\engine_out\\plan_quality_summary.xlsx",
+          "[engine] patient_pdf=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_NTCP_ONLY\\engine_out\\patient_plan_summary.pdf"
+        ]
+      }
+    },
+    {
+      "scenario": "DICOM_samples_advanced_TCP_ONLY",
+      "input": "C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\DICOM_samples",
+      "gui_mode": "advanced",
+      "analysis_mode": "TCP_ONLY",
+      "step1": {
+        "processed": 3,
+        "total": 3,
+        "failed": 0,
+        "input_kind": "dicom"
+      },
+      "engine": {
+        "exit_code": 0,
+        "tcp_rows": 8,
+        "ntcp_rows": 0,
+        "logs": [
+          "[engine] endpoint=tcp input=dicom mode=advanced",
+          "[engine] exit_code=0 tcp_rows=8 ntcp_rows=0",
+          "[engine] site_detection=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_TCP_ONLY\\engine_out\\site_detection.csv",
+          "[engine] plan_quality=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_TCP_ONLY\\engine_out\\plan_quality_summary.xlsx",
+          "[engine] patient_pdf=C:\\Users\\Sampa\\OneDrive\\Desktop\\input_folders\\rbgyanx_test_data\\_integration_test_output\\DICOM_samples_advanced_TCP_ONLY\\engine_out\\patient_plan_summary.pdf"
+        ]
+      }
+    }
+  ]
+}
