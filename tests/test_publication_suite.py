@@ -346,8 +346,10 @@ class TestLKBFormulas:
         assert all(ntcps[i] < ntcps[i + 1] for i in range(len(ntcps) - 1))
 
     def test_ntcp_bounded_01(self):
-        for g in [0.0, 10.0, 26.0, 50.0, 100.0]:
-            assert 0.0 <= self.loglogit(g, 26.0, 3.0) <= 1.0
+        for g in [10.0, 26.0, 50.0, 100.0]:
+            n = self.loglogit(g, 26.0, 3.0)
+            assert 0.0 <= n <= 1.0
+        assert math.isnan(self.loglogit(0.0, 26.0, 3.0))
 
     def test_parotid_below_50pct_at_25gy(self):
         assert self.loglogit(25.0, 26.0, 3.0) < 0.5
@@ -358,9 +360,14 @@ class TestLKBFormulas:
         n   = self.rs(dvh, 66.5, 4.0, 0.14)  # spinal cord RS params
         assert 0.0 <= n <= 1.0
 
-    def test_rs_ntcp_empty_dvh_zero(self):
-        """Empty DVH -> 0 (no dose, no complication)."""
-        assert self.rs(pd.DataFrame(), 66.5, 4.0, 0.14) == 0.0
+    def test_rs_ntcp_empty_dvh_nan(self):
+        """Empty DVH -> NaN (missing data, not zero complication)."""
+        assert math.isnan(self.rs(pd.DataFrame(), 66.5, 4.0, 0.14))
+
+    def test_rs_ntcp_half_at_d50_serial(self):
+        """Organ NTCP = 0.5 at uniform D=D50 when s=1 (fully serial)."""
+        dvh = pd.DataFrame({"dose_gy": [50.0], "volume_frac": [1.0]})
+        assert abs(self.rs(dvh, 50.0, 2.0, 1.0) - 0.5) < 1e-6
 
     def test_rs_ntcp_bounded_single_bin(self):
         """RS NTCP in [0,1] for any single-bin DVH input."""

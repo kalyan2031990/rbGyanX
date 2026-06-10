@@ -1,5 +1,8 @@
 # rbGyanX — radiobiology clinical decision support
 
+[![CI](https://github.com/kalyan2031990/rbGyanX/actions/workflows/ci.yml/badge.svg)](https://github.com/kalyan2031990/rbGyanX/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10--3.12-blue.svg)](pyproject.toml)
 [![GitHub](https://img.shields.io/github/stars/kalyan2031990/rbGyanX?style=social)](https://github.com/kalyan2031990/rbGyanX)
 
 Windows desktop CDSS: DICOM RT + TPS DVH ingest, classical TCP/NTCP, UTCP, QUANTEC flags, plan-quality metrics. Optional ML/XAI in ADVANCED mode.
@@ -32,13 +35,23 @@ cd rbGyanX
 python rbgyanx_gui.py
 ```
 
-## Verify (423 tests, synthetic data only)
+## Verify (423+ tests, synthetic data only)
+
+**Supported Python:** 3.10–3.12 (CI matrix). Installer build targets 3.10. Development on 3.13+ is best-effort.
 
 ```powershell
-$env:RBGYANX_ENGINE_PATH = "$PWD\engine"
+.\scripts\install_dev.ps1
+pytest
+```
+
+Legacy runner (still supported):
+
+```powershell
 $env:PYTHONUTF8 = "1"
 .\scripts\run_all_tests.ps1
 ```
+
+See [`DISCLAIMER.md`](DISCLAIMER.md) — decision support only, not a medical device.
 
 Publication suite only:
 

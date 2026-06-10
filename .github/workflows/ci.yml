@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  core:
+    name: Core (no optional ML)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install core packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "./engine" -e "./engine_advanced" -e "./engine_advanced_f" -e ".[dev]"
+
+      - name: Ruff
+        run: ruff check engine/radiobiology engine/tests/test_ntcp_scientific_anchors.py tests/synthetic
+
+      - name: Black
+        run: black --check engine/radiobiology engine/tests/test_ntcp_scientific_anchors.py tests/synthetic
+
+      - name: Mypy (radiobiology)
+        run: mypy engine/radiobiology --config-file pyproject.toml
+
+      - name: Pytest (engine + publication + synthetic)
+        run: |
+          pytest engine/tests tests/test_publication_suite.py tests/synthetic \
+            --import-mode=importlib -q --tb=short \
+            -m "not requires_ml and not requires_torch and not requires_pymc" \
+            --cov=engine/radiobiology --cov-report=xml --cov-fail-under=70
+
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml
+          fail_ci_if_error: false
+
+  full:
+    name: Full (optional ML stack)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install full stack
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "./engine[ml]" -e "./engine_advanced[pinn]" -e "./engine_advanced_f[bayesian,pinn]" -e ".[dev,ml,torch,bayesian]"
+
+      - name: Pytest (full suite)
+        run: |
+          pytest --import-mode=importlib -q --tb=short --cov --cov-report=xml --cov-fail-under=80
+
+      - name: Bandit
+        run: bandit -q -r engine/rbgyanx_engine rbgyanx || true
+
+      - name: pip-audit
+        run: pip-audit || true
