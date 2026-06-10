@@ -35,7 +35,17 @@ cd rbGyanX
 python rbgyanx_gui.py
 ```
 
-## Verify (423+ tests, synthetic data only)
+## Reproduction (Zenodo)
+
+Source code is on GitHub. **Test data and frozen pytest logs** are packaged for Zenodo:
+
+```powershell
+.\scripts\build_zenodo_bundle.ps1
+```
+
+See [`reproducibility/README.md`](reproducibility/README.md) and [`reproducibility/ZENODO_UPLOAD_GUIDE.md`](reproducibility/ZENODO_UPLOAD_GUIDE.md).
+
+## Verify (462 tests, synthetic data only)
 
 **Supported Python:** 3.10–3.12 (CI matrix). Installer build targets 3.10. Development on 3.13+ is best-effort.
 

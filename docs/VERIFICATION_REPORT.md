@@ -1,7 +1,7 @@
 # rbGyanX verification report
 
 **Date:** 2026-06-10  
-**Scope:** Phases 0–5 professionalization (partial DICOM factory)
+**Scope:** Release cleanup, reproducibility packaging, Phases 0–5 hardening
 
 ## Reproduce (zero env vars)
 
@@ -25,7 +25,7 @@ pytest tests/synthetic -v
 
 | Suite | Before | After (expected) |
 |-------|--------|------------------|
-| Full monorepo | ~436 | ~450+ |
+| Full monorepo | ~436 | **462 passed**, 3 skipped |
 | `tests/synthetic` | 0 | ~15+ |
 | Skips | 3 | 3 (GUI, validation_utils) |
 

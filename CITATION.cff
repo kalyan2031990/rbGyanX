@@ -4,9 +4,12 @@ authors:
   - family-names: Mondal
     given-names: Kalyan
 title: "rbGyanX: A radiobiology-guided clinical decision support framework"
-version: "2.0.0"
-date-released: 2026-06-07
+version: "1.0.0"
+date-released: 2026-06-10
 doi: ""
+# After Zenodo upload, set:
+#   doi: "10.5281/zenodo.XXXXX"           # software or meta-record
+#   identifiers: synthetic + real data DOIs in README
 url: "https://github.com/kalyan2031990/rbGyanX"
 repository-code: "https://github.com/kalyan2031990/rbGyanX"
 license: MIT

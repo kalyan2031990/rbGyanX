@@ -261,13 +261,15 @@ def test_calculator_mean_range(mock_dvh_result, mock_plan_meta):
     result = TCPCalculator().compute_all(
         mock_dvh_result, mock_plan_meta, SITE_PARAMS["HN"]
     )
-    models = [
-        result["TCP_Poisson"],
-        result["TCP_ZM"],
-        result["TCP_gEUD"],
-        result["TCP_Logistic"],
+    valid = [
+        float(v)
+        for k, v in result.items()
+        if k.startswith("TCP_")
+        and k not in ("TCP_mean", "TCP_range")
+        and isinstance(v, (int, float))
+        and not np.isnan(v)
     ]
-    valid = [v for v in models if not np.isnan(v)]
+    assert valid
     assert abs(result["TCP_mean"] - np.mean(valid)) < 1e-6
     assert abs(result["TCP_range"] - (max(valid) - min(valid))) < 1e-6
 
