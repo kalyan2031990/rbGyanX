@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/python-3.10--3.12-blue.svg)](pyproject.toml)
 [![GitHub](https://img.shields.io/github/stars/kalyan2031990/rbGyanX?style=social)](https://github.com/kalyan2031990/rbGyanX)
 
-Windows desktop CDSS: DICOM RT + TPS DVH ingest, classical TCP/NTCP, UTCP, QUANTEC flags, plan-quality metrics. Optional ML/XAI in ADVANCED mode.
+Hybrid radiobiology CDSS: classical **TCP/NTCP**, **UTCP** (P+), uncertainty-aware **uTCP/uNTCP** (inverse-variance consensus), **CCS** (MCD Mahalanobis), therapeutic index & window, four-tier validation harness, QUANTEC flags, and plan-quality metrics. ML/XAI and PINN are **ADVANCED / experimental** only.
 
 **Repository:** [github.com/kalyan2031990/rbGyanX](https://github.com/kalyan2031990/rbGyanX)
 

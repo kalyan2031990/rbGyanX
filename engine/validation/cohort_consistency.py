@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from scipy import stats
+from sklearn.covariance import MinCovDet
 
 
 def _adaptive_ccs_threshold(n: int) -> float:
@@ -46,4 +47,69 @@ def compute_ccs(
         "rho_classical_vs_outcome": float(rho_cl_out),
         "rho_ml_vs_outcome": float(rho_ml_out),
         "n_patients": n,
+    }
+
+
+def _mahalanobis_sq(
+    X: np.ndarray,
+    location: np.ndarray,
+    covariance: np.ndarray,
+) -> np.ndarray:
+    diff = X - location
+    inv = np.linalg.pinv(covariance)
+    return np.einsum("...i,ij,...j->...", diff, inv, diff)
+
+
+def compute_mcd_ccs(
+    features: np.ndarray | pd.DataFrame,
+    reference: np.ndarray | pd.DataFrame | None = None,
+) -> dict:
+    """
+    Robust CCS via minimum-covariance-determinant Mahalanobis distance.
+
+    Continuous CCS = F_{χ²_p}(d_M²); flag when d_M² > χ²_{p,0.975}.
+    """
+    X = np.asarray(features, dtype=float)
+    if X.ndim != 2 or X.shape[0] < 2:
+        return {"ccs": float("nan"), "flagged": [], "method": "mcd"}
+    ref = np.asarray(reference, dtype=float) if reference is not None else X
+    mcd = MinCovDet().fit(ref)
+    dist_sq = np.asarray(mcd.mahalanobis(X), dtype=float)
+    p = X.shape[1]
+    chi2_crit = float(stats.chi2.ppf(0.975, p))
+    ccs = stats.chi2.cdf(dist_sq, p)
+    flagged = np.where(dist_sq > chi2_crit)[0].tolist()
+    return {
+        "ccs": ccs.tolist(),
+        "mahalanobis_sq": dist_sq.tolist(),
+        "chi2_critical": chi2_crit,
+        "flagged_indices": flagged,
+        "method": "mcd",
+        "n_features": p,
+    }
+
+
+def compute_raw_covariance_ccs(
+    features: np.ndarray | pd.DataFrame,
+    reference: np.ndarray | pd.DataFrame | None = None,
+) -> dict:
+    """Sample-covariance Mahalanobis CCS (regression baseline; outlier-sensitive)."""
+    X = np.asarray(features, dtype=float)
+    ref = np.asarray(reference, dtype=float) if reference is not None else X
+    loc = np.mean(ref, axis=0)
+    cov = np.cov(ref, rowvar=False)
+    if cov.ndim == 0:
+        cov = np.array([[float(cov)]])
+    dist_sq = _mahalanobis_sq(X, loc, cov)
+    p = X.shape[1]
+    chi2_crit = float(stats.chi2.ppf(0.975, p))
+    ccs = stats.chi2.cdf(dist_sq, p)
+    flagged = np.where(dist_sq > chi2_crit)[0].tolist()
+    return {
+        "ccs": ccs.tolist(),
+        "mahalanobis_sq": dist_sq.tolist(),
+        "chi2_critical": chi2_crit,
+        "flagged_indices": flagged,
+        "method": "raw_covariance",
+        "n_features": p,
     }

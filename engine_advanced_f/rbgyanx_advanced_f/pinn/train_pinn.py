@@ -96,7 +96,14 @@ def train_pinn_from_df(
     val_split: float = 0.2,
     seed: int = 42,
     min_patients: int = 20,
+    experimental: bool = False,
 ) -> tuple[object | None, dict]:
+    if not experimental:
+        logger.warning(
+            "PINN training refused: set experimental=True (research-grade; not for clinical use)"
+        )
+        return None, {"refused": True, "reason": "experimental_flag_required"}
+    logger.warning("PINN: research-grade implementation — NOT FOR CLINICAL USE")
     if not _TORCH_AVAILABLE:
         logger.warning("PINN training skipped: torch not installed")
         return None, {}
