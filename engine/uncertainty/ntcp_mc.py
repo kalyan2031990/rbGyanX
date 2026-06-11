@@ -98,11 +98,28 @@ def run_untcp(
         if D50_rs_s is not None and g_rs_s is not None and s_rs_s is not None:
             ntcp_rs[i] = calculate_ntcp_rs_poisson(dvh_df, D50_rs_s[i], g_rs_s[i], s_rs_s[i])
 
+    ll_agg = _agg(ntcp_ll)
+    pb_agg = _agg(ntcp_pb)
+    rs_agg = _agg(ntcp_rs)
+
+    from uncertainty.inverse_variance_consensus import inverse_variance_consensus
+
+    estimates: list[float] = []
+    variances: list[float] = []
+    for agg in (ll_agg, pb_agg, rs_agg):
+        mean = agg.get("mean", math.nan)
+        sd = agg.get("sd", math.nan)
+        if math.isfinite(mean) and math.isfinite(sd) and sd > 0:
+            estimates.append(float(mean))
+            variances.append(float(sd**2))
+    consensus = inverse_variance_consensus(estimates, variances)
+
     return {
-        "uNTCP_LKB_loglogit": _agg(ntcp_ll),
-        "uNTCP_LKB_probit": _agg(ntcp_pb),
-        "uNTCP_RS": _agg(ntcp_rs),
+        "uNTCP_LKB_loglogit": ll_agg,
+        "uNTCP_LKB_probit": pb_agg,
+        "uNTCP_RS": rs_agg,
+        "uNTCP": consensus,
         "n_samples": n,
         "organ": organ_params.canonical,
-        "_note": "uNTCP uncertainty bands; UTCP (uncomplicated TCP) is different.",
+        "_note": "uNTCP = inverse-variance consensus; UTCP (P+) is radiobiology.utcp.",
     }
