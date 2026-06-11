@@ -39,7 +39,7 @@ def _synthetic_features(n: int = 30) -> pd.DataFrame:
 def test_train_pinn_checkpoint_format(tmp_path):
     df = _synthetic_features(30)
     model, hist = train_pinn_from_df(
-        df, "HN", tmp_path, epochs=8, min_patients=20
+        df, "HN", tmp_path, epochs=8, min_patients=20, experimental=True
     )
     assert model is not None
     assert hist["val_loss"]
