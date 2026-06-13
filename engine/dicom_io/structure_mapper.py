@@ -1,8 +1,13 @@
 """Structure name normalisation and canonical mapping."""
 
+import logging
 import re
+from difflib import get_close_matches
 
 from config.structure_aliases import STRUCTURE_ALIASES
+from config.tg263_aliases import TG263_ALIASES
+
+logger = logging.getLogger(__name__)
 
 TARGET_CANONICALS = frozenset({"GTV", "CTV", "PTV", "ITV", "BOOST"})
 SUPPORT_CANONICALS = frozenset({"BODY", "COUCH", "BOLUS", "PROSTHESIS"})
@@ -75,6 +80,44 @@ def _category(canonical: str) -> str:
     return "OAR"
 
 
+def normalize_to_tg263(raw_name: str) -> dict:
+    """
+    Map vendor/TCIA structure name to AAPM TG-263 token.
+
+    Unmapped names are preserved (uppercase) and flagged — never silently dropped.
+    Idempotent when input is already a TG-263 token.
+    """
+    normalised = normalise_name(raw_name)
+    for token, aliases in TG263_ALIASES.items():
+        if normalised == normalise_name(token) or normalised in aliases:
+            return {
+                "tg263": token,
+                "raw": raw_name,
+                "mapped": True,
+                "method": "exact",
+            }
+    keys = [normalise_name(k) for k in TG263_ALIASES]
+    close = get_close_matches(normalised, keys, n=1, cutoff=0.88)
+    if close:
+        for token in TG263_ALIASES:
+            if normalise_name(token) == close[0]:
+                logger.info("TG-263 fuzzy map: %r -> %s", raw_name, token)
+                return {
+                    "tg263": token,
+                    "raw": raw_name,
+                    "mapped": True,
+                    "method": "fuzzy",
+                }
+    token = raw_name.strip()
+    logger.warning("TG-263 unmapped structure: %r (passthrough)", raw_name)
+    return {
+        "tg263": token,
+        "raw": raw_name,
+        "mapped": False,
+        "method": "passthrough",
+    }
+
+
 def _lookup_alias(normalised: str) -> str | None:
     for canonical in _ALIAS_SEARCH_ORDER:
         aliases = STRUCTURE_ALIASES.get(canonical, [])
@@ -101,11 +144,24 @@ def canon_target(raw_name: str, roi_interpreted_type: str | None = None) -> dict
     normalised = normalise_name(raw_name)
     match = _lookup_alias(normalised)
     if match:
+        tg = normalize_to_tg263(match)
+        canonical = tg["tg263"] if tg["mapped"] else match
         return {
-            "canonical": match,
+            "canonical": canonical,
             "category": _category(match),
             "site_hint": _site_hint(match),
             "confidence": "MEDIUM",
+            "tg263": tg,
+        }
+
+    tg = normalize_to_tg263(raw_name)
+    if tg["mapped"]:
+        return {
+            "canonical": tg["tg263"],
+            "category": "OAR",
+            "site_hint": _site_hint(tg["tg263"]),
+            "confidence": "MEDIUM" if tg["method"] == "exact" else "LOW",
+            "tg263": tg,
         }
 
     return {
@@ -113,6 +169,7 @@ def canon_target(raw_name: str, roi_interpreted_type: str | None = None) -> dict
         "category": "UNKNOWN",
         "site_hint": "",
         "confidence": "LOW",
+        "tg263": tg,
     }
 
 

@@ -15,6 +15,21 @@ def test_canonical_names():
     assert canon_target("UNKNOWN_STRUCT_XYZ")["confidence"] == "LOW"
 
 
+def test_tg263_normalization():
+    from dicom_io.structure_mapper import normalize_to_tg263
+
+    r = normalize_to_tg263("Parotid_L")
+    assert r["tg263"] == "Parotid_L"
+    assert r["mapped"] is True
+    r2 = normalize_to_tg263("parotid left")
+    assert r2["mapped"] is True
+    assert r2["tg263"] == "Parotid_L"
+    r3 = normalize_to_tg263("Parotid_L")
+    assert r3["tg263"] == r["tg263"]
+    unmapped = normalize_to_tg263("WeirdOAR_XYZ")
+    assert unmapped["mapped"] is False
+
+
 def test_roi_type_tag_priority():
     result = canon_target("AnyRandomName123", roi_interpreted_type="GTV")
     assert result["canonical"] == "GTV"
