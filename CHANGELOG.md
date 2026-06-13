@@ -4,6 +4,15 @@ All notable changes to this project are documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- TCIA HNSCC external validation acquisition scaffold (`external_validation/`).
+- TG-263 structure normalization (`engine/config/tg263_aliases.py`).
+- TCIA HNSCC DICOM adapter and clinical covariate mapper.
+- External validation pipeline (`engine/validation/hnscc_external_val.py`).
+
 ## [1.0.0] - 2026-06-10
 
 ### Added
