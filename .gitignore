@@ -51,3 +51,6 @@ Desktop.ini
 # Reproduction bundles (build with scripts/build_zenodo_bundle.ps1)
 reproducibility/dist/
 paper/figures/*.png
+
+# External validation data (TCIA HNSCC — never commit)
+external_validation/data/
