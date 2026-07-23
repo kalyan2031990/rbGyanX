@@ -141,6 +141,10 @@ ignore = ["E501"]
 "engine/radiobiology/__init__.py" = ["E402"]
 # Imports deliberately follow a pytest.importorskip("hypothesis") guard.
 "tests/synthetic/test_property_invariants.py" = ["E402"]
+# Bodies extracted VERBATIM from rbgyanx_gui.py (v2 Phase 4 - Slice 1). Keeping them
+# byte-for-byte is what makes tests/test_gui_service_equivalence.py meaningful, so
+# cosmetic rewrites (ternaries, collapsed ifs) are deliberately not applied here.
+"rbgyanx/services/dvh_service.py" = ["SIM102", "SIM108"]
 
 [tool.black]
 line-length = 100
