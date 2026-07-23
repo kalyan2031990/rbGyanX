@@ -40,6 +40,18 @@ def test_example_clinical_csv_loads():
     assert cohort.covariates == ["age", "sex", "smoker"]
 
 
+def test_viz_demo_is_runnable(tmp_path, monkeypatch):
+    """The visualisation demo must keep working and stay PHI-free (v2 Phase 4 - Slice 2)."""
+    import examples.viz_demo as demo
+
+    monkeypatch.setattr(demo, "OUT", tmp_path / "viz")
+    assert demo.main() == 0
+    written = list((tmp_path / "viz").glob("*"))
+    assert written, "demo produced no figures"
+    # At least the publication PNGs; HTML only when plotly is installed.
+    assert any(p.suffix == ".png" for p in written)
+
+
 def test_make_example_data_is_runnable(tmp_path, monkeypatch):
     # Regenerate into a temp dir so the demo generator itself is exercised in CI.
     import examples.make_example_data as gen
