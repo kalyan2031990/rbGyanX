@@ -1,0 +1,12 @@
+Patient ID          : EX-002
+Mean Dose [cGy]: 3100
+Structure: Parotid_L
+Number of fractions: 35
+Dose per fraction [cGy]: 200
+
+Dose [cGy]  Structure Volume [cm3]
+0  30.0
+1240  24.0
+3100  12.0
+4340  5.0
+3900  0.5

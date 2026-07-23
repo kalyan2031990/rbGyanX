@@ -1,0 +1,12 @@
+Patient ID          : EX-002
+Mean Dose [cGy]: 1840
+Structure: SpinalCord
+Number of fractions: 35
+Dose per fraction [cGy]: 200
+
+Dose [cGy]  Structure Volume [cm3]
+0  30.0
+736  24.0
+1840  12.0
+2576  5.0
+4600  0.5

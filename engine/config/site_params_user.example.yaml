@@ -1,0 +1,9 @@
+# Copy to site_params_user.yaml (or pass --user-config) to override defaults.
+#
+# Keys = tumour site / histology (NOT IMRT, VMAT, SRS, SBRT):
+#   BRAIN_GBM, BRAIN_METS, HN, LUNG, BREAST
+#
+# Example:
+# HN:
+#   TCD50_gy: 65.0
+#   alpha_gy_inv: 0.35

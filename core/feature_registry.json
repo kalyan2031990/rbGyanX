@@ -1,0 +1,162 @@
+{
+  "app_info": {
+    "name": "rbGyanX",
+    "version": "1.0.0",
+    "intended_use": "Radiobiological Clinical Decision Support System (CDSS) for radiation oncology treatment plan evaluation",
+    "description": "DICOM TCP/NTCP engine, UTCP, QUANTEC, physical plan-quality metrics; optional ML and Ask rbGyanX in ADVANCED mode"
+  },
+  "enabled_features": {
+    "traditional_models": {
+      "ntcp": {
+        "LKB_LogLogistic": {
+          "enabled": true,
+          "description": "Lyman-Kutcher-Burman Log-Logistic model for normal tissue complication probability",
+          "reference": "Lyman (1985)"
+        },
+        "LKB_Probit": {
+          "enabled": true,
+          "description": "Lyman-Kutcher-Burman Probit model variant",
+          "reference": "Lyman (1985)"
+        },
+        "RS_Poisson": {
+          "enabled": true,
+          "description": "Relative Seriality Poisson model",
+          "reference": "Källman et al. (1992)"
+        }
+      },
+      "tcp": {
+        "Poisson_TCP": {
+          "enabled": true,
+          "description": "Poisson TCP model based on clonogen survival",
+          "reference": "Webb & Nahum (1993)"
+        },
+        "LKB_TCP": {
+          "enabled": true,
+          "description": "LKB-adapted TCP model",
+          "reference": "Okunieff et al. (1995)"
+        },
+        "Logistic_TCP": {
+          "enabled": true,
+          "description": "Logistic TCP model",
+          "reference": "Brahme (1984)"
+        },
+        "EUD_TCP": {
+          "enabled": true,
+          "description": "EUD-based TCP model",
+          "reference": "Niemierko (1997)"
+        }
+      }
+    },
+    "ml_models": {
+      "enabled": true,
+      "models": ["ANN", "XGBoost"],
+      "description": "Machine learning models for enhanced prediction accuracy",
+      "validation": "Cross-validation with train/test split"
+    },
+    "shap_explainability": {
+      "enabled": true,
+      "description": "SHAP (SHapley Additive exPlanations) for model interpretability",
+      "features": ["Summary plots", "Beeswarm plots", "Feature importance"]
+    },
+    "qa_checks": {
+      "enabled": true,
+      "checks": [
+        "Sample size adequacy (EPV)",
+        "Overfitting detection",
+        "Data leakage indicators",
+        "Calibration assessment",
+        "CV consistency"
+      ],
+      "description": "Comprehensive quality assurance for model reliability"
+    },
+    "overfitting_inspector": {
+      "enabled": true,
+      "description": "Automated overfitting detection and warnings",
+      "thresholds": {
+        "auc_difference_warning": 0.10,
+        "auc_difference_fail": 0.15,
+        "cv_std_warning": 0.15
+      }
+    },
+    "project_management": {
+      "enabled": true,
+      "features": [
+        "Project save/load",
+        "Auto-save (5 minutes)",
+        "Configuration persistence",
+        "State restoration"
+      ]
+    },
+    "ai_assistant": {
+      "enabled": true,
+      "name": "Ask rbGyanX",
+      "description": "Local AI assistant for educational and explanatory purposes",
+      "capabilities": [
+        "Model theory explanation",
+        "Parameter meaning",
+        "Statistics interpretation",
+        "Medical physics education"
+      ],
+      "constraints": [
+        "Local models only (no internet)",
+        "No PHI access",
+        "No DVH data access",
+        "Educational only"
+      ]
+    }
+  },
+  "analysis_modes": {
+    "retrospective": {
+      "description": "Retrospective analysis of historical treatment plans",
+      "use_case": "Research, validation, quality improvement"
+    },
+    "prospective": {
+      "description": "Prospective plan evaluation before treatment",
+      "use_case": "Clinical decision support, plan comparison"
+    },
+    "plan_comparison": {
+      "description": "Compare multiple treatment plan options",
+      "use_case": "Plan selection, optimization guidance"
+    }
+  },
+  "workflow_stages": {
+    "step1": {
+      "name": "DVH Preprocessing",
+      "description": "Import and preprocess differential/cumulative DVH files",
+      "output": "Processed DVH data"
+    },
+    "step2": {
+      "name": "Dose Metrics & Plots",
+      "description": "Calculate dose metrics and generate DVH plots",
+      "output": "Dose metrics, DVH visualizations"
+    },
+    "step3": {
+      "name": "TCP/NTCP Analysis",
+      "description": "Calculate TCP or NTCP using traditional and ML models",
+      "output": "TCP/NTCP predictions, performance metrics"
+    },
+    "step4": {
+      "name": "Clinical Factors Analysis",
+      "description": "Analyze clinical factors and their impact on outcomes",
+      "output": "Factor analysis, correlations"
+    },
+    "step5": {
+      "name": "Quality Assurance",
+      "description": "Comprehensive QA checks including overfitting inspection",
+      "output": "QA report, warnings, flags"
+    },
+    "step6": {
+      "name": "TCP-NTCP Integration",
+      "description": "Integrate TCP and NTCP for therapeutic ratio analysis",
+      "output": "Therapeutic ratio, integrated metrics"
+    }
+  },
+  "dashboard_text": {
+    "welcome": "Welcome to rbGyanX Pro v1.1.0",
+    "description": "Advanced radiobiological analysis platform with TCP/NTCP modeling, machine learning integration, and explainable AI capabilities.",
+    "features_summary": "Features: Traditional models (LKB, RS), ML models (ANN, XGBoost), SHAP explainability, QA checks, Project management, AI assistant",
+    "intended_use": "This software is intended for research and educational purposes. Clinical decisions should be made by qualified medical professionals.",
+    "disclaimer": "This tool provides decision support and should not replace clinical judgment. All results should be reviewed by qualified medical physicists and radiation oncologists."
+  }
+}
+

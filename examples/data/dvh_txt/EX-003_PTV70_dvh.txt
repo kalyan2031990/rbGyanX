@@ -1,0 +1,14 @@
+Patient ID          : EX-003
+Prescribed dose [cGy]: 6600
+Mean Dose [cGy]: 6666
+Structure: PTV70
+Number of fractions: 35
+Dose per fraction [cGy]: 200
+
+Dose [cGy]  Structure Volume [cm3]
+6798  100.0
+6600  98.0
+6270  89.1
+5940  59.4
+5280  10.0
+3960  1.0

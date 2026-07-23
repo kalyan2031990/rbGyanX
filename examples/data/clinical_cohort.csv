@@ -1,0 +1,11 @@
+patient_id,xerostomia_grade2,age,sex,smoker
+EX-001,0,61,M,no
+EX-002,1,68,F,yes
+EX-003,0,57,M,no
+EX-004,1,72,F,yes
+EX-005,0,64,M,no
+EX-006,1,70,M,yes
+EX-007,0,59,F,no
+EX-008,0,66,M,no
+EX-009,1,74,F,yes
+EX-010,0,62,M,no

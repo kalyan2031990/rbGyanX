@@ -1,0 +1,22 @@
+# Normalise line endings: check out with LF, store with LF. Kills CRLF churn.
+* text=auto eol=lf
+
+# Windows shell / PowerShell scripts keep CRLF
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Known binary assets — never normalise or diff as text
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.xlsx binary
+*.xls binary
+*.dcm binary
+*.npy binary
+*.npz binary
+*.pkl binary
+*.joblib binary

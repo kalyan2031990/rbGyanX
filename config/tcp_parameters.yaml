@@ -1,0 +1,138 @@
+# TCP Model Parameters
+# ====================
+# Literature-based default parameters for Tumor Control Probability models
+# 
+# Parameters are organized by tumor type and model.
+# All doses are in Gy (Gray).
+#
+# References:
+# - Poisson TCP: Webb & Nahum (1993)
+# - LKB TCP: Okunieff et al. (1995)
+# - Logistic TCP: Brahme (1984)
+# - EUD TCP: Niemierko (1997)
+
+# Head and Neck Squamous Cell Carcinoma (HNSCC)
+HNSCC:
+  Poisson_TCP:
+    D50: 50.0          # Dose for 50% TCP (Gy)
+    gamma50: 2.0       # Normalized dose-response gradient at D50
+    alpha_beta: 10.0   # Alpha/beta ratio (Gy)
+    reference: "Webb & Nahum, 1993; Typical values for HNSCC"
+  
+  LKB_TCP:
+    TD50: 50.0         # Dose for 50% TCP at reference volume (Gy)
+    m: 0.15            # Slope parameter (dimensionless)
+    n: 0.12            # Volume effect parameter (dimensionless)
+    alpha_beta: 10.0   # Alpha/beta ratio (Gy)
+    reference: "Okunieff et al., 1995; Adapted for HNSCC"
+  
+  Logistic_TCP:
+    D50: 50.0          # Dose for 50% TCP (Gy)
+    k: 0.35            # Steepness parameter (dimensionless)
+    alpha_beta: 10.0   # Alpha/beta ratio (Gy)
+    reference: "Brahme, 1984; Typical values for HNSCC"
+  
+  EUD_TCP:
+    D50: 50.0          # Dose for 50% TCP (Gy)
+    gamma50: 2.0       # Normalized dose-response gradient at D50
+    a: -10.0           # EUD parameter (negative for tumors)
+    alpha_beta: 10.0   # Alpha/beta ratio (Gy)
+    reference: "Niemierko, 1997; Typical values for HNSCC"
+
+# Prostate Cancer
+Prostate:
+  Poisson_TCP:
+    D50: 70.0          # Dose for 50% TCP (Gy)
+    gamma50: 1.5       # Normalized dose-response gradient at D50
+    alpha_beta: 1.5    # Alpha/beta ratio (Gy) - low for prostate
+    reference: "Webb & Nahum, 1993; Adapted for prostate"
+  
+  LKB_TCP:
+    TD50: 70.0         # Dose for 50% TCP at reference volume (Gy)
+    m: 0.12            # Slope parameter (dimensionless)
+    n: 0.10            # Volume effect parameter (dimensionless)
+    alpha_beta: 1.5    # Alpha/beta ratio (Gy)
+    reference: "Okunieff et al., 1995; Adapted for prostate"
+  
+  Logistic_TCP:
+    D50: 70.0          # Dose for 50% TCP (Gy)
+    k: 0.30            # Steepness parameter (dimensionless)
+    alpha_beta: 1.5    # Alpha/beta ratio (Gy)
+    reference: "Brahme, 1984; Adapted for prostate"
+  
+  EUD_TCP:
+    D50: 70.0          # Dose for 50% TCP (Gy)
+    gamma50: 1.5       # Normalized dose-response gradient at D50
+    a: -10.0           # EUD parameter (negative for tumors)
+    alpha_beta: 1.5    # Alpha/beta ratio (Gy)
+    reference: "Niemierko, 1997; Adapted for prostate"
+
+# Lung Cancer (NSCLC - Non-Small Cell Lung Cancer)
+Lung:
+  Poisson_TCP:
+    D50: 60.0          # Dose for 50% TCP (Gy)
+    gamma50: 1.8       # Normalized dose-response gradient at D50
+    alpha_beta: 10.0   # Alpha/beta ratio (Gy)
+    reference: "Webb & Nahum, 1993; Typical values for NSCLC"
+  
+  LKB_TCP:
+    TD50: 60.0         # Dose for 50% TCP at reference volume (Gy)
+    m: 0.18            # Slope parameter (dimensionless)
+    n: 0.15            # Volume effect parameter (dimensionless)
+    alpha_beta: 10.0   # Alpha/beta ratio (Gy)
+    reference: "Okunieff et al., 1995; Adapted for NSCLC"
+  
+  Logistic_TCP:
+    D50: 60.0          # Dose for 50% TCP (Gy)
+    k: 0.40            # Steepness parameter (dimensionless)
+    alpha_beta: 10.0   # Alpha/beta ratio (Gy)
+    reference: "Brahme, 1984; Typical values for NSCLC"
+  
+  EUD_TCP:
+    D50: 60.0          # Dose for 50% TCP (Gy)
+    gamma50: 1.8       # Normalized dose-response gradient at D50
+    a: -10.0           # EUD parameter (negative for tumors)
+    alpha_beta: 10.0   # Alpha/beta ratio (Gy)
+    reference: "Niemierko, 1997; Typical values for NSCLC"
+
+# Breast Cancer
+Breast:
+  Poisson_TCP:
+    D50: 45.0          # Dose for 50% TCP (Gy)
+    gamma50: 2.2       # Normalized dose-response gradient at D50
+    alpha_beta: 10.0   # Alpha/beta ratio (Gy)
+    reference: "Webb & Nahum, 1993; Typical values for breast"
+  
+  LKB_TCP:
+    TD50: 45.0         # Dose for 50% TCP at reference volume (Gy)
+    m: 0.20            # Slope parameter (dimensionless)
+    n: 0.18            # Volume effect parameter (dimensionless)
+    alpha_beta: 10.0   # Alpha/beta ratio (Gy)
+    reference: "Okunieff et al., 1995; Adapted for breast"
+  
+  Logistic_TCP:
+    D50: 45.0          # Dose for 50% TCP (Gy)
+    k: 0.38            # Steepness parameter (dimensionless)
+    alpha_beta: 10.0   # Alpha/beta ratio (Gy)
+    reference: "Brahme, 1984; Typical values for breast"
+  
+  EUD_TCP:
+    D50: 45.0          # Dose for 50% TCP (Gy)
+    gamma50: 2.2       # Normalized dose-response gradient at D50
+    a: -10.0           # EUD parameter (negative for tumors)
+    alpha_beta: 10.0   # Alpha/beta ratio (Gy)
+    reference: "Niemierko, 1997; Typical values for breast"
+
+# Notes:
+# ======
+# - D50/TD50: Dose at which TCP = 50% (typical range: 40-80 Gy)
+# - gamma50: Steepness of dose-response curve (typical range: 1.0-3.0)
+# - m: LKB slope parameter (typical range: 0.10-0.25)
+# - n: LKB volume effect (typical range: 0.05-0.20 for tumors)
+# - k: Logistic steepness (typical range: 0.25-0.50)
+# - a: EUD parameter (negative for tumors, typically -10 to -20)
+# - alpha_beta: Tissue-specific ratio (1.5-3 for prostate, 10 for most tumors)
+#
+# These parameters should be validated against clinical data for specific
+# patient populations and treatment protocols.
+

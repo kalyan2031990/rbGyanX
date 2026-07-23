@@ -1,0 +1,6 @@
+{
+  "ntcp_at_d50": 0.5,
+  "therapeutic_index_min": 1.0,
+  "ccs_outlier_indices": [7, 18],
+  "four_tier_t1_auc_min": 0.5
+}

@@ -1,0 +1,159 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  core:
+    name: Core (no optional ML)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install core packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "./engine" -e "./engine_advanced" -e "./engine_advanced_f" -e ".[dev]"
+
+      - name: Ruff
+        run: |
+          ruff check engine/radiobiology engine/tests/test_ntcp_scientific_anchors.py \
+            tests/synthetic engine/dicom_io/input_validation.py \
+            engine/validation/clinical_cohort.py examples \
+            tests/test_input_validation.py tests/test_reusable_interfaces.py \
+            tests/test_examples_smoke.py
+
+      - name: Black
+        run: |
+          black --check engine/radiobiology engine/tests/test_ntcp_scientific_anchors.py \
+            tests/synthetic engine/dicom_io/input_validation.py \
+            engine/validation/clinical_cohort.py examples \
+            tests/test_input_validation.py tests/test_reusable_interfaces.py \
+            tests/test_examples_smoke.py
+
+      - name: Mypy (radiobiology)
+        run: mypy engine/radiobiology --config-file pyproject.toml
+
+      - name: Pytest (engine + publication + synthetic + reusable interfaces + validation)
+        run: |
+          pytest engine/tests tests/test_publication_suite.py tests/synthetic \
+            tests/test_input_validation.py tests/test_reusable_interfaces.py \
+            tests/test_examples_smoke.py \
+            --import-mode=importlib -q --tb=short \
+            -m "not requires_ml and not requires_torch and not requires_pymc" \
+            --cov=engine/radiobiology --cov-report=xml --cov-fail-under=70
+
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml
+          fail_ci_if_error: false
+
+  full:
+    name: Full (optional ML stack)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install full stack
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "./engine[ml]" -e "./engine_advanced[pinn]" -e "./engine_advanced_f[bayesian,pinn]" -e ".[dev,ml,torch,bayesian]"
+
+      - name: Pytest (full suite)
+        # Coverage is gated on the maintained `engine` package (the public, reusable tool),
+        # not the legacy GUI/logic scripts kept for provenance. Engine-wide coverage of the
+        # data-independent suite is ~73%; 70% leaves headroom for env-dependent skips.
+        run: |
+          pytest --import-mode=importlib -q --tb=short \
+            --cov=engine --cov-report=xml --cov-fail-under=70
+
+      - name: Bandit
+        run: bandit -q -r engine/rbgyanx_engine rbgyanx || true
+
+      - name: pip-audit
+        run: pip-audit || true
+
+  paper-figures:
+    name: Paper figure capsule
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install engine + paper deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "./engine" -r paper/requirements.txt
+
+      - name: Reproduce figures
+        run: python paper/reproduce_figures.py
+
+      - name: Upload figure artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper-figures
+          path: paper/figures/*.png
+
+  extval:
+    name: External-validation pipeline (synthetic mirror)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install stack (engine + ML + torch)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "./engine" -e "./engine_advanced" -e "./engine_advanced_f" -e ".[dev,ml,torch]"
+
+      - name: Ruff + Black (extval modules)
+        run: |
+          ruff check engine/dicom_io/cohort_features.py engine/validation/extval_benchmark.py \
+            engine/validation/outcome_pinn.py external_validation tests/test_cohort_features.py \
+            tests/test_extval_benchmark.py tests/test_extval_cohort_builder.py tests/synthetic/dicom_rt_factory.py
+          black --check engine/dicom_io/cohort_features.py engine/validation/extval_benchmark.py \
+            engine/validation/outcome_pinn.py external_validation tests/synthetic/dicom_rt_factory.py
+
+      - name: Pytest (extval unit tests)
+        run: |
+          pytest tests/test_cohort_features.py tests/test_extval_cohort_builder.py \
+            tests/test_extval_benchmark.py --import-mode=importlib -q --tb=short
+
+      - name: Run pipeline on synthetic mirror (no patient data)
+        run: |
+          python external_validation/make_synthetic_mirror.py --out mirror/cohort_features.csv --n 120 --seed 0
+          python external_validation/run_benchmark.py --features mirror/cohort_features.csv --out-dir mirror/benchmark --quick --seed 0
+
+      - name: Upload synthetic benchmark artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: extval-synthetic-benchmark
+          path: mirror/benchmark/*

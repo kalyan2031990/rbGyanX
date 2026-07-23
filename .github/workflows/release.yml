@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  validate-citation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install cffconvert
+      - run: cffconvert --validate -i CITATION.cff
+
+  build-windows:
+    runs-on: windows-latest
+    needs: validate-citation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Build installer (if script present)
+        shell: pwsh
+        run: |
+          if (Test-Path packaging/build_rbGyanX.ps1) {
+            Write-Host "Installer build requires local TF bundle; skipping in CI unless secrets configured."
+          }
+      - name: Upload placeholder artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rbgyanx-release-notes
+          path: CHANGELOG.md
