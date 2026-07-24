@@ -17,12 +17,17 @@ from __future__ import annotations
 
 from rbgyanx.viz.base import RenderedFigure, VizBackend
 from rbgyanx.viz.spec import (
+    CohortFlowSpec,
     DoseResponseCurve,
     DoseResponseSpec,
     DVHCurve,
     DVHSpec,
+    FlowStage,
     OptimismRow,
     OptimismSpec,
+    SankeyLink,
+    SankeyNode,
+    SankeySpec,
 )
 
 __all__ = [
@@ -36,6 +41,11 @@ __all__ = [
     "DoseResponseSpec",
     "OptimismRow",
     "OptimismSpec",
+    "SankeyNode",
+    "SankeyLink",
+    "SankeySpec",
+    "FlowStage",
+    "CohortFlowSpec",
 ]
 
 #: name -> "why you'd pick it"

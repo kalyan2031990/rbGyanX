@@ -20,12 +20,17 @@ from pathlib import Path
 
 import numpy as np
 from rbgyanx.viz import (
+    CohortFlowSpec,
     DoseResponseCurve,
     DoseResponseSpec,
     DVHCurve,
     DVHSpec,
+    FlowStage,
     OptimismRow,
     OptimismSpec,
+    SankeyLink,
+    SankeyNode,
+    SankeySpec,
     available_backends,
     get_backend,
 )
@@ -100,6 +105,39 @@ def optimism_spec() -> OptimismSpec:
     )
 
 
+def sankey_spec() -> SankeySpec:
+    """How uncomplicated control is composed: dose -> per-OAR NTCP -> P+."""
+    return SankeySpec(
+        nodes=[
+            SankeyNode("Prescribed dose"),
+            SankeyNode("Parotid NTCP"),
+            SankeyNode("Cord NTCP"),
+            SankeyNode("Uncomplicated control (P+)"),
+        ],
+        links=[
+            SankeyLink(0, 1, 62.0, "parotid share"),
+            SankeyLink(0, 2, 38.0, "cord share"),
+            SankeyLink(1, 3, 52.0, "no xerostomia"),
+            SankeyLink(2, 3, 36.0, "no cord toxicity"),
+        ],
+        title="Dose -> per-OAR NTCP -> uncomplicated control (synthetic)",
+    )
+
+
+def cohort_flow_spec() -> CohortFlowSpec:
+    """PRISMA-style inclusion flow mapping onto the readiness gates."""
+    return CohortFlowSpec(
+        stages=[
+            FlowStage("Screened", 140),
+            FlowStage("With contours", 128, excluded=12, exclusion_reason="no RTSTRUCT"),
+            FlowStage("With dose", 124, excluded=4, exclusion_reason="no RTDOSE"),
+            FlowStage("With endpoint", 121, excluded=3, exclusion_reason="outcome missing"),
+            FlowStage("Analysed", 121),
+        ],
+        title="Cohort flow (synthetic illustration)",
+    )
+
+
 def _erf(x: float) -> float:
     import math
 
@@ -112,6 +150,8 @@ def main() -> int:
         "dvh": dvh_spec(),
         "dose_response": dose_response_spec(),
         "optimism": optimism_spec(),
+        "sankey": sankey_spec(),
+        "cohort_flow": cohort_flow_spec(),
     }
     backends = available_backends()
     print("available backends:")

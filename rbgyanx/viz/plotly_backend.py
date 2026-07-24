@@ -148,3 +148,80 @@ class PlotlyBackend(VizBackend):
             fig.add_hline(y=spec.chance_level, line=dict(color="grey", dash="dot", width=1))
         self._layout(fig, spec.title, "", spec.y_label)
         return RenderedFigure(fig, self.name)
+
+    def sankey(self, spec) -> RenderedFigure:
+        """Interactive Sankey: dose → per-OAR NTCP → uncomplicated control."""
+        import plotly.graph_objects as go
+
+        node_colours = [n.color or PALETTE[i % len(PALETTE)] for i, n in enumerate(spec.nodes)]
+        fig = go.Figure(
+            go.Sankey(
+                node=dict(
+                    label=[n.label for n in spec.nodes],
+                    color=node_colours,
+                    pad=18,
+                    thickness=18,
+                    line=dict(color="rgba(0,0,0,0.25)", width=0.5),
+                ),
+                link=dict(
+                    source=[link.source for link in spec.links],
+                    target=[link.target for link in spec.links],
+                    value=[link.value for link in spec.links],
+                    label=[link.label for link in spec.links],
+                    color=[_rgba(node_colours[link.source], 0.35) for link in spec.links],
+                ),
+            )
+        )
+        fig.update_layout(
+            title=dict(text=spec.title, font=dict(size=14)),
+            template=self.template,
+            height=self.height,
+            margin=dict(l=20, r=20, t=50, b=20),
+        )
+        return RenderedFigure(fig, self.name)
+
+    def cohort_flow(self, spec) -> RenderedFigure:
+        """Interactive PRISMA-style inclusion flow with exclusion reasons on hover."""
+        import plotly.graph_objects as go
+
+        labels = [s.label for s in spec.stages]
+        counts = [s.n for s in spec.stages]
+        hover = [
+            (
+                f"{s.label}<br>n = {s.n}"
+                + (f"<br>excluded {s.excluded}: {s.exclusion_reason}" if s.excluded else "")
+            )
+            for s in spec.stages
+        ]
+        fig = go.Figure(
+            go.Bar(
+                x=counts,
+                y=labels,
+                orientation="h",
+                marker=dict(color=PALETTE[0]),
+                text=[f"n={c}" for c in counts],
+                textposition="auto",
+                hovertext=hover,
+                hoverinfo="text",
+            )
+        )
+        for i, s in enumerate(spec.stages):
+            if s.excluded:
+                fig.add_annotation(
+                    x=counts[i],
+                    y=labels[i],
+                    text=f"−{s.excluded}: {s.exclusion_reason}",
+                    showarrow=False,
+                    xanchor="left",
+                    xshift=8,
+                    font=dict(size=10, color=PALETTE[1]),
+                )
+        fig.update_layout(
+            title=dict(text=spec.title, font=dict(size=14)),
+            xaxis_title="patients",
+            template=self.template,
+            height=self.height,
+            margin=dict(l=180, r=180, t=50, b=40),
+            yaxis=dict(autorange="reversed"),
+        )
+        return RenderedFigure(fig, self.name)

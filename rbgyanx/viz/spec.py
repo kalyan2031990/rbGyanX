@@ -23,6 +23,11 @@ __all__ = [
     "DoseResponseSpec",
     "OptimismRow",
     "OptimismSpec",
+    "SankeyNode",
+    "SankeyLink",
+    "SankeySpec",
+    "FlowStage",
+    "CohortFlowSpec",
 ]
 
 
@@ -128,3 +133,91 @@ class OptimismSpec:
     def __post_init__(self) -> None:
         if not self.rows:
             raise ValueError("OptimismSpec needs at least one row")
+
+
+@dataclass
+class SankeyNode:
+    """One stage in the uncomplicated-control composition."""
+
+    label: str
+    color: str | None = None
+
+
+@dataclass
+class SankeyLink:
+    """Flow between two nodes, by index into ``SankeySpec.nodes``."""
+
+    source: int
+    target: int
+    value: float
+    label: str = ""
+
+    def __post_init__(self) -> None:
+        if self.value < 0:
+            raise ValueError(f"Sankey link '{self.label}': value must be >= 0")
+
+
+@dataclass
+class SankeySpec:
+    """dose → per-OAR NTCP → UTCP (P+), showing how uncomplicated control is composed.
+
+    Adapted from Düzenli et al., SoftwareX 2026, 102773 (Sankey for pipeline composition).
+    """
+
+    nodes: list[SankeyNode]
+    links: list[SankeyLink]
+    title: str = "Dose → OAR NTCP → uncomplicated control"
+
+    def __post_init__(self) -> None:
+        if not self.nodes:
+            raise ValueError("SankeySpec needs at least one node")
+        if not self.links:
+            raise ValueError("SankeySpec needs at least one link")
+        n = len(self.nodes)
+        for link in self.links:
+            if not (0 <= link.source < n and 0 <= link.target < n):
+                raise ValueError(
+                    f"Sankey link ({link.source}->{link.target}) is out of range for {n} nodes"
+                )
+            if link.source == link.target:
+                raise ValueError("Sankey link cannot point at its own node")
+
+
+@dataclass
+class FlowStage:
+    """One PRISMA-style stage: how many entered, and why any were excluded."""
+
+    label: str
+    n: int
+    excluded: int = 0
+    exclusion_reason: str = ""
+
+    def __post_init__(self) -> None:
+        if self.n < 0 or self.excluded < 0:
+            raise ValueError(f"Flow stage '{self.label}': counts must be >= 0")
+        if self.excluded and not self.exclusion_reason:
+            raise ValueError(
+                f"Flow stage '{self.label}': {self.excluded} excluded but no reason given"
+            )
+
+
+@dataclass
+class CohortFlowSpec:
+    """PRISMA-style inclusion flow: screened → contours → dose → endpoint → analysed.
+
+    Maps directly onto the readiness gates, so the figure is publication-ready and the
+    exclusions are auditable rather than implicit.
+    """
+
+    stages: list[FlowStage]
+    title: str = "Cohort flow"
+
+    def __post_init__(self) -> None:
+        if not self.stages:
+            raise ValueError("CohortFlowSpec needs at least one stage")
+        for a, b in zip(self.stages, self.stages[1:], strict=False):
+            if b.n > a.n:
+                raise ValueError(
+                    f"cohort grew from '{a.label}' ({a.n}) to '{b.label}' ({b.n}); "
+                    "a flow diagram must be monotone non-increasing"
+                )

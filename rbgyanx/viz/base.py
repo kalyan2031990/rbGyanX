@@ -17,7 +17,13 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
-from rbgyanx.viz.spec import DoseResponseSpec, DVHSpec, OptimismSpec
+from rbgyanx.viz.spec import (
+    CohortFlowSpec,
+    DoseResponseSpec,
+    DVHSpec,
+    OptimismSpec,
+    SankeySpec,
+)
 
 __all__ = ["VizBackend", "RenderedFigure"]
 
@@ -87,7 +93,18 @@ class VizBackend(ABC):
     def optimism(self, spec: OptimismSpec) -> RenderedFigure:
         """Apparent vs cross-validated performance."""
 
-    def render(self, spec: DVHSpec | DoseResponseSpec | OptimismSpec) -> RenderedFigure:
+    @abstractmethod
+    def sankey(self, spec: SankeySpec) -> RenderedFigure:
+        """dose -> per-OAR NTCP -> uncomplicated control (P+)."""
+
+    @abstractmethod
+    def cohort_flow(self, spec: CohortFlowSpec) -> RenderedFigure:
+        """PRISMA-style inclusion flow with exclusion reasons."""
+
+    def render(
+        self,
+        spec: DVHSpec | DoseResponseSpec | OptimismSpec | SankeySpec | CohortFlowSpec,
+    ) -> RenderedFigure:
         """Dispatch on spec type, so callers can stay generic."""
         if isinstance(spec, DVHSpec):
             return self.dvh(spec)
@@ -95,4 +112,8 @@ class VizBackend(ABC):
             return self.dose_response(spec)
         if isinstance(spec, OptimismSpec):
             return self.optimism(spec)
+        if isinstance(spec, SankeySpec):
+            return self.sankey(spec)
+        if isinstance(spec, CohortFlowSpec):
+            return self.cohort_flow(spec)
         raise TypeError(f"unsupported spec type: {type(spec).__name__}")

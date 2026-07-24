@@ -121,3 +121,88 @@ class MatplotlibBackend(VizBackend):
         ax.legend(fontsize=8, frameon=False, loc="lower left")
         fig.tight_layout()
         return RenderedFigure(fig, self.name)
+
+    def sankey(self, spec) -> RenderedFigure:
+        """Publication Sankey rendered as a layered flow diagram.
+
+        Matplotlib has no native Sankey that handles arbitrary DAGs well, so nodes are placed
+        in columns by depth and links drawn as width-proportional ribbons. Same data as the
+        Plotly view (the specs are shared), just static.
+        """
+        fig, ax = self._new()
+
+        # Depth of each node = longest path from any source (columns, left to right).
+        depth = [0] * len(spec.nodes)
+        for _ in range(len(spec.nodes)):
+            for link in spec.links:
+                depth[link.target] = max(depth[link.target], depth[link.source] + 1)
+
+        columns: dict[int, list[int]] = {}
+        for idx, d in enumerate(depth):
+            columns.setdefault(d, []).append(idx)
+
+        pos: dict[int, tuple[float, float]] = {}
+        for d, members in columns.items():
+            for row, idx in enumerate(members):
+                y = 1.0 - (row + 0.5) / len(members)
+                pos[idx] = (float(d), y)
+
+        max_value = max((link.value for link in spec.links), default=1.0) or 1.0
+        for link in spec.links:
+            x0, y0 = pos[link.source]
+            x1, y1 = pos[link.target]
+            ax.plot(
+                [x0 + 0.08, x1 - 0.08],
+                [y0, y1],
+                lw=1.0 + 6.0 * (link.value / max_value),
+                alpha=0.35,
+                color=spec.nodes[link.source].color or PALETTE[link.source % len(PALETTE)],
+                solid_capstyle="round",
+            )
+
+        for idx, node in enumerate(spec.nodes):
+            x, y = pos[idx]
+            ax.scatter([x], [y], s=90, zorder=3, color=node.color or PALETTE[idx % len(PALETTE)])
+            ax.annotate(
+                node.label,
+                (x, y),
+                xytext=(0, 11),
+                textcoords="offset points",
+                ha="center",
+                fontsize=8,
+            )
+
+        ax.set_xlim(-0.5, max(depth) + 0.5)
+        ax.set_ylim(-0.05, 1.15)
+        ax.axis("off")
+        ax.set_title(spec.title, fontsize=10)
+        fig.tight_layout()
+        return RenderedFigure(fig, self.name)
+
+    def cohort_flow(self, spec) -> RenderedFigure:
+        """Publication PRISMA-style inclusion flow with exclusion annotations."""
+        fig, ax = self._new()
+        labels = [s.label for s in spec.stages]
+        counts = [s.n for s in spec.stages]
+        y = np.arange(len(spec.stages))
+
+        ax.barh(y, counts, color=PALETTE[0], height=0.55)
+        for i, s in enumerate(spec.stages):
+            ax.text(counts[i], y[i], f" n={s.n}", va="center", fontsize=8)
+            if s.excluded:
+                ax.annotate(
+                    f"−{s.excluded}: {s.exclusion_reason}",
+                    xy=(counts[i], y[i]),
+                    xytext=(12, -14),
+                    textcoords="offset points",
+                    fontsize=7,
+                    color=PALETTE[1],
+                )
+        ax.set_yticks(y)
+        ax.set_yticklabels(labels, fontsize=8)
+        ax.invert_yaxis()
+        ax.set_xlabel("patients")
+        ax.set_title(spec.title, fontsize=10)
+        ax.grid(axis="x", alpha=0.3, lw=0.5)
+        fig.tight_layout()
+        return RenderedFigure(fig, self.name)

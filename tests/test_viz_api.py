@@ -14,12 +14,17 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from rbgyanx.viz import (
+    CohortFlowSpec,
     DoseResponseCurve,
     DoseResponseSpec,
     DVHCurve,
     DVHSpec,
+    FlowStage,
     OptimismRow,
     OptimismSpec,
+    SankeyLink,
+    SankeyNode,
+    SankeySpec,
     available_backends,
     get_backend,
 )
@@ -216,3 +221,92 @@ def test_specs_carry_no_patient_identifiers():
     spec = _dvh_spec()
     assert all(c.label in {"PTV70", "Parotid"} for c in spec.curves)
     assert not hasattr(spec, "patient_id")
+
+
+# ------------------------------------------------- Sankey + cohort flow (Slice 5)
+
+
+def _sankey_spec() -> SankeySpec:
+    """dose -> per-OAR NTCP -> uncomplicated control (P+)."""
+    return SankeySpec(
+        nodes=[
+            SankeyNode("Prescribed dose"),
+            SankeyNode("Rectum NTCP"),
+            SankeyNode("Bladder NTCP"),
+            SankeyNode("Uncomplicated control (P+)"),
+        ],
+        links=[
+            SankeyLink(0, 1, 60.0, "rectum share"),
+            SankeyLink(0, 2, 40.0, "bladder share"),
+            SankeyLink(1, 3, 54.0, "no rectal complication"),
+            SankeyLink(2, 3, 36.0, "no bladder complication"),
+        ],
+    )
+
+
+def _cohort_flow_spec() -> CohortFlowSpec:
+    return CohortFlowSpec(
+        stages=[
+            FlowStage("Screened", 140),
+            FlowStage("With contours", 128, excluded=12, exclusion_reason="no RTSTRUCT"),
+            FlowStage("With dose", 124, excluded=4, exclusion_reason="no RTDOSE"),
+            FlowStage("With endpoint", 121, excluded=3, exclusion_reason="outcome missing"),
+            FlowStage("Analysed", 121),
+        ]
+    )
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_backends_render_sankey_and_cohort_flow(backend):
+    engine = get_backend(backend)
+    assert engine.render(_sankey_spec()).figure is not None
+    assert engine.render(_cohort_flow_spec()).figure is not None
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_new_views_save_and_export(backend, tmp_path):
+    engine = get_backend(backend)
+    suffix = ".html" if backend == "plotly" else ".png"
+    for name, spec in (("sankey", _sankey_spec()), ("flow", _cohort_flow_spec())):
+        out = engine.render(spec).save(tmp_path / f"{name}{suffix}")
+        assert out.exists() and out.stat().st_size > 0
+
+
+def test_sankey_rejects_structurally_invalid_graphs():
+    node = SankeyNode("only")
+    with pytest.raises(ValueError, match="out of range"):
+        SankeySpec(nodes=[node], links=[SankeyLink(0, 5, 1.0)])
+    with pytest.raises(ValueError, match="own node"):
+        SankeySpec(nodes=[node, SankeyNode("b")], links=[SankeyLink(0, 0, 1.0)])
+    with pytest.raises(ValueError, match="value must be"):
+        SankeyLink(0, 1, -3.0)
+    with pytest.raises(ValueError, match="at least one node"):
+        SankeySpec(nodes=[], links=[SankeyLink(0, 1, 1.0)])
+
+
+def test_cohort_flow_must_be_monotone_non_increasing():
+    """A flow diagram cannot gain patients; that would hide a data error."""
+    with pytest.raises(ValueError, match="cohort grew"):
+        CohortFlowSpec(stages=[FlowStage("Screened", 100), FlowStage("Analysed", 120)])
+
+
+def test_cohort_flow_requires_a_reason_for_every_exclusion():
+    """Exclusions must be auditable — a count with no reason is rejected."""
+    with pytest.raises(ValueError, match="no reason given"):
+        FlowStage("With contours", 90, excluded=10)
+
+
+def test_cohort_flow_totals_are_internally_consistent():
+    spec = _cohort_flow_spec()
+    for a, b in zip(spec.stages, spec.stages[1:], strict=False):
+        assert b.n <= a.n
+        if b.excluded:
+            assert a.n - b.n == b.excluded, f"{b.label}: drop != declared exclusions"
+
+
+def test_sankey_conserves_flow_into_the_outcome_node():
+    """P+ inflow cannot exceed what entered the OAR nodes (complications only subtract)."""
+    spec = _sankey_spec()
+    into_oars = sum(link.value for link in spec.links if link.target in (1, 2))
+    into_pplus = sum(link.value for link in spec.links if link.target == 3)
+    assert into_pplus <= into_oars
