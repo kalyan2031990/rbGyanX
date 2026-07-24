@@ -1,0 +1,370 @@
+"""
+rbGyanX Qt shell — main window (v2 Phase 4 · Slice 3).
+
+A thin **view** over :mod:`rbgyanx.services`: this module reads widgets and paints results; it
+computes nothing. Two real screens are implemented end to end —
+
+    Run      : choose input -> validate -> run -> live log/progress
+    Results  : per-structure table + an embedded INTERACTIVE Plotly DVH (QWebEngineView)
+
+BASIC vs ADVANCED follows the existing product split: BASIC is the clinic-safe subset;
+ADVANCED exposes research controls (extra NTCP models, interactive export). Remaining screens
+(Sankey, PRISMA cohort flow, live training view, SHAP) land in later commits.
+
+PHI: nothing is written to disk by this window, and nothing is transmitted anywhere.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtGui import QAction, QIcon
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QFileDialog,
+    QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QMainWindow,
+    QMessageBox,
+    QPlainTextEdit,
+    QProgressBar,
+    QPushButton,
+    QSplitter,
+    QTableWidget,
+    QTableWidgetItem,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
+
+from rbgyanx.qtapp.branding import PALETTE, STYLESHEET, icon_path
+from rbgyanx.services.progress import CallbackReporter
+from rbgyanx.services.run_controller import RunController, RunResult
+from rbgyanx.services.run_request import RunRequest
+
+__all__ = ["MainWindow", "AppMode"]
+
+APP_TITLE = "rbGyanX — radiobiology clinical decision support"
+
+#: NTCP models offered per mode. BASIC keeps the clinic to one well-understood model.
+BASIC_MODELS = {
+    "LKB probit": {"model": "lkb_probit", "params": {"TD50_gy": 39.9, "m": 0.40}},
+}
+ADVANCED_MODELS = {
+    **BASIC_MODELS,
+    "LKB log-logistic": {"model": "lkb_loglogit", "params": {"TD50_gy": 28.4, "gamma50": 0.6}},
+    "Relative seriality": {
+        "model": "rs_poisson",
+        "params": {"D50_gy": 28.4, "gamma": 1.0, "s": 0.25},
+    },
+}
+
+
+class AppMode:
+    BASIC = "BASIC"
+    ADVANCED = "ADVANCED"
+
+
+class _RunWorker(QThread):
+    """Runs the controller off the UI thread so the window stays responsive."""
+
+    line = Signal(str)
+    stage = Signal(str)
+    pct = Signal(float)
+    done = Signal(object)
+
+    def __init__(self, request: RunRequest, models: dict) -> None:
+        super().__init__()
+        self._request = request
+        self._models = models
+
+    def run(self) -> None:  # noqa: D102 - Qt entry point
+        reporter = CallbackReporter(
+            log=self.line.emit, status=self.stage.emit, progress=self.pct.emit
+        )
+        try:
+            result = RunController(reporter).run_dvh_text(self._request, ntcp_models=self._models)
+        except Exception as exc:  # never let a worker exception kill the app
+            result = RunResult(ok=False, errors=[f"{type(exc).__name__}: {exc}"])
+        self.done.emit(result)
+
+
+class MainWindow(QMainWindow):
+    """The application shell."""
+
+    def __init__(self, mode: str = AppMode.BASIC) -> None:
+        super().__init__()
+        self.mode = mode
+        self._result: RunResult | None = None
+        self._worker: _RunWorker | None = None
+
+        self.setWindowTitle(APP_TITLE)
+        self.resize(1180, 780)
+        self.setStyleSheet(STYLESHEET)
+        ico = icon_path()
+        if ico:
+            self.setWindowIcon(QIcon(str(ico)))  # existing rbGyanX branding
+
+        self._build_menu()
+        self.tabs = QTabWidget()
+        self.tabs.addTab(self._build_run_tab(), "Run")
+        self.tabs.addTab(self._build_results_tab(), "Results")
+        self.setCentralWidget(self.tabs)
+        self._apply_mode()
+        self.statusBar().showMessage("Ready")
+
+    # ------------------------------------------------------------------ chrome
+
+    def _build_menu(self) -> None:
+        mode_menu = self.menuBar().addMenu("&Mode")
+        for label in (AppMode.BASIC, AppMode.ADVANCED):
+            act = QAction(f"{label.title()} mode", self, checkable=True)
+            act.setChecked(label == self.mode)
+            act.triggered.connect(lambda _=False, m=label: self.set_mode(m))
+            mode_menu.addAction(act)
+            setattr(self, f"_act_{label.lower()}", act)
+
+        help_menu = self.menuBar().addMenu("&Help")
+        about = QAction("About rbGyanX", self)
+        about.triggered.connect(self._about)
+        help_menu.addAction(about)
+
+    def _about(self) -> None:
+        QMessageBox.information(
+            self,
+            "About rbGyanX",
+            "rbGyanX — radiobiology-guided clinical decision support.\n\n"
+            "Research and education use. Not a certified medical device.\n"
+            "Patient data stays on this machine: nothing is uploaded.",
+        )
+
+    # ------------------------------------------------------------------ run tab
+
+    def _build_run_tab(self) -> QWidget:
+        page = QWidget()
+        outer = QVBoxLayout(page)
+
+        box = QGroupBox("Input")
+        form = QVBoxLayout(box)
+
+        row = QHBoxLayout()
+        self.input_edit = QLineEdit()
+        self.input_edit.setPlaceholderText("Folder of TPS DVH text exports…")
+        browse = QPushButton("Browse…")
+        browse.setProperty("variant", "secondary")
+        browse.clicked.connect(self._pick_input)
+        row.addWidget(QLabel("DVH folder:"))
+        row.addWidget(self.input_edit, 1)
+        row.addWidget(browse)
+        form.addLayout(row)
+
+        row2 = QHBoxLayout()
+        self.source_combo = QComboBox()
+        self.source_combo.addItems(["dvh_txt", "dicom"])
+        self.mode_combo = QComboBox()
+        self.mode_combo.addItems(["NTCP", "TCP", "BOTH"])
+        self.ml_check = QCheckBox("Enable ML (needs clinical CSV)")
+        row2.addWidget(QLabel("Source:"))
+        row2.addWidget(self.source_combo)
+        row2.addSpacing(16)
+        row2.addWidget(QLabel("Endpoint:"))
+        row2.addWidget(self.mode_combo)
+        row2.addSpacing(16)
+        row2.addWidget(self.ml_check)
+        row2.addStretch(1)
+        form.addLayout(row2)
+        outer.addWidget(box)
+
+        controls = QHBoxLayout()
+        self.run_btn = QPushButton("Run analysis")
+        self.run_btn.clicked.connect(self._start_run)
+        self.progress = QProgressBar()
+        self.progress.setRange(0, 100)
+        controls.addWidget(self.run_btn)
+        controls.addWidget(self.progress, 1)
+        outer.addLayout(controls)
+
+        self.log = QPlainTextEdit()
+        self.log.setReadOnly(True)
+        self.log.setPlaceholderText("Run log…")
+        outer.addWidget(self.log, 1)
+
+        self.mode_banner = QLabel()
+        self.mode_banner.setAlignment(Qt.AlignmentFlag.AlignRight)
+        outer.addWidget(self.mode_banner)
+        return page
+
+    def _build_results_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        split = QSplitter(Qt.Orientation.Vertical)
+
+        self.table = QTableWidget(0, 5)
+        self.table.setHorizontalHeaderLabels(
+            ["Structure", "Patient", "Mean dose (Gy)", "Volume (cm³)", "NTCP"]
+        )
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        split.addWidget(self.table)
+
+        self.plot_host = QWidget()
+        self.plot_layout = QVBoxLayout(self.plot_host)
+        self.plot_placeholder = QLabel("Run an analysis to see the interactive DVH.")
+        self.plot_placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.plot_placeholder.setStyleSheet(f"color: {PALETTE['muted']};")
+        self.plot_layout.addWidget(self.plot_placeholder)
+        split.addWidget(self.plot_host)
+        split.setSizes([260, 480])
+
+        layout.addWidget(split)
+        self.export_btn = QPushButton("Export interactive HTML…")
+        self.export_btn.setProperty("variant", "secondary")
+        self.export_btn.setEnabled(False)
+        self.export_btn.clicked.connect(self._export_html)
+        layout.addWidget(self.export_btn, alignment=Qt.AlignmentFlag.AlignRight)
+        return page
+
+    # ------------------------------------------------------------------- mode
+
+    def set_mode(self, mode: str) -> None:
+        self.mode = mode
+        for label in (AppMode.BASIC, AppMode.ADVANCED):
+            getattr(self, f"_act_{label.lower()}").setChecked(label == mode)
+        self._apply_mode()
+
+    def _apply_mode(self) -> None:
+        advanced = self.mode == AppMode.ADVANCED
+        self.ml_check.setVisible(advanced)
+        self.source_combo.setEnabled(advanced)  # BASIC = DVH text, the clinic-safe path
+        self.export_btn.setVisible(advanced)
+        if not advanced:
+            self.source_combo.setCurrentText("dvh_txt")
+        self.mode_banner.setText(
+            f"<b>{self.mode}</b> mode — "
+            + ("research controls enabled" if advanced else "clinic-safe defaults")
+        )
+
+    @property
+    def models(self) -> dict:
+        return ADVANCED_MODELS if self.mode == AppMode.ADVANCED else BASIC_MODELS
+
+    # -------------------------------------------------------------------- run
+
+    def _pick_input(self) -> None:
+        folder = QFileDialog.getExistingDirectory(self, "Select DVH folder")
+        if folder:
+            self.input_edit.setText(folder)
+
+    def build_request(self) -> RunRequest:
+        """Widgets -> headless request (the only place the view touches the model)."""
+        return RunRequest(
+            analysis_mode=self.mode_combo.currentText(),
+            input_path=Path(self.input_edit.text()) if self.input_edit.text() else None,
+            output_dir=Path.cwd(),
+            input_source=self.source_combo.currentText(),
+            enable_ml=self.ml_check.isChecked(),
+            basic_mode=self.mode == AppMode.BASIC,
+        )
+
+    def _start_run(self) -> None:
+        request = self.build_request()
+        validation = RunController().validate(request)
+        if not validation.ok:
+            QMessageBox.critical(self, "Validation Error", validation.message())
+            return
+
+        self.log.clear()
+        self.progress.setValue(0)
+        self.run_btn.setEnabled(False)
+        self._worker = _RunWorker(request, self.models)
+        self._worker.line.connect(self.log.appendPlainText)
+        self._worker.stage.connect(self.statusBar().showMessage)
+        self._worker.pct.connect(lambda f: self.progress.setValue(int(f * 100)))
+        self._worker.done.connect(self._on_done)
+        self._worker.start()
+
+    def _on_done(self, result: RunResult) -> None:
+        self._result = result
+        self.run_btn.setEnabled(True)
+        self.statusBar().showMessage(result.summary)
+        self.populate_results(result)
+        if result.ok:
+            self.tabs.setCurrentIndex(1)
+        else:
+            QMessageBox.warning(self, "Run failed", "\n".join(result.errors[:8]) or "Unknown error")
+
+    # ---------------------------------------------------------------- results
+
+    def populate_results(self, result: RunResult) -> None:
+        """Fill the table and render the embedded interactive DVH."""
+        self.table.setRowCount(len(result.structures))
+        for r, s in enumerate(result.structures):
+            ntcp = ", ".join(f"{k}: {v:.3f}" for k, v in s.ntcp.items() if v == v)
+            for c, text in enumerate(
+                [s.label, s.patient_id, f"{s.mean_dose_gy:.2f}", f"{s.volume_cc:.1f}", ntcp]
+            ):
+                self.table.setItem(r, c, QTableWidgetItem(text))
+        self.export_btn.setEnabled(bool(result.structures) and self.mode == AppMode.ADVANCED)
+        self._render_dvh(result)
+
+    def dvh_html(self, result: RunResult) -> str:
+        """Interactive DVH as standalone HTML (also what the export button writes)."""
+        from rbgyanx.viz import DVHCurve, DVHSpec, get_backend
+
+        curves = [
+            DVHCurve(f"{s.label} ({s.patient_id})", s.dose_gy, s.volume_pct)
+            for s in result.structures
+            if s.dose_gy and s.volume_pct
+        ]
+        if not curves:
+            return "<p>No plottable DVH curves in this run.</p>"
+        spec = DVHSpec(curves=curves[:12], title="Dose-volume histogram")
+        return get_backend("plotly").dvh(spec).to_html()
+
+    def _render_dvh(self, result: RunResult) -> None:
+        html = self.dvh_html(result)
+        try:
+            from PySide6.QtWebEngineWidgets import QWebEngineView
+        except ImportError:  # QtWebEngine unavailable -> keep the app usable
+            self.plot_placeholder.setText(
+                "QtWebEngine is not available; use “Export interactive HTML” instead."
+            )
+            return
+        while self.plot_layout.count():
+            item = self.plot_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        view = QWebEngineView()
+        view.setHtml(html)
+        self.plot_layout.addWidget(view)
+
+    def _export_html(self) -> None:
+        if not self._result:
+            return
+        path, _ = QFileDialog.getSaveFileName(self, "Export interactive DVH", "dvh.html", "*.html")
+        if path:
+            Path(path).write_text(self.dvh_html(self._result), encoding="utf-8")
+            self.statusBar().showMessage(f"Wrote {path}")
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Launch the Qt application."""
+    from PySide6.QtWidgets import QApplication
+
+    app = QApplication(argv if argv is not None else sys.argv)
+    app.setApplicationName("rbGyanX")
+    ico = icon_path()
+    if ico:
+        app.setWindowIcon(QIcon(str(ico)))
+    window = MainWindow()
+    window.show()
+    return app.exec()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
