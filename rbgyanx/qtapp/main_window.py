@@ -44,7 +44,7 @@ from PySide6.QtWidgets import (
 )
 
 from rbgyanx.qtapp.branding import PALETTE, STYLESHEET, icon_path
-from rbgyanx.qtapp.screens import WorkflowScreen
+from rbgyanx.qtapp.screens import VisualisationScreen, WorkflowScreen
 from rbgyanx.services.progress import CallbackReporter
 from rbgyanx.services.run_controller import RunController, RunResult
 from rbgyanx.services.run_request import RunRequest
@@ -110,6 +110,8 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.workflow, "Workflow")
         self.tabs.addTab(self._build_run_tab(), "Run")
         self.tabs.addTab(self._build_results_tab(), "Results")
+        self.visualisation = VisualisationScreen(self.policy)
+        self.tabs.addTab(self.visualisation, "Visualisation")
         self.setCentralWidget(self.tabs)
         self._apply_mode()
         self.statusBar().showMessage("Ready")
@@ -244,6 +246,8 @@ class MainWindow(QMainWindow):
         self.mode_banner.setText(f"<b>{policy.name}</b> mode — {policy.banner().split('— ')[-1]}")
         if hasattr(self, "workflow"):
             self.workflow.apply_policy(policy)
+        if hasattr(self, "visualisation"):
+            self.visualisation.apply_policy(policy)
 
     @property
     def models(self) -> dict:
@@ -310,6 +314,8 @@ class MainWindow(QMainWindow):
             bool(result.structures) and self.policy.allows(UiFeature.INTERACTIVE_EXPORT)
         )
         self._render_dvh(result)
+        if hasattr(self, "visualisation"):
+            self.visualisation.set_result(result)
 
     def dvh_html(self, result: RunResult) -> str:
         """Interactive DVH as standalone HTML (also what the export button writes)."""

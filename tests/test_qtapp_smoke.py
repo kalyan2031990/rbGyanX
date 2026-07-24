@@ -59,7 +59,7 @@ def window(qapp):
 def test_window_constructs_with_branding(window):
     assert window.windowTitle().startswith("rbGyanX")
     tabs = [window.tabs.tabText(i) for i in range(window.tabs.count())]
-    assert tabs == ["Workflow", "Run", "Results"]
+    assert tabs[:3] == ["Workflow", "Run", "Results"]
     # The existing rbGyanX icon is reused, not replaced.
     from rbgyanx.qtapp.branding import icon_path
 
@@ -182,7 +182,7 @@ def test_window_writes_nothing_on_run(window, run_result, tmp_path, monkeypatch)
 
 def test_workflow_tab_is_present(window):
     assert window.tabs.tabText(0) == "Workflow"
-    assert window.tabs.count() == 3
+    assert window.tabs.count() >= 3
 
 
 def test_workflow_lists_every_pipeline_step(window):
@@ -239,3 +239,75 @@ def test_workflow_respects_central_policy(window):
     assert window.workflow.source_combo.isEnabled()
     assert window.workflow.policy.is_advanced
     assert window.models == UiPolicy.advanced().models()
+
+
+# ---------------------------------------------- Visualisation screen (Slice 6)
+
+
+def test_visualisation_tab_present(window):
+    tabs = [window.tabs.tabText(i) for i in range(window.tabs.count())]
+    assert tabs == ["Workflow", "Run", "Results", "Visualisation"]
+
+
+def test_visualisation_views_are_policy_gated(window):
+    from rbgyanx.services.ui_policy import UiFeature, UiPolicy
+
+    window.set_mode(AppMode.BASIC)
+    basic_views = set(window.visualisation.available_views)
+    window.set_mode(AppMode.ADVANCED)
+    adv_views = set(window.visualisation.available_views)
+
+    assert basic_views <= adv_views
+    # Sankey and cohort flow are explanatory -> available to the clinic too.
+    assert {"sankey", "cohort_flow"} <= basic_views
+    assert UiPolicy.basic().allows(UiFeature.SANKEY_VIEW)
+
+
+def test_visualisation_placeholder_before_a_run(window):
+    assert window.visualisation._result is None
+    assert "Run an analysis" in window.visualisation.placeholder.text()
+
+
+def test_visualisation_builds_specs_from_a_real_run(window, run_result):
+    vis = window.visualisation
+    vis.set_result(run_result)
+
+    dvh = vis.build_spec("dvh")
+    assert dvh is not None and dvh.curves
+
+    sankey = vis.build_spec("sankey")
+    assert sankey is not None
+    assert sankey.nodes[0].label == "Delivered dose"
+    assert sankey.nodes[-1].label.startswith("Uncomplicated control")
+
+    flow = vis.build_spec("cohort_flow")
+    assert flow is not None
+    assert flow.stages[0].n == run_result.n_files
+
+
+def test_sankey_flow_never_exceeds_what_entered(window, run_result):
+    """P+ inflow must be <= OAR inflow: complications can only subtract."""
+    vis = window.visualisation
+    vis.set_result(run_result)
+    spec = vis.build_spec("sankey")
+    p_index = len(spec.nodes) - 1
+    into_oars = sum(link.value for link in spec.links if link.source == 0)
+    into_pplus = sum(link.value for link in spec.links if link.target == p_index)
+    assert into_pplus <= into_oars + 1e-9
+
+
+def test_visualisation_renders_interactive_html(window, run_result):
+    vis = window.visualisation
+    vis.set_result(run_result)
+    for key in vis.available_views:
+        idx = vis.view_combo.findData(key)
+        vis.view_combo.setCurrentIndex(idx)
+        html = vis.current_html()
+        assert len(html) > 500, f"{key} produced no figure"
+
+
+def test_visualisation_writes_nothing_without_export(window, run_result, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    window.visualisation.set_result(run_result)
+    window.visualisation.render_current()
+    assert not list(tmp_path.iterdir())
