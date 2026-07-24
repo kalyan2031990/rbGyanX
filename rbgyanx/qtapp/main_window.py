@@ -44,26 +44,17 @@ from PySide6.QtWidgets import (
 )
 
 from rbgyanx.qtapp.branding import PALETTE, STYLESHEET, icon_path
+from rbgyanx.qtapp.screens import WorkflowScreen
 from rbgyanx.services.progress import CallbackReporter
 from rbgyanx.services.run_controller import RunController, RunResult
 from rbgyanx.services.run_request import RunRequest
+from rbgyanx.services.ui_policy import UiFeature, UiPolicy
 
 __all__ = ["MainWindow", "AppMode"]
 
 APP_TITLE = "rbGyanX — radiobiology clinical decision support"
 
-#: NTCP models offered per mode. BASIC keeps the clinic to one well-understood model.
-BASIC_MODELS = {
-    "LKB probit": {"model": "lkb_probit", "params": {"TD50_gy": 39.9, "m": 0.40}},
-}
-ADVANCED_MODELS = {
-    **BASIC_MODELS,
-    "LKB log-logistic": {"model": "lkb_loglogit", "params": {"TD50_gy": 28.4, "gamma50": 0.6}},
-    "Relative seriality": {
-        "model": "rs_poisson",
-        "params": {"D50_gy": 28.4, "gamma": 1.0, "s": 0.25},
-    },
-}
+# NTCP model sets and feature gating live in rbgyanx.services.ui_policy (single authority).
 
 
 class AppMode:
@@ -101,6 +92,7 @@ class MainWindow(QMainWindow):
     def __init__(self, mode: str = AppMode.BASIC) -> None:
         super().__init__()
         self.mode = mode
+        self.policy = UiPolicy.from_name(mode)
         self._result: RunResult | None = None
         self._worker: _RunWorker | None = None
 
@@ -113,6 +105,9 @@ class MainWindow(QMainWindow):
 
         self._build_menu()
         self.tabs = QTabWidget()
+        self.workflow = WorkflowScreen(self.policy)
+        self.workflow.run_requested.connect(self._start_run)
+        self.tabs.addTab(self.workflow, "Workflow")
         self.tabs.addTab(self._build_run_tab(), "Run")
         self.tabs.addTab(self._build_results_tab(), "Results")
         self.setCentralWidget(self.tabs)
@@ -233,25 +228,27 @@ class MainWindow(QMainWindow):
 
     def set_mode(self, mode: str) -> None:
         self.mode = mode
+        self.policy = UiPolicy.from_name(mode)
         for label in (AppMode.BASIC, AppMode.ADVANCED):
             getattr(self, f"_act_{label.lower()}").setChecked(label == mode)
         self._apply_mode()
 
     def _apply_mode(self) -> None:
-        advanced = self.mode == AppMode.ADVANCED
-        self.ml_check.setVisible(advanced)
-        self.source_combo.setEnabled(advanced)  # BASIC = DVH text, the clinic-safe path
-        self.export_btn.setVisible(advanced)
-        if not advanced:
+        """Apply the CENTRAL policy to every surface; no local mode logic here."""
+        policy = self.policy
+        self.ml_check.setVisible(policy.allows(UiFeature.ML_TOGGLE))
+        self.source_combo.setEnabled(policy.allows(UiFeature.INPUT_SOURCE_CHOICE))
+        self.export_btn.setVisible(policy.allows(UiFeature.INTERACTIVE_EXPORT))
+        if not policy.allows(UiFeature.INPUT_SOURCE_CHOICE):
             self.source_combo.setCurrentText("dvh_txt")
-        self.mode_banner.setText(
-            f"<b>{self.mode}</b> mode — "
-            + ("research controls enabled" if advanced else "clinic-safe defaults")
-        )
+        self.mode_banner.setText(f"<b>{policy.name}</b> mode — {policy.banner().split('— ')[-1]}")
+        if hasattr(self, "workflow"):
+            self.workflow.apply_policy(policy)
 
     @property
     def models(self) -> dict:
-        return ADVANCED_MODELS if self.mode == AppMode.ADVANCED else BASIC_MODELS
+        """NTCP model set for the active mode (from the central policy)."""
+        return self.policy.models()
 
     # -------------------------------------------------------------------- run
 
@@ -309,7 +306,9 @@ class MainWindow(QMainWindow):
                 [s.label, s.patient_id, f"{s.mean_dose_gy:.2f}", f"{s.volume_cc:.1f}", ntcp]
             ):
                 self.table.setItem(r, c, QTableWidgetItem(text))
-        self.export_btn.setEnabled(bool(result.structures) and self.mode == AppMode.ADVANCED)
+        self.export_btn.setEnabled(
+            bool(result.structures) and self.policy.allows(UiFeature.INTERACTIVE_EXPORT)
+        )
         self._render_dvh(result)
 
     def dvh_html(self, result: RunResult) -> str:

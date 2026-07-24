@@ -25,13 +25,15 @@ if not is_available():  # pragma: no cover - environment dependent
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from rbgyanx.qtapp.main_window import (  # noqa: E402 - must follow the platform setting
-    ADVANCED_MODELS,
-    BASIC_MODELS,
     AppMode,
     MainWindow,
 )
 from rbgyanx.services.run_controller import RunController  # noqa: E402
 from rbgyanx.services.run_request import RunRequest  # noqa: E402
+from rbgyanx.services.ui_policy import (  # noqa: E402
+    ADVANCED_MODELS,
+    BASIC_MODELS,
+)
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples" / "data" / "dvh_txt"
 
@@ -56,9 +58,8 @@ def window(qapp):
 
 def test_window_constructs_with_branding(window):
     assert window.windowTitle().startswith("rbGyanX")
-    assert window.tabs.count() == 2
-    assert window.tabs.tabText(0) == "Run"
-    assert window.tabs.tabText(1) == "Results"
+    tabs = [window.tabs.tabText(i) for i in range(window.tabs.count())]
+    assert tabs == ["Workflow", "Run", "Results"]
     # The existing rbGyanX icon is reused, not replaced.
     from rbgyanx.qtapp.branding import icon_path
 
@@ -174,3 +175,67 @@ def test_window_writes_nothing_on_run(window, run_result, tmp_path, monkeypatch)
     monkeypatch.chdir(tmp_path)
     window.populate_results(run_result)
     assert not list(tmp_path.iterdir()), "the results view wrote files without being asked"
+
+
+# --------------------------------------------------- Workflow screen (Slice 4)
+
+
+def test_workflow_tab_is_present(window):
+    assert window.tabs.tabText(0) == "Workflow"
+    assert window.tabs.count() == 3
+
+
+def test_workflow_lists_every_pipeline_step(window):
+    from rbgyanx.qtapp.screens.workflow import STEPS
+
+    assert len(STEPS) == 7  # 6 numbered steps, TCP and NTCP split at step 3
+    for _label, attr in STEPS:
+        assert attr in window.workflow._step_labels
+
+
+def test_workflow_step_status_tracks_shared_pipeline_state(window):
+    wf = window.workflow
+    wf.state.step1_complete = True
+    wf.refresh_status()
+    assert wf._step_labels["step1_complete"].text() == "complete"
+    assert wf._step_labels["step2_complete"].text() == "not started"
+
+
+def test_step6_is_blocked_until_both_arms_complete(window):
+    """Mirrors PipelineExecutionState.can_run_step6 — the same rule the Tkinter app uses."""
+    wf = window.workflow
+    wf.state.reset()
+    wf.refresh_status()
+    assert "blocked" in wf._step_labels["step6_complete"].text()
+
+    wf.state.tcp_step3_complete = True
+    wf.state.ntcp_step3_complete = True
+    wf.refresh_status()
+    assert wf._step_labels["step6_complete"].text() == "not started"
+
+
+def test_workflow_values_convert_to_request_kwargs(window, tmp_path):
+    wf = window.workflow
+    wf.input_edit.setText(str(EXAMPLES))
+    wf.output_edit.setText(str(tmp_path))
+    wf.mode_combo.setCurrentText("BOTH")
+    kwargs = wf.to_request_kwargs()
+    assert kwargs["analysis_mode"] == "BOTH"
+    assert Path(kwargs["input_path"]) == EXAMPLES
+    # Plain data only: no Qt objects leak into the headless layer.
+    assert all(not type(v).__module__.startswith("PySide6") for v in kwargs.values())
+    RunRequest(**kwargs)  # must be constructible
+
+
+def test_workflow_respects_central_policy(window):
+    from rbgyanx.services.ui_policy import UiPolicy
+
+    window.set_mode(AppMode.BASIC)
+    assert not window.workflow.ml_check.isVisible()
+    assert not window.workflow.source_combo.isEnabled()
+    assert window.workflow.source_combo.currentText() == "dvh_txt"
+
+    window.set_mode(AppMode.ADVANCED)
+    assert window.workflow.source_combo.isEnabled()
+    assert window.workflow.policy.is_advanced
+    assert window.models == UiPolicy.advanced().models()
