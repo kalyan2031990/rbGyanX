@@ -167,6 +167,19 @@ def test_qtwebengine_is_available_for_embedding():
     pytest.importorskip("PySide6.QtWebEngineWidgets")
 
 
+def test_selftest_renders_plotly_in_a_live_webengine(qapp):
+    """Drives the same headless path the packaged exe runs (RBGYANX_QT_SELFTEST=1):
+
+    a real run -> interactive DVH -> loaded into a live QWebEngineView -> the rendered DOM is
+    queried for a Plotly graph. Returns 0 only when the plot actually drew, so this guards the
+    blank-plot packaging bug at the source level too.
+    """
+    pytest.importorskip("PySide6.QtWebEngineWidgets")
+    from rbgyanx.qtapp.main_window import _selftest
+
+    assert _selftest() == 0
+
+
 # ------------------------------------------------------------------------ PHI
 
 

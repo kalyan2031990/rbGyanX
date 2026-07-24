@@ -46,7 +46,7 @@ from PySide6.QtWidgets import (
 from rbgyanx.qtapp.branding import PALETTE, STYLESHEET, icon_path
 from rbgyanx.qtapp.screens import VisualisationScreen, WorkflowScreen
 from rbgyanx.services.progress import CallbackReporter
-from rbgyanx.services.run_controller import RunController, RunResult
+from rbgyanx.services.run_controller import RunController, RunResult, StructureResult
 from rbgyanx.services.run_request import RunRequest
 from rbgyanx.services.ui_policy import UiFeature, UiPolicy
 
@@ -357,8 +357,73 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(f"Wrote {path}")
 
 
+def _selftest() -> int:
+    """Headless end-to-end check of the packaged QtWebEngine stack.
+
+    Builds a real interactive Plotly DVH and loads it into a live ``QWebEngineView``, then asks
+    the rendered page (via JavaScript, in the QtWebEngine renderer process) whether a Plotly
+    graph actually drew. This is the check that proves a *packaged* build ships a working
+    QtWebEngine — the blank-plot class of bug only shows up once the helper process and ``.pak``
+    resources have to be found on disk. Prints ``SELFTEST OK``/``SELFTEST FAIL`` and returns a
+    process exit code; run it from the frozen exe with ``RBGYANX_QT_SELFTEST=1``.
+    """
+    from PySide6.QtCore import QTimer
+    from PySide6.QtWebEngineWidgets import QWebEngineView
+    from PySide6.QtWidgets import QApplication
+
+    app = QApplication.instance() or QApplication(sys.argv)
+    window = MainWindow()
+
+    # Self-contained synthetic DVH -> a real interactive Plotly page. Deliberately does NOT read
+    # any bundled data file: the check must prove the *rendering* stack, not data packaging.
+    result = RunResult(
+        ok=True,
+        n_files=1,
+        structures=[
+            StructureResult(
+                label="Parotid_L (selftest)",
+                patient_id="SELFTEST",
+                dose_gy=[float(d) for d in range(0, 71, 5)],
+                volume_pct=[max(0.0, 100.0 - d * 1.4) for d in range(0, 71, 5)],
+                mean_dose_gy=26.0,
+            )
+        ],
+    )
+    html = window.dvh_html(result)
+
+    state: dict[str, object] = {"loaded": False, "plotly_nodes": -1}
+    view = QWebEngineView()
+
+    def _on_load(ok: bool) -> None:
+        state["loaded"] = ok
+        # Count Plotly's SVG containers in the live DOM — >0 means the plot really rendered.
+        view.page().runJavaScript(
+            "document.querySelectorAll('.plotly, .plot-container').length",
+            lambda n: (state.update(plotly_nodes=n), app.quit()),
+        )
+
+    view.loadFinished.connect(_on_load)
+    view.setHtml(html)
+    QTimer.singleShot(20000, app.quit)  # never hang the build machine
+    app.exec()
+
+    nodes = state["plotly_nodes"]  # QtWebEngine returns JS numbers as float
+    ok = bool(state["loaded"]) and isinstance(nodes, (int, float)) and nodes > 0
+    print(
+        f"SELFTEST {'OK' if ok else 'FAIL'} "
+        f"(loaded={state['loaded']}, plotly_nodes={state['plotly_nodes']}, "
+        f"structures={len(result.structures)}, html_bytes={len(html)})"
+    )
+    return 0 if ok else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     """Launch the Qt application."""
+    import os
+
+    if os.environ.get("RBGYANX_QT_SELFTEST") == "1":
+        return _selftest()
+
     from PySide6.QtWidgets import QApplication
 
     app = QApplication(argv if argv is not None else sys.argv)

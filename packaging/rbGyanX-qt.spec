@@ -80,7 +80,36 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=["tkinter", "tensorflow", "torch"],  # Qt build does not need the Tk stack
+    # The Qt run path is: DVH parse -> engine LKB/RS NTCP -> RandomForest -> Plotly/Matplotlib.
+    # Everything below is an OPTIONAL research/ML extra or a Tk-only dependency, none of which
+    # the Qt app imports. Excluding them keeps the analysis tractable (the first attempt scanned
+    # the full skimage/sympy/ML graph and was killed after 18 min) and the installer small.
+    excludes=[
+        "tkinter",
+        "tensorflow",
+        "torch",
+        "xgboost",
+        "lightgbm",
+        "shap",
+        "lime",
+        # NOTE: lifelines (cox_regression.py, top-level) and skimage (via dicompylercore,
+        # needed for DICOM DVH extraction) are genuine engine imports — do NOT exclude them.
+        "sympy",
+        "numba",
+        "llvmlite",
+        "statsmodels",
+        "seaborn",
+        "pymc",
+        "arviz",
+        "bokeh",
+        "cv2",
+        "IPython",
+        "notebook",
+        "sphinx",
+        "pytest",
+        "PyQt5",
+        "PyQt6",
+    ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
