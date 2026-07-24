@@ -80,23 +80,27 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    # The Qt run path is: DVH parse -> engine LKB/RS NTCP -> RandomForest -> Plotly/Matplotlib.
-    # Everything below is an OPTIONAL research/ML extra or a Tk-only dependency, none of which
-    # the Qt app imports. Excluding them keeps the analysis tractable (the first attempt scanned
-    # the full skimage/sympy/ML graph and was killed after 18 min) and the installer small.
+    # The Qt run path is: DVH parse -> engine LKB/RS NTCP -> RandomForest -> Plotly/Matplotlib,
+    # plus the ADVANCED xAI view (SHAP over the RandomForest TCP model). Everything below is an
+    # OPTIONAL research/ML extra or a Tk-only dependency the Qt app never imports. Excluding them
+    # keeps the analysis tractable (the first attempt scanned the full sympy/ML graph and was
+    # killed after 18 min) and the installer small.
+    #
+    # shap is deliberately NOT excluded: the SHAP/xAI view ships in the packaged app (verified by
+    # the frozen-exe self-test). This shap version imports numba unconditionally, so numba +
+    # llvmlite must ship too — a frozen build that excluded them raised ModuleNotFoundError:
+    # 'numba' the moment TreeExplainer ran. They are NOT in the excludes list below.
     excludes=[
         "tkinter",
         "tensorflow",
         "torch",
         "xgboost",
         "lightgbm",
-        "shap",
         "lime",
         # NOTE: lifelines (cox_regression.py, top-level) and skimage (via dicompylercore,
         # needed for DICOM DVH extraction) are genuine engine imports — do NOT exclude them.
+        # numba + llvmlite are also kept in: shap needs numba at import/compute time.
         "sympy",
-        "numba",
-        "llvmlite",
         "statsmodels",
         "seaborn",
         "pymc",

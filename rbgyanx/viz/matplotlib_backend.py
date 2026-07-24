@@ -206,3 +206,22 @@ class MatplotlibBackend(VizBackend):
         ax.grid(axis="x", alpha=0.3, lw=0.5)
         fig.tight_layout()
         return RenderedFigure(fig, self.name)
+
+    def shap(self, spec) -> RenderedFigure:
+        """Publication mean-|SHAP| bar; colour encodes the average push direction."""
+        fig, ax = self._new()
+        feats = spec.sorted_features()
+        names = [f.name for f in feats]
+        vals = [f.mean_abs_shap for f in feats]
+        colours = [PALETTE[1] if f.mean_signed_shap >= 0 else PALETTE[0] for f in feats]
+        y = np.arange(len(feats))
+        ax.barh(y, vals, color=colours)
+        ax.set_yticks(y)
+        ax.set_yticklabels(names, fontsize=8)
+        ax.invert_yaxis()  # most important on top
+        ax.set_xlabel(spec.x_label, fontsize=9)
+        title = spec.title + (f"  (n={spec.n_samples})" if spec.n_samples else "")
+        ax.set_title(title, fontsize=10)
+        ax.grid(axis="x", alpha=0.3, lw=0.5)
+        fig.tight_layout()
+        return RenderedFigure(fig, self.name)

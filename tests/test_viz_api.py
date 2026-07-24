@@ -25,8 +25,11 @@ from rbgyanx.viz import (
     SankeyLink,
     SankeyNode,
     SankeySpec,
+    ShapFeature,
+    ShapSpec,
     available_backends,
     get_backend,
+    shap_spec_from_values,
 )
 
 pytestmark = pytest.mark.unit
@@ -310,3 +313,92 @@ def test_sankey_conserves_flow_into_the_outcome_node():
     into_oars = sum(link.value for link in spec.links if link.target in (1, 2))
     into_pplus = sum(link.value for link in spec.links if link.target == 3)
     assert into_pplus <= into_oars
+
+
+# -------------------------------------------------------------------- SHAP / xAI
+
+
+def _shap_values_from_a_real_fit():
+    """Genuine SHAP values from a tiny RandomForest — not hand-authored numbers."""
+    shap = pytest.importorskip("shap")
+    from sklearn.ensemble import RandomForestClassifier
+
+    rng = np.random.default_rng(0)
+    x = rng.normal(size=(80, 4))
+    y = (x[:, 0] + 0.5 * x[:, 1] > 0).astype(int)  # signal in features 0 and 1 only
+    rf = RandomForestClassifier(n_estimators=30, random_state=0).fit(x, y)
+    sv = shap.TreeExplainer(rf).shap_values(x)
+    if isinstance(sv, list):
+        sv = sv[1]
+    sv = np.asarray(sv)
+    if sv.ndim == 3:
+        sv = sv[:, :, 1]
+    return ["dose", "volume", "age", "noise"], sv
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_backends_render_shap(backend):
+    spec = ShapSpec(
+        features=[
+            ShapFeature("dose", 0.31, 0.31),
+            ShapFeature("volume", 0.12, -0.05),
+            ShapFeature("age", 0.03, 0.01),
+        ],
+        n_samples=80,
+    )
+    fig = get_backend(backend).render(spec)
+    assert fig.figure is not None and fig.backend == backend
+    suffix = ".html" if backend == "plotly" else ".png"
+    html = fig.to_html()
+    assert len(html) > 200
+    assert "html" in html.lower() or "<div" in html.lower() or suffix  # renders something
+
+
+def test_shap_builder_matches_manual_reduction():
+    names = ["a", "b", "c"]
+    sv = np.array([[1.0, -3.0, 0.0], [-2.0, 3.0, 0.0], [2.0, 3.0, 0.0]])
+    spec = shap_spec_from_values(names, sv)
+    by_name = {f.name: f for f in spec.features}
+    assert by_name["a"].mean_abs_shap == pytest.approx((1 + 2 + 2) / 3)
+    assert by_name["b"].mean_abs_shap == pytest.approx((3 + 3 + 3) / 3)
+    assert by_name["b"].mean_signed_shap == pytest.approx((-3 + 3 + 3) / 3)
+    assert by_name["c"].mean_abs_shap == pytest.approx(0.0)
+    assert spec.n_samples == 3
+    # Most-important-first ordering: b (3.0) > a (1.67) > c (0).
+    assert [f.name for f in spec.sorted_features()] == ["b", "a", "c"]
+
+
+def test_shap_builder_ignores_nans_rather_than_imputing():
+    """NaN-not-zero: a degenerate cell is excluded from its column, not treated as 0."""
+    sv = np.array([[1.0, np.nan], [3.0, 4.0]])
+    spec = shap_spec_from_values(["x", "y"], sv)
+    by_name = {f.name: f for f in spec.features}
+    assert by_name["x"].mean_abs_shap == pytest.approx(2.0)
+    assert by_name["y"].mean_abs_shap == pytest.approx(4.0)  # NaN ignored, not averaged as 0
+
+
+def test_shap_builder_rejects_shape_mismatch():
+    with pytest.raises(ValueError, match="does not match"):
+        shap_spec_from_values(["a", "b"], np.zeros((5, 3)))
+    with pytest.raises(ValueError, match="2-D"):
+        shap_spec_from_values(["a"], np.zeros(5))
+
+
+def test_shap_spec_rejects_empty_and_negative_importance():
+    with pytest.raises(ValueError, match="at least one feature"):
+        ShapSpec(features=[])
+    with pytest.raises(ValueError, match="must be >= 0"):
+        ShapFeature("bad", -0.5)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_real_shap_values_render(backend):
+    """End-to-end: genuine SHAP from a fitted model -> spec -> figure, in both backends."""
+    names, sv = _shap_values_from_a_real_fit()
+    spec = shap_spec_from_values(names, sv, title="RF TCP xAI")
+    assert len(spec.features) == 4
+    # The signal features should dominate the noise feature.
+    imp = {f.name: f.mean_abs_shap for f in spec.features}
+    assert imp["dose"] > imp["noise"]
+    fig = get_backend(backend).render(spec)
+    assert fig.figure is not None

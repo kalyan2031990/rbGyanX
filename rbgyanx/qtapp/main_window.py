@@ -409,12 +409,44 @@ def _selftest() -> int:
 
     nodes = state["plotly_nodes"]  # QtWebEngine returns JS numbers as float
     ok = bool(state["loaded"]) and isinstance(nodes, (int, float)) and nodes > 0
+
+    # The bundled SHAP/xAI path: fit a tiny RandomForest, get real SHAP values, render a bar.
+    # Proves shap is actually shipped and computes inside the frozen exe (not just importable).
+    shap_ok, shap_note = _selftest_shap()
+    ok = ok and shap_ok
+
     print(
         f"SELFTEST {'OK' if ok else 'FAIL'} "
         f"(loaded={state['loaded']}, plotly_nodes={state['plotly_nodes']}, "
-        f"structures={len(result.structures)}, html_bytes={len(html)})"
+        f"structures={len(result.structures)}, html_bytes={len(html)}, shap={shap_note})"
     )
     return 0 if ok else 1
+
+
+def _selftest_shap() -> tuple[bool, str]:
+    """Fit a small RandomForest, compute genuine SHAP values, render the xAI bar. Returns (ok, note)."""
+    try:
+        import numpy as np
+        import shap
+        from sklearn.ensemble import RandomForestClassifier
+
+        from rbgyanx.viz import get_backend, shap_spec_from_values
+
+        rng = np.random.default_rng(0)
+        x = rng.normal(size=(60, 4))
+        y = (x[:, 0] + 0.5 * x[:, 1] > 0).astype(int)  # signal in features 0 and 1
+        rf = RandomForestClassifier(n_estimators=25, random_state=0).fit(x, y)
+        sv = shap.TreeExplainer(rf).shap_values(x)
+        if isinstance(sv, list):
+            sv = sv[1]
+        sv = np.asarray(sv)
+        if sv.ndim == 3:  # some shap versions return (samples, features, classes)
+            sv = sv[:, :, 1]
+        spec = shap_spec_from_values(["dose", "volume", "age", "noise"], sv)
+        html = get_backend("plotly").render(spec).to_html()
+        return (len(html) > 500 and len(spec.features) == 4), "rendered"
+    except Exception as exc:  # bundled-shap failure must be visible, not fatal to the whole test
+        return False, f"FAILED:{type(exc).__name__}:{exc}"
 
 
 def main(argv: list[str] | None = None) -> int:

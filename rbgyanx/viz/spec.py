@@ -28,6 +28,9 @@ __all__ = [
     "SankeySpec",
     "FlowStage",
     "CohortFlowSpec",
+    "ShapFeature",
+    "ShapSpec",
+    "shap_spec_from_values",
 ]
 
 
@@ -221,3 +224,82 @@ class CohortFlowSpec:
                     f"cohort grew from '{a.label}' ({a.n}) to '{b.label}' ({b.n}); "
                     "a flow diagram must be monotone non-increasing"
                 )
+
+
+@dataclass
+class ShapFeature:
+    """One predictor's global SHAP attribution for an ML model.
+
+    ``mean_abs_shap`` is the mean absolute SHAP value across samples (global importance, always
+    >= 0). ``mean_signed_shap`` is the mean signed value: its sign says which way the feature
+    pushes the model output on average (e.g. higher dose -> higher predicted complication). It is
+    shown as direction only, never as a causal claim.
+    """
+
+    name: str
+    mean_abs_shap: float
+    mean_signed_shap: float = 0.0
+
+    def __post_init__(self) -> None:
+        if self.mean_abs_shap < -1e-12:
+            raise ValueError(f"SHAP feature '{self.name}': mean_abs_shap must be >= 0")
+
+
+@dataclass
+class ShapSpec:
+    """Global feature-attribution panel (mean |SHAP|) for a trained ML model.
+
+    This is an *explanation of a model*, not of the patient: it reports how much each input moved
+    the model's output on the data it was fitted to. It only exists when a model was actually
+    trained — the app never fabricates SHAP values from a run that had no outcomes.
+    """
+
+    features: list[ShapFeature]
+    title: str = "Feature attribution (mean |SHAP|)"
+    x_label: str = "Mean |SHAP| (impact on model output)"
+    base_value: float | None = None
+    n_samples: int | None = None
+
+    def __post_init__(self) -> None:
+        if not self.features:
+            raise ValueError("ShapSpec needs at least one feature")
+
+    def sorted_features(self) -> list[ShapFeature]:
+        """Features from most to least important — the canonical SHAP ordering."""
+        return sorted(self.features, key=lambda f: f.mean_abs_shap, reverse=True)
+
+
+def shap_spec_from_values(
+    feature_names: Sequence[str],
+    shap_values,
+    *,
+    base_value: float | None = None,
+    title: str = "Feature attribution (mean |SHAP|)",
+) -> ShapSpec:
+    """Build a :class:`ShapSpec` from a model's raw SHAP values.
+
+    ``shap_values`` is a ``(n_samples, n_features)`` array (the per-sample attributions a SHAP
+    explainer returns). Each feature's global importance is ``mean(|shap|)`` over samples and its
+    direction is ``mean(shap)``. NaNs are ignored per column (exclude-and-count, never impute), so
+    a degenerate column does not poison the whole panel.
+    """
+    sv = np.asarray(shap_values, dtype=float)
+    if sv.ndim != 2:
+        raise ValueError(f"shap_values must be 2-D (samples x features); got shape {sv.shape}")
+    if sv.shape[1] != len(feature_names):
+        raise ValueError(
+            f"feature_names ({len(feature_names)}) does not match shap_values columns "
+            f"({sv.shape[1]})"
+        )
+    with np.errstate(invalid="ignore"):
+        mean_abs = np.nanmean(np.abs(sv), axis=0)
+        mean_signed = np.nanmean(sv, axis=0)
+    features = [
+        ShapFeature(
+            name=str(name),
+            mean_abs_shap=float(a) if np.isfinite(a) else 0.0,
+            mean_signed_shap=float(s) if np.isfinite(s) else 0.0,
+        )
+        for name, a, s in zip(feature_names, mean_abs, mean_signed, strict=True)
+    ]
+    return ShapSpec(features=features, title=title, base_value=base_value, n_samples=int(sv.shape[0]))

@@ -40,6 +40,7 @@ from rbgyanx.viz import (
     SankeyNode,
     SankeySpec,
     get_backend,
+    shap_spec_from_values,
 )
 
 __all__ = ["VisualisationScreen", "VIEWS"]
@@ -50,6 +51,7 @@ VIEWS: list[tuple[str, str, str | None]] = [
     ("sankey", "Dose → NTCP → P+", UiFeature.SANKEY_VIEW),
     ("cohort_flow", "Cohort flow", UiFeature.COHORT_FLOW_VIEW),
     ("optimism", "Apparent vs CV", None),
+    ("shap", "SHAP / xAI", UiFeature.SHAP_VIEW),
 ]
 
 
@@ -60,6 +62,7 @@ class VisualisationScreen(QWidget):
         super().__init__(parent)
         self.policy = policy or UiPolicy.basic()
         self._result = None
+        self._ml_result = None  # a trained-model result (feature_names + shap_values), if any
         self._web = None
 
         root = QVBoxLayout(self)
@@ -112,8 +115,23 @@ class VisualisationScreen(QWidget):
         self._result = result
         self.render_current()
 
+    def set_ml_result(self, ml_result) -> None:
+        """Attach a trained-model result so the SHAP view can populate.
+
+        Expects an object exposing ``feature_names`` and ``shap_values`` (e.g. the engine's
+        ``RandomForestTCPResult``). Until one is provided, the SHAP view shows an honest
+        placeholder rather than fabricated attributions.
+        """
+        self._ml_result = ml_result
+        self.render_current()
+
     def build_spec(self, key: str):
         """Spec for one view, or None when the run cannot support it."""
+        if key == "shap":
+            # SHAP depends on a trained model, not on the DVH run. It is deliberately the only
+            # view that renders without a run result — and never fabricates values.
+            return self._shap_from_ml_result()
+
         result = self._result
         if result is None:
             return None
@@ -163,6 +181,25 @@ class VisualisationScreen(QWidget):
             )
         return None
 
+    def _shap_from_ml_result(self):
+        """Global mean-|SHAP| spec from an attached trained model, or None if none/unusable."""
+        ml = self._ml_result
+        if ml is None:
+            return None
+        names = getattr(ml, "feature_names", None)
+        values = getattr(ml, "shap_values", None)
+        if not names or values is None:
+            return None
+        try:
+            return shap_spec_from_values(
+                names,
+                values,
+                base_value=getattr(ml, "shap_expected_value", None),
+                title="Feature attribution (mean |SHAP|) — Random Forest TCP",
+            )
+        except (ValueError, TypeError):
+            return None
+
     @staticmethod
     def _sankey_from_result(result):
         """dose → per-OAR NTCP → P+, using the run's own NTCP values."""
@@ -192,11 +229,16 @@ class VisualisationScreen(QWidget):
         key = self.view_combo.currentData()
         spec = self.build_spec(key) if key else None
         if spec is None:
-            self._show_placeholder(
-                "Run an analysis to populate the visualisations."
-                if self._result is None
-                else "This view is not available for the current run."
-            )
+            if key == "shap":
+                message = (
+                    "SHAP explains a trained ML model. Train an ML/TCP model (ADVANCED, with "
+                    "outcomes) to populate — no attributions are fabricated from a DVH-only run."
+                )
+            elif self._result is None:
+                message = "Run an analysis to populate the visualisations."
+            else:
+                message = "This view is not available for the current run."
+            self._show_placeholder(message)
             return
         try:
             html = get_backend("plotly").render(spec).to_html()

@@ -28,6 +28,9 @@ from rbgyanx.viz.spec import (
     SankeyLink,
     SankeyNode,
     SankeySpec,
+    ShapFeature,
+    ShapSpec,
+    shap_spec_from_values,
 )
 
 __all__ = [
@@ -46,6 +49,9 @@ __all__ = [
     "SankeySpec",
     "FlowStage",
     "CohortFlowSpec",
+    "ShapFeature",
+    "ShapSpec",
+    "shap_spec_from_values",
 ]
 
 #: name -> "why you'd pick it"

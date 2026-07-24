@@ -23,6 +23,7 @@ from rbgyanx.viz.spec import (
     DVHSpec,
     OptimismSpec,
     SankeySpec,
+    ShapSpec,
 )
 
 __all__ = ["VizBackend", "RenderedFigure"]
@@ -101,9 +102,13 @@ class VizBackend(ABC):
     def cohort_flow(self, spec: CohortFlowSpec) -> RenderedFigure:
         """PRISMA-style inclusion flow with exclusion reasons."""
 
+    @abstractmethod
+    def shap(self, spec: ShapSpec) -> RenderedFigure:
+        """Global feature attribution (mean |SHAP|) for a trained ML model."""
+
     def render(
         self,
-        spec: DVHSpec | DoseResponseSpec | OptimismSpec | SankeySpec | CohortFlowSpec,
+        spec: DVHSpec | DoseResponseSpec | OptimismSpec | SankeySpec | CohortFlowSpec | ShapSpec,
     ) -> RenderedFigure:
         """Dispatch on spec type, so callers can stay generic."""
         if isinstance(spec, DVHSpec):
@@ -116,4 +121,6 @@ class VizBackend(ABC):
             return self.sankey(spec)
         if isinstance(spec, CohortFlowSpec):
             return self.cohort_flow(spec)
+        if isinstance(spec, ShapSpec):
+            return self.shap(spec)
         raise TypeError(f"unsupported spec type: {type(spec).__name__}")

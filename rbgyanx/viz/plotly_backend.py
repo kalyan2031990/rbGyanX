@@ -225,3 +225,42 @@ class PlotlyBackend(VizBackend):
             yaxis=dict(autorange="reversed"),
         )
         return RenderedFigure(fig, self.name)
+
+    def shap(self, spec) -> RenderedFigure:
+        """Interactive mean-|SHAP| bar; colour encodes the average push direction."""
+        import plotly.graph_objects as go
+
+        feats = spec.sorted_features()
+        names = [f.name for f in feats]
+        vals = [f.mean_abs_shap for f in feats]
+        # Blue = pushes model output down on average, red = up. Direction only, not causation.
+        colours = [PALETTE[1] if f.mean_signed_shap >= 0 else PALETTE[0] for f in feats]
+        hover = [
+            f"{f.name}<br>mean |SHAP| = {f.mean_abs_shap:.4f}"
+            f"<br>mean signed = {f.mean_signed_shap:+.4f}"
+            for f in feats
+        ]
+        fig = go.Figure(
+            go.Bar(
+                x=vals,
+                y=names,
+                orientation="h",
+                marker=dict(color=colours),
+                text=[f"{v:.3f}" for v in vals],
+                textposition="auto",
+                hovertext=hover,
+                hoverinfo="text",
+            )
+        )
+        subtitle = spec.title
+        if spec.n_samples:
+            subtitle += f"  (n={spec.n_samples})"
+        fig.update_layout(
+            title=dict(text=subtitle, font=dict(size=14)),
+            xaxis_title=spec.x_label,
+            template=self.template,
+            height=self.height,
+            margin=dict(l=160, r=40, t=50, b=45),
+            yaxis=dict(autorange="reversed"),
+        )
+        return RenderedFigure(fig, self.name)

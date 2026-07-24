@@ -324,3 +324,53 @@ def test_visualisation_writes_nothing_without_export(window, run_result, tmp_pat
     window.visualisation.set_result(run_result)
     window.visualisation.render_current()
     assert not list(tmp_path.iterdir())
+
+
+# ------------------------------------------------------ SHAP / xAI view (Slice 7)
+
+
+def test_shap_view_is_advanced_only(window):
+    window.set_mode(AppMode.BASIC)
+    assert "shap" not in window.visualisation.available_views  # clinic never sees xAI
+    window.set_mode(AppMode.ADVANCED)
+    assert "shap" in window.visualisation.available_views
+
+
+def test_shap_view_shows_honest_placeholder_without_a_model(window):
+    """No trained model -> no fabricated attributions, just a clear message."""
+    window.set_mode(AppMode.ADVANCED)
+    vis = window.visualisation
+    assert vis._ml_result is None
+    assert vis.build_spec("shap") is None
+
+
+def test_shap_view_populates_from_a_trained_model(window):
+    """Attaching a model with real SHAP values makes the view render a figure."""
+    shap = pytest.importorskip("shap")
+    import numpy as np
+    from sklearn.ensemble import RandomForestClassifier
+
+    window.set_mode(AppMode.ADVANCED)
+    rng = np.random.default_rng(1)
+    x = rng.normal(size=(60, 3))
+    y = (x[:, 0] > 0).astype(int)
+    rf = RandomForestClassifier(n_estimators=20, random_state=0).fit(x, y)
+    sv = shap.TreeExplainer(rf).shap_values(x)
+    if isinstance(sv, list):
+        sv = sv[1]
+    sv = np.asarray(sv)
+    if sv.ndim == 3:
+        sv = sv[:, :, 1]
+
+    class _ML:
+        feature_names = ["dose", "volume", "age"]
+        shap_values = sv
+        shap_expected_value = 0.5
+
+    vis = window.visualisation
+    vis.set_ml_result(_ML())
+    spec = vis.build_spec("shap")
+    assert spec is not None and len(spec.features) == 3
+    idx = vis.view_combo.findData("shap")
+    vis.view_combo.setCurrentIndex(idx)
+    assert len(vis.current_html()) > 500
