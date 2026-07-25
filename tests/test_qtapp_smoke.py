@@ -259,7 +259,7 @@ def test_workflow_respects_central_policy(window):
 
 def test_visualisation_tab_present(window):
     tabs = [window.tabs.tabText(i) for i in range(window.tabs.count())]
-    assert tabs == ["Workflow", "Run", "Results", "Visualisation"]
+    assert tabs[:4] == ["Workflow", "Run", "Results", "Visualisation"]
 
 
 def test_visualisation_views_are_policy_gated(window):
@@ -374,3 +374,68 @@ def test_shap_view_populates_from_a_trained_model(window):
     idx = vis.view_combo.findData("shap")
     vis.view_combo.setCurrentIndex(idx)
     assert len(vis.current_html()) > 500
+
+
+# ------------------------------------------------------ AI panel (Phase 5 · B)
+
+
+def test_assistant_tab_present(window):
+    tabs = [window.tabs.tabText(i) for i in range(window.tabs.count())]
+    assert "Assistant" in tabs
+
+
+def test_ai_panel_disabled_in_basic_enabled_in_advanced(window):
+    window.set_mode(AppMode.BASIC)
+    assert not window.ai_panel.is_enabled
+    assert not window.ai_panel.send_btn.isEnabled()
+    window.set_mode(AppMode.ADVANCED)
+    assert window.ai_panel.is_enabled
+    assert window.ai_panel.send_btn.isEnabled()
+
+
+def test_ai_panel_builds_messages_with_system_prompt(window):
+    window.set_mode(AppMode.ADVANCED)
+    msgs = window.ai_panel.build_messages("why is the parotid NTCP high?")
+    assert msgs[0].role == "system"
+    assert msgs[-1].content == "why is the parotid NTCP high?"
+
+
+def test_ai_panel_context_is_aggregate_not_per_patient(window, run_result):
+    window.set_mode(AppMode.ADVANCED)
+    window.ai_panel.set_result(run_result)
+    msgs = window.ai_panel.build_messages("summarise")
+    joined = "\n".join(m.content for m in msgs)
+    # The attached context is the aggregate summary; no patient id leaks in.
+    for s in run_result.structures:
+        assert s.patient_id not in joined
+
+
+def test_ai_panel_preview_flags_phi(window):
+    window.set_mode(AppMode.ADVANCED)
+    _text, findings = window.ai_panel.outgoing_preview("PatientID 12345678 please explain")
+    assert findings  # warned, not blocked
+
+
+def test_ai_panel_run_exchange_with_fake_transport_records_history(window):
+    window.set_mode(AppMode.ADVANCED)
+
+    class _FakeTransport:
+        def complete(self, request, *, base_url, api_key):
+            return "Because mean dose exceeded tolerance."
+
+    resp = window.ai_panel.run_exchange("explain", transport=_FakeTransport())
+    assert resp.text.startswith("Because")
+    # in-memory history holds the turn; nothing is persisted
+    assert window.ai_panel._history[-1].content == resp.text
+
+
+def test_ai_panel_writes_nothing(window, tmp_path, monkeypatch):
+    window.set_mode(AppMode.ADVANCED)
+    monkeypatch.chdir(tmp_path)
+
+    class _FakeTransport:
+        def complete(self, request, *, base_url, api_key):
+            return "ok"
+
+    window.ai_panel.run_exchange("hello", transport=_FakeTransport())
+    assert not list(tmp_path.iterdir())

@@ -44,7 +44,7 @@ from PySide6.QtWidgets import (
 )
 
 from rbgyanx.qtapp.branding import PALETTE, STYLESHEET, icon_path
-from rbgyanx.qtapp.screens import VisualisationScreen, WorkflowScreen
+from rbgyanx.qtapp.screens import AiPanelScreen, VisualisationScreen, WorkflowScreen
 from rbgyanx.services.progress import CallbackReporter
 from rbgyanx.services.run_controller import RunController, RunResult, StructureResult
 from rbgyanx.services.run_request import RunRequest
@@ -112,6 +112,8 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self._build_results_tab(), "Results")
         self.visualisation = VisualisationScreen(self.policy)
         self.tabs.addTab(self.visualisation, "Visualisation")
+        self.ai_panel = AiPanelScreen(self.policy)
+        self.tabs.addTab(self.ai_panel, "Assistant")
         self.setCentralWidget(self.tabs)
         self._apply_mode()
         self.statusBar().showMessage("Ready")
@@ -248,6 +250,8 @@ class MainWindow(QMainWindow):
             self.workflow.apply_policy(policy)
         if hasattr(self, "visualisation"):
             self.visualisation.apply_policy(policy)
+        if hasattr(self, "ai_panel"):
+            self.ai_panel.apply_policy(policy)
 
     @property
     def models(self) -> dict:
@@ -316,6 +320,8 @@ class MainWindow(QMainWindow):
         self._render_dvh(result)
         if hasattr(self, "visualisation"):
             self.visualisation.set_result(result)
+        if hasattr(self, "ai_panel"):
+            self.ai_panel.set_result(result)  # aggregate summary only; no per-patient rows
 
     def dvh_html(self, result: RunResult) -> str:
         """Interactive DVH as standalone HTML (also what the export button writes)."""

@@ -225,3 +225,79 @@ def test_ai_panel_is_advanced_only():
 
     assert not UiPolicy.basic().allows(UiFeature.AI_PANEL)
     assert UiPolicy.advanced().allows(UiFeature.AI_PANEL)
+
+
+# ---------------------------------------------------- HTTP transport (mocked)
+
+
+def _fake_urlopen_factory(response_obj, captured):
+    """Return a urlopen stand-in that records the request and returns a canned JSON body."""
+    import io
+    import json as _json
+
+    class _Resp(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    def _fake_urlopen(req, timeout=None):
+        captured["url"] = req.full_url
+        captured["headers"] = dict(req.header_items())
+        captured["body"] = _json.loads(req.data.decode("utf-8"))
+        captured["timeout"] = timeout
+        return _Resp(_json.dumps(response_obj).encode("utf-8"))
+
+    return _fake_urlopen
+
+
+def test_http_transport_posts_openai_shape_and_returns_text(monkeypatch):
+    from rbgyanx.ai.http_transport import HttpTransport
+    from rbgyanx.ai.llm_client import LLMMessage, LLMRequest
+
+    captured: dict = {}
+    reply = {"choices": [{"message": {"content": "explained."}}]}
+    monkeypatch.setattr(
+        "urllib.request.urlopen", _fake_urlopen_factory(reply, captured), raising=True
+    )
+
+    req = LLMRequest(messages=[LLMMessage("user", "hi")], model="kimi-k2-0711-preview")
+    text = HttpTransport().complete(req, base_url="https://api.moonshot.ai/v1", api_key="sk-x")
+
+    assert text == "explained."
+    assert captured["url"] == "https://api.moonshot.ai/v1/chat/completions"
+    assert captured["body"]["model"] == "kimi-k2-0711-preview"
+    assert captured["body"]["messages"] == [{"role": "user", "content": "hi"}]
+    # Key travels only in the Authorization header, never in the URL or body.
+    assert any(v == "Bearer sk-x" for v in captured["headers"].values())
+    assert "sk-x" not in captured["url"]
+
+
+def test_http_transport_omits_auth_header_for_local(monkeypatch):
+    from rbgyanx.ai.http_transport import HttpTransport
+    from rbgyanx.ai.llm_client import LLMMessage, LLMRequest
+
+    captured: dict = {}
+    reply = {"choices": [{"message": {"content": "ok"}}]}
+    monkeypatch.setattr(
+        "urllib.request.urlopen", _fake_urlopen_factory(reply, captured), raising=True
+    )
+    req = LLMRequest(messages=[LLMMessage("user", "hi")], model="llama3.1")
+    HttpTransport().complete(req, base_url="http://localhost:11434/v1", api_key=None)
+    assert not any("authorization" in k.lower() for k in captured["headers"])
+
+
+def test_http_transport_maps_http_error(monkeypatch):
+    import urllib.error
+
+    from rbgyanx.ai.http_transport import HttpTransport
+    from rbgyanx.ai.llm_client import LLMError, LLMMessage, LLMRequest
+
+    def _raise(req, timeout=None):
+        raise urllib.error.HTTPError(req.full_url, 401, "Unauthorized", {}, None)
+
+    monkeypatch.setattr("urllib.request.urlopen", _raise, raising=True)
+    req = LLMRequest(messages=[LLMMessage("user", "hi")], model="m")
+    with pytest.raises(LLMError, match="HTTP 401"):
+        HttpTransport().complete(req, base_url="https://api.anthropic.com/v1", api_key="k")

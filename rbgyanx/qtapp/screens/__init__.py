@@ -8,7 +8,8 @@ never compute science and never decide BASIC/ADVANCED locally.
 
 from __future__ import annotations
 
+from rbgyanx.qtapp.screens.ai_panel import AiPanelScreen
 from rbgyanx.qtapp.screens.visualisation import VIEWS, VisualisationScreen
 from rbgyanx.qtapp.screens.workflow import STEPS, WorkflowScreen
 
-__all__ = ["WorkflowScreen", "STEPS", "VisualisationScreen", "VIEWS"]
+__all__ = ["WorkflowScreen", "STEPS", "VisualisationScreen", "VIEWS", "AiPanelScreen"]
