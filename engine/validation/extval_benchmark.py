@@ -347,10 +347,13 @@ def _clinical_features(df: pd.DataFrame) -> pd.DataFrame:
         .astype(str)
         .str.lower()
         .map(
+            # str(s) guard: pandas >= 2.3's default string dtype keeps missing values as NA
+            # (a float) through .astype(str)/.str.lower(), so a membership test on the raw value
+            # raises "argument of type 'float' is not iterable". Coercing to str is version-proof.
             lambda s: (
                 1.0
-                if any(k in s for k in ("pos", "+", "1"))
-                else (0.0 if any(k in s for k in ("neg", "-", "0")) else np.nan)
+                if any(k in str(s) for k in ("pos", "+", "1"))
+                else (0.0 if any(k in str(s) for k in ("neg", "-", "0")) else np.nan)
             )
         )
     )

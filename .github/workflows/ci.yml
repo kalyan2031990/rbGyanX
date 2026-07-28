@@ -29,8 +29,13 @@ jobs:
           pip install -e "./engine" -e "./engine_advanced" -e "./engine_advanced_f" -e ".[dev]"
 
       - name: Ruff
+        # --config pins ruff to this repo's config *in lieu of* discovering others. Without it,
+        # ruff on Windows runners walks into the setup-python action's bundled
+        # _actions/.../__tests__/data/inner/pyproject.toml (a deliberately-malformed fixture)
+        # and fails with a TOML parse error.
         run: |
-          ruff check engine/radiobiology engine/tests/test_ntcp_scientific_anchors.py \
+          ruff check --config pyproject.toml \
+            engine/radiobiology engine/tests/test_ntcp_scientific_anchors.py \
             tests/synthetic engine/dicom_io/input_validation.py \
             engine/validation/clinical_cohort.py examples \
             tests/test_input_validation.py tests/test_reusable_interfaces.py \
@@ -38,7 +43,8 @@ jobs:
 
       - name: Black
         run: |
-          black --check engine/radiobiology engine/tests/test_ntcp_scientific_anchors.py \
+          black --check --config pyproject.toml \
+            engine/radiobiology engine/tests/test_ntcp_scientific_anchors.py \
             tests/synthetic engine/dicom_io/input_validation.py \
             engine/validation/clinical_cohort.py examples \
             tests/test_input_validation.py tests/test_reusable_interfaces.py \
