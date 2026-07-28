@@ -28,11 +28,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e "./engine" -e "./engine_advanced" -e "./engine_advanced_f" -e ".[dev]"
 
+      # Lint and type-checking are OS-independent, so run them once on Linux. On Windows
+      # runners, ruff/black walk configuration discovery into the setup-python action's bundled
+      # _actions/.../__tests__/data/inner/pyproject.toml (a deliberately-malformed fixture) and
+      # fail with a TOML parse error that neither --config nor a version pin avoids. Gating to
+      # Linux both fixes that and keeps the Windows/macOS matrix focused on runtime (pytest).
       - name: Ruff
-        # --config pins ruff to this repo's config *in lieu of* discovering others. Without it,
-        # ruff on Windows runners walks into the setup-python action's bundled
-        # _actions/.../__tests__/data/inner/pyproject.toml (a deliberately-malformed fixture)
-        # and fails with a TOML parse error.
+        if: runner.os == 'Linux'
         run: |
           ruff check --config pyproject.toml \
             engine/radiobiology engine/tests/test_ntcp_scientific_anchors.py \
@@ -42,6 +44,7 @@ jobs:
             tests/test_examples_smoke.py
 
       - name: Black
+        if: runner.os == 'Linux'
         run: |
           black --check --config pyproject.toml \
             engine/radiobiology engine/tests/test_ntcp_scientific_anchors.py \
@@ -51,6 +54,7 @@ jobs:
             tests/test_examples_smoke.py
 
       - name: Mypy (radiobiology)
+        if: runner.os == 'Linux'
         run: mypy engine/radiobiology --config-file pyproject.toml
 
       - name: Pytest (engine + publication + synthetic + reusable interfaces + validation)
