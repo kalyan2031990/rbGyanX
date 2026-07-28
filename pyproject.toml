@@ -55,6 +55,7 @@ ml = [
     "lifelines>=0.27",
     "shap>=0.41",
     "lime>=0.2",
+    "seaborn>=0.12",  # plotting for legacy code3/code6, exercised by the full-stack tests
 ]
 torch = ["torch>=2.1"]
 # Qt6 desktop interface (v2). Optional: the Tkinter app and the engine work without it.
@@ -154,7 +155,9 @@ line-length = 100
 target-version = ["py310"]
 
 [tool.mypy]
-python_version = "3.10"
+# 3.12 so mypy can parse numpy >= 2.4's PEP 695 `type` statements in its bundled stubs.
+# Runtime compatibility with 3.10/3.11 is verified by the pytest matrix, not by mypy.
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
