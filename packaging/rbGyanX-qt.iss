@@ -37,7 +37,9 @@ LicenseFile=installer_license.txt
 InfoBeforeFile=..\docs\RBGYANX_1.0_DESKTOP.md
 OutputDir=..\build_qt\dist
 OutputBaseFilename=rbGyanX-{#MyAppVersion}-Qt-Setup
-Compression=lzma2/ultra64
+; lzma2/max (not ultra64): the Qt payload (QtWebEngine + numba + shap) is large, and ultra64's
+; huge dictionary + max effort makes the compile impractically slow. max keeps a good ratio.
+Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
 PrivilegesRequired=admin
