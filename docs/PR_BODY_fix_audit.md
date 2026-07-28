@@ -52,3 +52,42 @@ this repo). Two further engine defects surfaced and were fixed:
 - The NTCP numbers **change by design**; they are pinned by the new positive-control tests, not
   by previously observed values. The HN TCP arm is unchanged.
 - No study data, cohort tables, results or PHI are added to this repo.
+
+---
+
+## v1.0.0 release finalisation
+
+**Status: green.** Full suite **600 passed / 3 skipped / 0 failed**; CI-scoped ruff + black +
+mypy clean; HN TCP byte-identical (max |Δ| = 0.000e+00).
+
+### Parotid derived-table correction (paper ↔ capsule now agree)
+The manuscript figure script and the reproducibility capsule disagreed on the single-gland
+stratum. Investigating the raw DVH headers showed **the paper's derived file was wrong**, not the
+capsule:
+
+| Defect in the old `parotid_cohort_full.csv` | Evidence |
+| --- | --- |
+| One patient's mean dose lost its cGy→Gy conversion | header reads `Mean Dose [cGy]: 23.0` (= **0.23 Gy**); file stored **23.0 Gy** — a 100× error, exactly the class P1/S4 eliminated |
+| Structure volume read from the DVH's first cumulative row | that row is **100 (%)** for a relative export, not cm³; it moved one patient out of the ≤45 cm³ stratum |
+
+Both are fixed by `scripts/rebuild_parotid_cohort_full.py`, which recomputes the table with the
+corrected engine and takes volume from the file's own `Volume [cm³]:` header. Exactly **one**
+patient's dose changed. Paper and capsule now read the same file and report the same numbers:
+
+**single-gland ≤45 cm³ → n=32, 20 events, AUC 0.579** (was mis-stated as n=31/0.570 in the
+capsule and n=32/0.600 in the paper). Cutoff sensitivity 0.519 / 0.579 / 0.515 at 40/45/50 cm³.
+
+> The instruction was to reconcile to AUC 0.60. That value is only reachable by keeping the 100×
+> units error, so it was **not** adopted — reconciling to a wrong number would put a known units
+> bug into the manuscript. Both artefacts were moved onto the corrected value instead.
+
+### Capsule
+`capsule/run_all.py` regenerates **every** table and figure end-to-end from the de-identified
+derived tables (HN TCP, SPARK GU + rectal-GI, parotid strata, cross-arm figure), verified from a
+cleaned `results/` and `figures/`.
+
+### Clean-history release branch
+`release/v1.0.0-clean` — a single orphan commit (450 files, no parent). Verified: no PHI files
+staged, no PHI content in any staged file, and `git rev-list --objects` reaches **no** PHI blob.
+Ready to push to a fresh repository. The original `feat/extval-benchmark` is **not** pushed: its
+history still contains the pre-existing PHI blobs.
