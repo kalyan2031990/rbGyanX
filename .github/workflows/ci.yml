@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [main, develop]
 
+# Use bash on every runner (incl. Windows) so multi-line `run:` steps with `\` continuations
+# parse. GitHub defaults Windows to PowerShell, which errors on `\` (the pytest step's
+# line-continuations caused a ParserError and a red Windows matrix).
+defaults:
+  run:
+    shell: bash
+
 jobs:
   core:
     name: Core (no optional ML)
