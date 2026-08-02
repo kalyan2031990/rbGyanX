@@ -202,26 +202,51 @@ class VisualisationScreen(QWidget):
 
     @staticmethod
     def _sankey_from_result(result):
-        """dose → per-OAR NTCP → P+, using the run's own NTCP values."""
-        oars = [s for s in result.structures if s.ntcp and any(v == v for v in s.ntcp.values())]
+        """dose → per-OAR NTCP → P+, using the run's own NTCP values.
+
+        Targets (PTV/CTV/GTV) are excluded: uncomplicated control is composed from OAR
+        complication probabilities only. A target carries no NTCP, so folding it in as
+        (1 - NTCP_target) would be a scientific error.
+        """
+        oars = [
+            s
+            for s in result.structures
+            if not getattr(s, "is_target", False)
+            and s.ntcp
+            and any(v == v for v in s.ntcp.values())
+        ]
         if not oars:
             return None
         oars = oars[:6]
 
+        # Label each OAR node per patient so no two nodes are ambiguous when several patients
+        # share a structure name (e.g. Parotid_L appears once per patient).
+        def _node_label(s) -> str:
+            return f"{s.label} · {s.patient_id}" if getattr(s, "patient_id", "") else s.label
+
         nodes = [SankeyNode("Delivered dose")]
-        nodes += [SankeyNode(f"{s.label} NTCP") for s in oars]
+        nodes += [SankeyNode(f"{_node_label(s)} NTCP") for s in oars]
         nodes.append(SankeyNode("Uncomplicated control (P+)"))
         p_index = len(nodes) - 1
 
+        # Flow conservation: each OAR receives an equal unit share of the delivered dose; the
+        # ribbon into P+ is that share times (1 - NTCP), so P+ inflow <= OAR inflow always, and
+        # the "lost" width is exactly the expected complication burden. Widths therefore add up.
         links: list[SankeyLink] = []
         for i, s in enumerate(oars, start=1):
             ntcp = next((v for v in s.ntcp.values() if v == v), 0.0)
             share = 100.0 / len(oars)
-            links.append(SankeyLink(0, i, share, f"{s.label} dose share"))
+            links.append(SankeyLink(0, i, share, f"{_node_label(s)} dose share"))
             links.append(
-                SankeyLink(i, p_index, share * (1.0 - float(ntcp)), f"{s.label} complication-free")
+                SankeyLink(
+                    i, p_index, share * (1.0 - float(ntcp)), f"{_node_label(s)} complication-free"
+                )
             )
-        return SankeySpec(nodes=nodes, links=links, title="Dose → per-OAR NTCP → P+")
+        return SankeySpec(
+            nodes=nodes,
+            links=links,
+            title="Dose → per-OAR NTCP → P+ (OARs only; targets excluded)",
+        )
 
     # ---------------------------------------------------------------- render
 

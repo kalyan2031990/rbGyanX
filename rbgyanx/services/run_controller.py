@@ -37,6 +37,8 @@ class StructureResult:
     volume_cc: float = float("nan")
     ntcp: dict[str, float] = field(default_factory=dict)
     source_file: str = ""
+    is_target: bool = False  # PTV/CTV/GTV/ITV/BOOST — NTCP is not applicable
+    target_type: str = ""  # the canonical target class, when is_target
 
 
 @dataclass
@@ -128,12 +130,19 @@ class RunController:
     @staticmethod
     def _read_one(path: Path, ntcp_models: dict[str, dict[str, Any]]) -> StructureResult:
         """Parse one DVH file and evaluate the requested engine NTCP models."""
+        from dicom_io.structure_mapper import TARGET_CANONICALS, canon_target
         from dicom_io.txt_dvh_reader import parse_dvh_text_file
         from radiobiology import dvh_object_to_dataframe
         from validation.ntcp_benchmark import classical_ntcp
 
         parsed = parse_dvh_text_file(path)
         diff = dvh_object_to_dataframe(parsed.dvh_object)
+
+        # Classify from the RAW ROI name (the reader coerces every single-file canonical to PTV,
+        # so parsed.canonical_name cannot be trusted for this). NTCP is an OAR concept; a target
+        # must never receive one from some fallback organ's parameters.
+        target_canonical = str(canon_target(parsed.raw_name).get("canonical", ""))
+        is_target = target_canonical in TARGET_CANONICALS
 
         dose: list[float] = []
         vol_pct: list[float] = []
@@ -148,18 +157,22 @@ class RunController:
                 cum = cum / cum[0] * 100.0
             dose, vol_pct = list(d), list(cum)
 
+        # A target gets NO NTCP — explicitly not-applicable, never a fallback organ's number.
         ntcp: dict[str, float] = {}
-        for label, cfg in ntcp_models.items():
-            model = cfg["model"]
-            params = cfg["params"]
-            try:
-                if model == "rs_poisson":
-                    value = float(classical_ntcp(model, params, dvhs=[diff])[0])
-                else:
-                    value = float(classical_ntcp(model, params, dose_metric=[parsed.dmean_gy])[0])
-            except Exception:
-                value = float("nan")
-            ntcp[label] = value
+        if not is_target:
+            for label, cfg in ntcp_models.items():
+                model = cfg["model"]
+                params = cfg["params"]
+                try:
+                    if model == "rs_poisson":
+                        value = float(classical_ntcp(model, params, dvhs=[diff])[0])
+                    else:
+                        value = float(
+                            classical_ntcp(model, params, dose_metric=[parsed.dmean_gy])[0]
+                        )
+                except Exception:
+                    value = float("nan")
+                ntcp[label] = value
 
         return StructureResult(
             label=parsed.raw_name or path.stem,
@@ -170,4 +183,6 @@ class RunController:
             volume_cc=float(parsed.total_volume_cc),
             ntcp=ntcp,
             source_file=path.name,
+            is_target=is_target,
+            target_type=target_canonical if is_target else "",
         )

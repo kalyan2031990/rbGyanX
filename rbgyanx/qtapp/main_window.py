@@ -309,7 +309,10 @@ class MainWindow(QMainWindow):
         """Fill the table and render the embedded interactive DVH."""
         self.table.setRowCount(len(result.structures))
         for r, s in enumerate(result.structures):
-            ntcp = ", ".join(f"{k}: {v:.3f}" for k, v in s.ntcp.items() if v == v)
+            if getattr(s, "is_target", False):
+                ntcp = f"n/a — target ({s.target_type})"
+            else:
+                ntcp = ", ".join(f"{k}: {v:.3f}" for k, v in s.ntcp.items() if v == v)
             for c, text in enumerate(
                 [s.label, s.patient_id, f"{s.mean_dose_gy:.2f}", f"{s.volume_cc:.1f}", ntcp]
             ):
