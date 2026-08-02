@@ -3,6 +3,7 @@ message: "If you use this software, please cite it as below."
 authors:
   - family-names: Mondal
     given-names: Kalyan
+    # TODO(release): add ORCID — "orcid: https://orcid.org/0000-0000-0000-0000"
 title: "rbGyanX: A radiobiology-guided clinical decision support framework"
 version: "1.0.0"
 date-released: 2026-06-10
@@ -19,3 +20,11 @@ keywords:
   - radiotherapy
   - medical physics
 abstract: "rbGyanX is a radiobiology-guided clinical decision support framework designed to integrate physical dosimetry, radiobiological modeling, and explainable machine learning for treatment plan evaluation in radiation oncology."
+# TODO(on manuscript acceptance): add the paper as the preferred citation, e.g.
+# preferred-citation:
+#   type: article
+#   title: "<manuscript title>"
+#   authors: [{family-names: Mondal, given-names: Kalyan}]
+#   journal: "Medical Physics"
+#   year: 2026
+#   doi: "<article DOI>"

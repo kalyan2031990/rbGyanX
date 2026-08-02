@@ -1,102 +1,102 @@
-# rbGyanX — radiobiology clinical decision support
+# rbGyanX — radiobiology-guided clinical decision **support**
 
 [![CI](https://github.com/kalyan2031990/rbGyanX/actions/workflows/ci.yml/badge.svg)](https://github.com/kalyan2031990/rbGyanX/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10--3.12-blue.svg)](pyproject.toml)
-[![GitHub](https://img.shields.io/github/stars/kalyan2031990/rbGyanX?style=social)](https://github.com/kalyan2031990/rbGyanX)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20623120-blue.svg)](https://doi.org/10.5281/zenodo.20623120)
 
-Hybrid radiobiology CDSS: classical **TCP/NTCP**, **UTCP** (P+), uncertainty-aware **uTCP/uNTCP** (inverse-variance consensus), **CCS** (MCD Mahalanobis), therapeutic index & window, four-tier validation harness, QUANTEC flags, and plan-quality metrics. ML/XAI and PINN are **ADVANCED / experimental** only.
+**rbGyanX** evaluates radiotherapy treatment plans with transparent, classical radiobiology —
+tumour control (**TCP**), normal-tissue complication (**NTCP**: LKB probit / log-logistic and
+relative-seriality), uncomplicated control (**P+**), an uncertainty-aware consensus, QUANTEC
+flags, and a four-tier validation harness. It is built for **medical physicists and radiobiology
+researchers** who need results they can trace to an equation.
 
-**Repository:** [github.com/kalyan2031990/rbGyanX](https://github.com/kalyan2031990/rbGyanX)
+> ⚠️ **Not a medical device.** rbGyanX is decision-*support* and research software. It does not
+> diagnose, treat, or prescribe, and it is not a substitute for clinical judgement. See
+> [`DISCLAIMER.md`](DISCLAIMER.md).
 
-**Technical review:** [`docs/TECHNICAL_DEVELOPMENT_NOTE.md`](docs/TECHNICAL_DEVELOPMENT_NOTE.md) · [`docs/review/REVIEW_FOR_AI.md`](docs/review/REVIEW_FOR_AI.md)
+## Two governed modes
+
+The engine enforces a **BASIC / ADVANCED** split (`rbgyanx.logic.mode_controller`):
+
+- **BASIC (clinic):** one well-understood NTCP model per site, no ML, no experimental features —
+  a small, auditable decision-support surface.
+- **ADVANCED (research):** additional NTCP models, dosiomics/ML, SHAP explainability, a PINN
+  benchmark, and an opt-in AI assistant. Everything here is labelled **experimental**.
+
+Machine learning, xAI and PINN are ADVANCED-only. The mode is a capability gate, not a cosmetic
+toggle: BASIC cannot reach the experimental code paths.
+
+## Install
+
+Python **3.10–3.12**. From a clone:
+
+```bash
+python -m venv .venv && . .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -e "./engine" -e ".[dev]"             # add ,qt for the desktop GUI, ,ml for the research stack
+```
+
+## 5-minute example (shipped synthetic data — no patient data)
+
+```bash
+python - <<'PY'
+from pathlib import Path
+from rbgyanx.services.run_controller import RunController
+from rbgyanx.services.run_request import RunRequest
+
+req = RunRequest(analysis_mode="NTCP", input_path=Path("examples/data/dvh_txt"),
+                 output_dir=Path("."), input_source="dvh_txt")
+res = RunController().run_dvh_text(
+    req, ntcp_models={"LKB": {"model": "lkb_probit", "params": {"TD50_gy": 39.9, "m": 0.40}}})
+for s in res.structures:
+    tag = "target — NTCP n/a" if getattr(s, "is_target", False) else f"NTCP={s.ntcp}"
+    print(f"{s.patient_id} {s.label:12s} Dmean={s.mean_dose_gy:5.1f} Gy  {tag}")
+PY
+```
+
+Desktop GUIs: `python -m rbgyanx.qtapp` (Qt6, needs the `qt` extra) or `python rbgyanx_gui.py`
+(Tkinter).
+
+## Verify (763 tests, synthetic data only)
+
+```bash
+pytest -q
+```
+
+The scientific core is pinned by **22 analytic positive controls**
+(`pytest tests/test_ntcp_positive_controls.py`): NTCP = 0.5 at TD50, monotonicity, QUANTEC
+anchors, and UTCP factorisation. No patient data is required or included.
+
+## How to cite
+
+Cite the archived release via its DOI — see [`CITATION.cff`](CITATION.cff), or:
+
+> Mondal, K. *rbGyanX: A radiobiology-guided clinical decision support framework* (v1.0.0).
+> Zenodo. https://doi.org/10.5281/zenodo.20623120
+
+The accompanying manuscript (Medical Physics) will be added as the preferred citation on
+acceptance.
 
 ## Layout
 
 | Path | Role |
 |------|------|
-| `rbgyanx_gui.py` | Main GUI |
-| `engine/` | `rbgyanx-engine` — clinic core (TCP, NTCP, DICOM, reporting) |
-| `engine_advanced/` | ADVANCED Parts B & E (dosiomics, PINN registry, covariates) |
-| `engine_advanced_f/` | ADVANCED Part F (Bayesian NTCP, PINN training) |
-| `rbgyanx/` | Modes, engine bridge, input router |
-| `code1`–`code7` | Legacy TPS / ML / integration steps |
-| `tests/test_publication_suite.py` | 129-test software-paper validation suite |
-| `packaging/` | PyInstaller + Inno Setup |
+| `engine/` | `rbgyanx-engine` — clinic core: TCP/NTCP, DICOM/DVH I/O, validation, reporting |
+| `rbgyanx/` | mode governance, headless services, Qt6 desktop app (`rbgyanx.qtapp`), AI panel |
+| `rbgyanx_gui.py` | the original Tkinter desktop app |
+| `engine_advanced/`, `engine_advanced_f/` | ADVANCED research modules (dosiomics, PINN, Bayesian NTCP) |
+| `examples/` | shipped **synthetic** demo DVHs (a positive control for the reader) |
+| `packaging/` | PyInstaller + Inno Setup build scripts |
+| `legacy/` | quarantined earlier scripts, kept for provenance |
 
-Patient DICOM and clinical files are **not** in this repository.
+**No patient DICOM, cohort tables, or clinical files are in this repository.** The external
+validation runs on real head-and-neck anatomy (TCIA Head-Neck-PET-CT) *outside* this repo; CI
+exercises a synthetic mirror only. Requires `pydicom<3.0`.
 
-## Quick start
+## More
 
-```powershell
-git clone https://github.com/kalyan2031990/rbGyanX.git
-cd rbGyanX
-.\Install-rbGyanX.ps1
-python rbgyanx_gui.py
-```
+- [`docs/EXTVAL_RESULTS.md`](docs/EXTVAL_RESULTS.md) — external-validation benchmark (methods, seeds, tables)
+- [`docs/RBGYANX_1.0_DESKTOP.md`](docs/RBGYANX_1.0_DESKTOP.md) — desktop feature guide
+- [`CHANGELOG.md`](CHANGELOG.md) · [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`SECURITY.md`](SECURITY.md)
 
-## Reproduction (Zenodo)
-
-Source code is on GitHub. **Test data and frozen pytest logs** are packaged for Zenodo:
-
-```powershell
-.\scripts\build_zenodo_bundle.ps1
-```
-
-See [`reproducibility/README.md`](reproducibility/README.md) and [`reproducibility/ZENODO_UPLOAD_GUIDE.md`](reproducibility/ZENODO_UPLOAD_GUIDE.md).
-
-## Verify (487 tests, synthetic data only)
-
-**Supported Python:** 3.10–3.12 (CI matrix). Installer build targets 3.10. Development on 3.13+ is best-effort.
-
-```powershell
-.\scripts\install_dev.ps1
-pytest
-```
-
-Legacy runner (still supported):
-
-```powershell
-$env:PYTHONUTF8 = "1"
-.\scripts\run_all_tests.ps1
-```
-
-See [`DISCLAIMER.md`](DISCLAIMER.md) — decision support only, not a medical device.
-
-Publication suite only:
-
-```powershell
-python -m pytest tests/test_publication_suite.py -v --tb=short
-```
-
-## Build installer (local only, gitignored)
-
-```powershell
-.\packaging\build_rbGyanX.ps1 -BuildInstaller
-```
-
-Requires Python **3.10** for the full TensorFlow bundle. Output: `dist\rbGyanX-1.0.0-full-Setup.exe`.
-
-## External validation (synthetic + real reference-dose benchmark)
-
-Beyond the synthetic test suite, rbGyanX is benchmarked on **real head-and-neck anatomy**
-(TCIA Head-Neck-PET-CT, n=121) under one leakage-safe protocol: classical radiobiology vs
-clinical covariates vs dosiomics ML vs an LQ-constrained **PINN**, for loco-regional control
-and death. Because the archived dose is a **reference/auto plan (not the delivered clinical
-dose)**, results are framed as *association on reference-planned dose* — a methods benchmark,
-**not** a clinical-discrimination claim.
-
-- [`docs/EXTVAL_RESULTS.md`](docs/EXTVAL_RESULTS.md) — benchmark tables, seeds, reproduce command
-- [`external_validation/REPRODUCE.md`](external_validation/REPRODUCE.md) — run it (synthetic mirror or real data)
-- [`paper/EXTERNAL_VALIDATION.md`](paper/EXTERNAL_VALIDATION.md) — manuscript section + TRIPOD + TCIA data-use
-
-CI runs the full pipeline on a **synthetic mirror** (no patient data). No patient DICOM is
-committed. Requires `pydicom<3.0` (dicompyler-core); do not install the legacy `dicom` package.
-
-## Documentation
-
-- [`docs/RBGYANX_1.0_DESKTOP.md`](docs/RBGYANX_1.0_DESKTOP.md) — desktop feature guide  
-- [`docs/RBGYANX_MANIFESTO.md`](docs/RBGYANX_MANIFESTO.md) — philosophy and positioning  
-- [`docs/IMPLEMENTATION_ROADMAP.md`](docs/IMPLEMENTATION_ROADMAP.md) — Parts A–F status  
-
-Decision-support software — not a substitute for clinical judgment. MIT License.
+MIT License. Decision-support and research software — not a regulated medical device.
