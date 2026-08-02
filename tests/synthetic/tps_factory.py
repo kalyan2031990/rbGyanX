@@ -21,10 +21,10 @@ Number of fractions: 35
 Dose per fraction [cGy]: 200
 
 Dose [cGy]  Structure Volume [cm³]
-{prescription_cgy:.0f}  100.0
-{prescription_cgy - 1000:.0f}  95.0
-{prescription_cgy - 2000:.0f}  80.0
-{prescription_cgy - 3000:.0f}  50.0
+{prescription_cgy - 3000:.0f}  100.0
+{prescription_cgy - 2000:.0f}  95.0
+{prescription_cgy - 1000:.0f}  80.0
+{prescription_cgy:.0f}  50.0
 """
     path = out_dir / f"{patient_id}_PTV_dvh.txt"
     path.write_text(content, encoding="utf-8")

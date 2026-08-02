@@ -14,6 +14,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from dicom_io.dvh_integrity import validate_cumulative_dvh
 from dicom_io.structure_mapper import canon_target
 
 _HEADER_PATTERNS = {
@@ -201,7 +202,16 @@ def _parse_dvh_text(
             d_gy = d_gy / 100.0
 
     v = np.asarray(vol_vals, dtype=float)
-    v_diff = v if not cumulative_hint or not _is_cumulative(v) else _cum_to_diff(v)
+    is_cumulative = cumulative_hint and _is_cumulative(v)
+    if is_cumulative:
+        # Validate the cumulative curve and canonicalise to ascending dose. Raises on an inverted
+        # or scrambled curve rather than silently accepting it. For an already-ascending valid
+        # curve this is a no-op, so derived metrics are unchanged. (This reader is not on the
+        # published DICOM validation path, so this cannot affect the paper's numbers.)
+        d_gy, v = validate_cumulative_dvh(d_gy, v, structure=organ_raw)
+        v_diff = _cum_to_diff(v)
+    else:
+        v_diff = v
 
     if len(d_gy) > 1:
         centres = 0.5 * (d_gy[:-1] + d_gy[1:])

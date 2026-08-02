@@ -16,10 +16,10 @@ Mean Dose [cGy]: 7100.0
 Structure: PTV70
 
 Dose [cGy]  Structure Volume [cm³]
-7000  100.0
-6000  95.0
+4000  100.0
 5000  80.0
-4000  50.0
+6000  50.0
+7000  10.0
 """
     path = tmp_path / "TEST-001_dvh.txt"
     path.write_text(content, encoding="utf-8")
@@ -78,8 +78,8 @@ def test_multi_structure_falls_back_to_single(tmp_path: Path) -> None:
 Patient ID           : S-1
 Structure: PTV
 Dose [cGy]  Volume [cm³]
-7000 100.0
-6000 50.0
+6000 100.0
+7000 50.0
 """
     path = tmp_path / "single.txt"
     path.write_text(content, encoding="utf-8")
