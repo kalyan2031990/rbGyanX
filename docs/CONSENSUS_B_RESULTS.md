@@ -130,6 +130,81 @@ tuned to win; both were pre-registered.
 
 ---
 
+## B8. Clean single-gland stratum (parotid, volume ≤ 45 cm³, n = 32, 20 events)
+
+The pooled cohort mixes single-gland and combined parotid structure definitions, which
+anti-discriminates (B2, AUC≈0.42). Restricting to single-gland structures recovers a coherent
+dose-response — **AUC = 0.579 for every model** (LL, probit, RS, consensus alike) and **positive
+calibration slopes** — so this is the *fair* test of combination (pre-registered, Amendment 3).
+
+| Predictor | Brier | ECE | AUC | cal-slope |
+|---|---|---|---|---|
+| LKB log-logistic | 0.255 | 0.158 | 0.579 | +0.16 |
+| LKB probit | 0.309 | 0.257 | 0.579 | +0.17 |
+| **relative-seriality (best single)** | **0.241** | **0.129** | 0.579 | **+0.36** |
+| naive mean (prob) | 0.260 | 0.201 | 0.579 | +0.24 |
+| naive mean (logit) | 0.263 | 0.208 | 0.579 | +0.21 |
+| **inverse-variance consensus** | 0.254 | 0.147 | 0.579 | +0.19 |
+
+**Paired difference (consensus − comparator), 2000-bootstrap 95 % CI:**
+
+| vs | ΔBrier [95 % CI] | verdict |
+|---|---|---|
+| best single (RS) | +0.013 [−0.005, +0.035] | **indistinguishable** (CI includes 0) |
+| naive mean (prob) | −0.006 [−0.014, +0.004] | indistinguishable |
+| naive mean (logit) | −0.009 [−0.019, +0.0005] | indistinguishable |
+| LKB probit (worst) | −0.055 [−0.089, −0.020] `*` | consensus better |
+
+**In the clean, discriminating regime the consensus is no longer *significantly* worse than the best
+single model** (unlike pooled, where it lost with CI excluding 0) — but it is not better either: it is
+statistically indistinguishable from RS and from a naive mean, and RS alone remains the point-estimate
+leader on Brier/ECE/slope. The consensus buys nothing over the best single model even where the models
+work. Calibration slopes are all well below 1 (models over-spread relative to observed risk), consistent
+across single models and consensus.
+
+## B9. Why the consensus is a lightly-perturbed single model (near-constant diagnosis)
+
+Per-model MC band width and the **mean fraction of the inverse-variance weight** each model receives,
+averaged over patients (both strata; identical picture):
+
+| model | σ (MC), median | mean weight fraction (pooled) | (single-gland) |
+|---|---|---|---|
+| LKB log-logistic | 0.085 | 0.33 | 0.31 |
+| LKB probit | 0.137 | 0.14 | 0.15 |
+| **relative-seriality** | **0.062 (narrowest)** | **0.53** | **0.54** |
+
+**A single model (relative-seriality) already carries a majority of the weight by default — with no
+poisoning at all** — purely because its parametric MC band is the narrowest (σ≈0.062 vs 0.137 for
+probit). The consensus point estimate therefore tracks RS (consensus pred-std 0.18 ≈ RS-flavoured, not
+a genuine three-way blend); it cannot outperform RS because it is mostly RS, and it inherits RS's
+behaviour. This is the *same* $1/\sigma^2$ pathology the B4 stress test provokes with a poisoned member,
+operating here spontaneously on the honest, well-specified set. **The mechanism does not require an
+adversary: whichever model is quoted most confidently dominates the "consensus," accuracy notwithstanding.**
+This strengthens, not weakens, the finding.
+
+## B10. Generality of the median advantage (across strata)
+
+Pre-registered decision rule (Amendment 3): the median is generalisably preferable iff, across cohorts,
+(i) its worst-cell stress damage is smaller than IVW's **and** (ii) on the clean set it is non-inferior
+to IVW (paired Brier CI upper bound ≤ +0.01).
+
+| stratum (n / events) | clean IVW / **median** | worst-poison IVW / **median** | worst bad-model weight |
+|---|---|---|---|
+| parotid pooled (54 / 34) | 0.296 / **0.295** | 0.537 / **0.290** | 0.92 |
+| parotid single-gland (32 / 20) | 0.254 / **0.253** | 0.516 / **0.253** | 0.93 |
+
+**Both conditions hold in both strata.** (i) *Direction:* under the worst poison (TD50 +50 %, band ×0.1)
+the over-confident member captures ≈0.93 of the IVW weight and inflates IVW Brier by +0.24/+0.26, while
+the **median barely moves** (Δ ≤ +0.001 vs its clean value) — median worst-cell damage ≪ IVW in both.
+(ii) *Non-inferiority:* on the clean set the median is not worse than IVW (in fact −0.001 in both, well
+within the +0.01 bound). The disagreement-penalty is a valid runner-up (worst-poison 0.324 / 0.292) at a
+small clean cost. **The median advantage is not cohort-specific**; combined with the B11 analytic argument
+it holds independent of the anti-discrimination confound. *(HN loco-regional TCP arm — B7 — is a
+different endpoint family and is deferred to a follow-on commit; the parotid-strata generality + analytic
+argument already satisfy the decision rule for the software change in B12.)*
+
+---
+
 ## B11. Analytic proposition (Methods, LaTeX-ready)
 
 **Proposition (when inverse-variance weighting is optimal).** Let $\hat\theta_1,\dots,\hat\theta_M$ be
@@ -158,3 +233,40 @@ of same-endpoint radiobiological models is not MSE-optimal and can be dominated 
 wrong member — as the B4 stress test demonstrates. A rank-based combiner (median) is invariant to any
 single member's quoted confidence and is therefore robust to this failure, at the cost of discarding
 genuine precision information when the models *are* well-specified and independent (rare here).
+
+---
+
+## B12. Applying the finding to the software (engine change)
+
+Analysis B is not just a paper result — it changes the default the engine ships. Evidence-driven change,
+made minimally and with do-no-harm on the classical numerics.
+
+**What changed (`engine/uncertainty/inverse_variance_consensus.py`).** The module now offers three
+combiners behind a `combine_consensus(estimates, variances, method=...)` dispatcher:
+
+- **`median` (NEW DEFAULT, robust).** Point estimate = median of the members; band = between-model τ² +
+  the *median* within-model variance. No single member's quoted confidence can move the centre
+  (≈50 % breakdown) or collapse the band.
+- **`inverse_variance` (historical).** The original Eq. 1 weighting, `w_i = 1/σ_i²`. Kept, selectable,
+  documented as MSE-optimal only for independent, unbiased, well-specified members (B11). Its standalone
+  function keeps its exact previous return shape (backward compatible).
+- **`disagreement`.** Inverse-variance with `σ_i² ← σ_i² + τ²`; a middle ground.
+
+`run_untcp` (uNTCP) and `run_utcp_consensus` (uTCP) now default to `method="median"`; the method is
+selectable via `NTCPUncertaintyConfig.consensus_method` / the `consensus_method=` argument.
+
+**Permanent positive control (`engine/tests/test_consensus_robustness.py`, 9 tests).** A confidently
+mis-specified member (far from peers, band ≈30× narrower ⇒ ≈900× weight) is fed to the default combiner;
+the test asserts the default consensus stays with the honest members (median) **and** that inverse-variance
+*is* dragged to the outlier (captures > 95 % weight) — so the guard cannot silently rot: if a future
+change reinstates a weighting default, this test fails. Also locks the band's robustness, the
+agreeing-members do-no-harm case, the backward-compatible IVW shape, and NaN handling.
+
+**Do-no-harm verification.**
+
+- Classical single-model NTCP numerics are untouched — the change is only in how per-model estimates are
+  *combined*. `tests/test_ntcp_positive_controls.py` — **22/22 green**, max|Δ| = 0.
+- The pipeline (`engine/rbgyanx_engine/pipeline.py`) surfaces the per-model uNTCP blocks (LL/probit/RS)
+  individually and does **not** consume the consensus `mean`, so no published pipeline number moves.
+- `engine/tests/test_ntcp_models.py` (per-model MC bands) and the original
+  `test_inverse_variance_consensus.py` (historical combiner) — all green.
