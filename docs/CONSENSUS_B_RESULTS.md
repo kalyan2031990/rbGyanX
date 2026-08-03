@@ -127,3 +127,34 @@ tuned to win; both were pre-registered.
   the flat LL/RS predictions), not a neutral fact.
 - What it DOES establish, defensibly: the estimator's weighting mechanism is fragile to over-confident
   members (quantified), and a robust combiner fixes it at no cost — a genuine, useful, honest result.
+
+---
+
+## B11. Analytic proposition (Methods, LaTeX-ready)
+
+**Proposition (when inverse-variance weighting is optimal).** Let $\hat\theta_1,\dots,\hat\theta_M$ be
+estimators of a common scalar $\theta$. The linear combination $\sum_i w_i\hat\theta_i$ with
+$\sum_i w_i=1$ that minimises mean squared error has, for **independent** and **unbiased** estimators,
+weights $w_i\propto 1/\operatorname{Var}(\hat\theta_i)$ — the inverse-variance rule — *provided the
+quoted variance equals the estimator's true error*, $\sigma_i^2=\mathbb E[(\hat\theta_i-\theta)^2]$.
+
+**Why this fails for an ensemble of TCP/NTCP models of the same endpoint.** Three of the required
+conditions break, structurally:
+
+1. **Dependence.** The models are evaluated on the *same* patient DVH/gEUD, so $\hat\theta_i$ share
+   their dominant input; they are strongly positively correlated, not independent. The optimal weights
+   then involve the full covariance $\Sigma$, $w\propto\Sigma^{-1}\mathbf 1$, not the diagonal $1/\sigma_i^2$.
+2. **Bias.** Each model uses a *fixed literature parameter set* (different TD50/m/γ/s), so
+   $\mathbb E[\hat\theta_i]\neq\theta$ in general; the estimators are biased, and MSE $=\text{bias}^2+\text{variance}$.
+   Inverse-*variance* weighting ignores the bias term entirely.
+3. **Variance $\neq$ error.** The quoted $\sigma_i$ is the **parametric Monte-Carlo spread** of model $i$
+   under an *assumed* parameter distribution — the width of the analyst's prior, not the model's distance
+   from the truth. A confidently-wrong model (narrow prior, wrong centre) has small $\sigma_i$ and large
+   error, exactly the case IVW cannot see.
+
+**Consequence (one line).** Because $w_i\propto 1/\sigma_i^2$ uses the analyst's *confidence* in place of
+the estimator's *accuracy*, and because the ensemble is dependent and biased, inverse-variance weighting
+of same-endpoint radiobiological models is not MSE-optimal and can be dominated by a single confident,
+wrong member — as the B4 stress test demonstrates. A rank-based combiner (median) is invariant to any
+single member's quoted confidence and is therefore robust to this failure, at the cost of discarding
+genuine precision information when the models *are* well-specified and independent (rare here).
