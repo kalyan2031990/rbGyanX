@@ -61,7 +61,7 @@ All version surfaces reconciled to **1.0.0**:
 |---------|-------|
 | `engine/rbgyanx_engine/_version.py` (`__version__`) | 1.0.0 |
 | `VERSION.txt` | 1.0.0 (release date corrected 2025-12-25 → 2026-06-10) |
-| `CITATION.cff` | 1.0.0, `doi: 10.5281/zenodo.20623120` (set this phase) |
+| `CITATION.cff` | 1.0.0, `doi: 10.5281/zenodo.21757164` (set this phase) |
 | `pyproject.toml` / `engine/pyproject.toml` | 1.0.0 |
 | `engine/VERSION` | 0.1.0-alpha → **1.0.0** (stray orphan reconciled) |
 | `rbgyanx.__version__` (← engine) / `APP_VERSION` (← VERSION.txt) | 1.0.0 |
@@ -81,7 +81,7 @@ engine `__version__`, and `rbgyanx.__version__`.
 |-----------|--------|
 | Working-tree drift committed; local == GitHub-reconcilable | ✅ (this commit) |
 | Single version source | ✅ |
-| `CITATION.cff` Zenodo DOI set | ✅ 10.5281/zenodo.20623120 |
+| `CITATION.cff` Zenodo DOI set | ✅ 10.5281/zenodo.21757164 |
 | `pip install -e ".[dev]"` + `pytest` green, zero env vars | ✅ 487/3/0, exit 0 |
 | ruff + black + mypy clean on engine/radiobiology + new modules | ✅ |
 | Classical numerics unchanged (regression contract) | ✅ count identical pre/post |

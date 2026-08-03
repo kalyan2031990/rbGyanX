@@ -72,7 +72,7 @@ To bump the release version: edit `_version.py`, then update the three guarded f
 - `.gitattributes` added: `* text=auto eol=lf` (LF-normalised text; `*.ps1/.bat/.cmd` keep CRLF; known
   binaries marked `binary`). Kills cross-platform CRLF churn.
 - No `__pycache__/`, `*.pyc`, or `*.egg-info/` tracked (all covered by `.gitignore`).
-- `CITATION.cff` DOI = `10.5281/zenodo.20623120`.
+- `CITATION.cff` DOI = `10.5281/zenodo.21757164`.
 - Track-B validation-study planning docs (private local data paths / cohort design) are `.gitignore`d out
   of the public repo history — kept on disk only.
 

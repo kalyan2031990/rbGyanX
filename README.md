@@ -3,7 +3,7 @@
 [![CI](https://github.com/kalyan2031990/rbGyanX/actions/workflows/ci.yml/badge.svg)](https://github.com/kalyan2031990/rbGyanX/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10--3.12-blue.svg)](pyproject.toml)
-[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20623120-blue.svg)](https://doi.org/10.5281/zenodo.20623120)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21757164-blue.svg)](https://doi.org/10.5281/zenodo.21757164)
 
 **rbGyanX** evaluates radiotherapy treatment plans with transparent, classical radiobiology —
 tumour control (**TCP**), normal-tissue complication (**NTCP**: LKB probit / log-logistic and
@@ -71,11 +71,10 @@ anchors, and UTCP factorisation. No patient data is required or included.
 
 Cite the archived release via its DOI — see [`CITATION.cff`](CITATION.cff), or:
 
-> Mondal, K. *rbGyanX: A radiobiology-guided clinical decision support framework* (v1.0.0).
-> Zenodo. https://doi.org/10.5281/zenodo.20623120
+> Mondal, K., Mandal, A., & Vijay, A. *rbGyanX: A radiobiology-guided clinical decision support
+> framework* (v1.0.0). Zenodo. https://doi.org/10.5281/zenodo.21757164
 
-The accompanying manuscript (Medical Physics) will be added as the preferred citation on
-acceptance.
+The accompanying manuscript will be added as the preferred citation on acceptance.
 
 ## Layout
 
