@@ -158,13 +158,43 @@ class PatientPred:
     sd: dict  # model -> MC sd
 
 
-def load_cohort(root: Path) -> pd.DataFrame:
+def load_cohort(root: Path, volume_max: float | None = None) -> pd.DataFrame:
     events = pd.read_csv(root / "derived" / "parotid_cohort_full.csv")
     mp = pd.read_csv(root / "derived" / "parotid_pseudonym_map.csv")
     m = events.merge(mp[["pseudonym", "dvh_file"]], on="pseudonym", how="left")
     if m["dvh_file"].isna().any():
         raise SystemExit("pseudonym<->dvh_file mapping incomplete; STOP.")
+    if volume_max is not None:  # B8 single-gland stratum
+        m = m[m["Parotid_volume_cc"] <= volume_max].reset_index(drop=True)
     return m
+
+
+def b9_diagnostics(preds: list[PatientPred]) -> pd.DataFrame:
+    """Why is the clean consensus near-constant? Per-model sigma_i distribution, mean effective
+    weight, and output-range collapse (consensus spread vs single-model spread)."""
+    rows = []
+    cons_means = []
+    for p in preds:
+        c = inverse_variance_consensus([p.est[m] for m in MODELS], [p.sd[m] ** 2 for m in MODELS])
+        cons_means.append(c["mean"])
+    cons_means = np.array(cons_means)
+    for mdl in MODELS:
+        ests = np.array([p.est[mdl] for p in preds])
+        sds = np.array([p.sd[mdl] for p in preds])
+        # mean effective weight of this model across patients
+        wfrac = []
+        for p in preds:
+            v = np.array([p.sd[m] ** 2 for m in MODELS])
+            w = 1.0 / v
+            wfrac.append(w[MODELS.index(mdl)] / w.sum())
+        rows.append({"model": mdl,
+                     "sigma_median": float(np.median(sds)), "sigma_iqr": float(np.subtract(*np.percentile(sds, [75, 25]))),
+                     "mean_weight_fraction": float(np.mean(wfrac)),
+                     "pred_range": float(ests.max() - ests.min()), "pred_std": float(ests.std())})
+    rows.append({"model": "CONSENSUS", "sigma_median": math.nan, "sigma_iqr": math.nan,
+                 "mean_weight_fraction": math.nan,
+                 "pred_range": float(cons_means.max() - cons_means.min()), "pred_std": float(cons_means.std())})
+    return pd.DataFrame(rows)
 
 
 def per_patient_predictions(root: Path, cohort: pd.DataFrame) -> list[PatientPred]:
@@ -378,31 +408,36 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--data-root", required=True,
                     help="validation_study dir with derived/parotid_* (PRIVATE, not committed)")
+    ap.add_argument("--volume-max", type=float, default=None,
+                    help="B8: restrict to Parotid_volume_cc <= this (single-gland stratum)")
+    ap.add_argument("--tag", default="pooled", help="output subdir under outputs/consensus_B/")
     args = ap.parse_args()
     root = Path(args.data_root)
-    OUT.mkdir(parents=True, exist_ok=True)
+    out = OUT / args.tag
+    out.mkdir(parents=True, exist_ok=True)
 
-    cohort = load_cohort(root)
+    cohort = load_cohort(root, volume_max=args.volume_max)
     preds = per_patient_predictions(root, cohort)
     y = np.array([p.event for p in preds])
-    print(f"parotid: analysed n={len(preds)}, events={int(y.sum())}")
+    print(f"parotid[{args.tag}]: analysed n={len(preds)}, events={int(y.sum())}")
+    b9_diagnostics(preds).to_csv(out / "b9_diagnostics.csv", index=False)
 
     comps = comparator_predictions(preds)
     # apparent metrics per comparator
     app = pd.DataFrame([{"comparator": k, **all_metrics(y, v)} for k, v in comps.items()])
-    app.to_csv(OUT / "apparent_metrics.csv", index=False)
+    app.to_csv(out / "apparent_metrics.csv", index=False)
 
     paired = bootstrap_paired(y, comps, ref="consensus")
-    paired.to_csv(OUT / "paired_differences.csv", index=False)
+    paired.to_csv(out / "paired_differences.csv", index=False)
 
     iq = interval_quality(preds)
-    iq.to_csv(OUT / "interval_quality.csv", index=False)
+    iq.to_csv(out / "interval_quality.csv", index=False)
 
     stress, base_m = stress_test(preds)
-    stress.to_csv(OUT / "stress_test.csv", index=False)
+    stress.to_csv(out / "stress_test.csv", index=False)
 
     repairs = b5_repairs(preds)
-    repairs.to_csv(OUT / "b5_repairs.csv", index=False)
+    repairs.to_csv(out / "b5_repairs.csv", index=False)
     print("\nB5 repairs:\n" + repairs.to_string(index=False))
 
     # calibration curve inputs (apparent, per comparator, 10 bins)
@@ -415,7 +450,7 @@ def main() -> int:
                 cal_rows.append({"comparator": k, "bin_mid": (lo + hi) / 2,
                                  "mean_pred": float(v[m].mean()), "obs_rate": float(y[m].mean()),
                                  "n": int(m.sum())})
-    pd.DataFrame(cal_rows).to_csv(OUT / "calibration_curves.csv", index=False)
+    pd.DataFrame(cal_rows).to_csv(out / "calibration_curves.csv", index=False)
 
     prov = {
         "analysis": "B — inverse-variance consensus (parotid PRIMARY)",
@@ -428,7 +463,7 @@ def main() -> int:
         "outputs": ["apparent_metrics.csv", "paired_differences.csv", "interval_quality.csv",
                     "stress_test.csv", "calibration_curves.csv"],
     }
-    (OUT / "provenance.json").write_text(json.dumps(prov, indent=2), encoding="utf-8")
+    (out / "provenance.json").write_text(json.dumps(prov, indent=2), encoding="utf-8")
     print("wrote ->", OUT)
     print(app.to_string(index=False))
     return 0
