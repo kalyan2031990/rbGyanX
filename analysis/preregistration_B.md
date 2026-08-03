@@ -77,3 +77,22 @@ degrading the well-specified case. Repairs are never presented as the original m
 Seed 0; provenance.json per output; no patient identifier in any output (pseudonyms only); outputs
 gitignored; classical numerics unchanged (22 positive controls stay green); the consensus is used
 exactly as implemented — no modification to win.
+
+---
+
+## Amendment 1 (2026-08-03, before results)
+
+On inspecting the engine config, the parotid organ (`HN/Parotid_L`) parameterises **only** LKB
+log-logistic (TD50=28.4, γ50=0.6) and relative-seriality (D50=28.4, γ=1.0, s=0.25) at geud_a=1.0;
+**LKB probit is not configured for parotid**. To keep the pre-registered **3-model** design (and a
+richer stress test), the analysis adds a documented QUANTEC-era parotid **probit** parameterisation
+(TD50=39.9 Gy, m=0.40, n=1.0 → mean-dose form) *for the analysis only* — the engine config is not
+modified (do-no-harm). If a reader prefers the strict engine set, the 2-model (LL+RS) consensus is
+reported alongside as a sensitivity. No outcome data has been examined at the time of this amendment.
+
+## Amendment 2 (2026-08-03, before results)
+
+Scope for this run: the **parotid PRIMARY** cohort is executed in full (B2–B4). The HN loco-regional
+arm is a **TCP** (tumour-control) consensus over a different model set and the SPARK arm is
+descriptive; both are deferred to a follow-on commit so the primary result is delivered clean. This
+does not change the pre-registered endpoints or decision rule.
