@@ -21,6 +21,9 @@ class NTCPUncertaintyConfig:
     s_rs_cv: float = 0.25
     n_samples: int = 1000
     seed: int = 42
+    # Consensus combiner: "median" (default, robust — Analysis B), "inverse_variance"
+    # (historical), or "disagreement" (inverse-variance + between-model penalty).
+    consensus_method: str = "median"
 
 
 def _truncated_normal(mean: float, cv: float, n: int, rng: np.random.Generator) -> np.ndarray:
@@ -102,7 +105,7 @@ def run_untcp(
     pb_agg = _agg(ntcp_pb)
     rs_agg = _agg(ntcp_rs)
 
-    from uncertainty.inverse_variance_consensus import inverse_variance_consensus
+    from uncertainty.inverse_variance_consensus import combine_consensus
 
     estimates: list[float] = []
     variances: list[float] = []
@@ -112,7 +115,7 @@ def run_untcp(
         if math.isfinite(mean) and math.isfinite(sd) and sd > 0:
             estimates.append(float(mean))
             variances.append(float(sd**2))
-    consensus = inverse_variance_consensus(estimates, variances)
+    consensus = combine_consensus(estimates, variances, method=config.consensus_method)
 
     return {
         "uNTCP_LKB_loglogit": ll_agg,
@@ -121,5 +124,5 @@ def run_untcp(
         "uNTCP": consensus,
         "n_samples": n,
         "organ": organ_params.canonical,
-        "_note": "uNTCP = inverse-variance consensus; UTCP (P+) is radiobiology.utcp.",
+        "_note": f"uNTCP = {config.consensus_method} consensus; UTCP (P+) is radiobiology.utcp.",
     }
