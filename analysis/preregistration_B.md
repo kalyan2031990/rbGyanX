@@ -96,3 +96,33 @@ Scope for this run: the **parotid PRIMARY** cohort is executed in full (B2–B4)
 arm is a **TCP** (tumour-control) consensus over a different model set and the SPARK arm is
 descriptive; both are deferred to a follow-on commit so the primary result is delivered clean. This
 does not change the pre-registered endpoints or decision rule.
+
+---
+
+## Amendment 3 (2026-08-03, before the extension runs)
+
+**Why supplement the pooled parotid result.** In the pooled parotid cohort every model
+anti-discriminated (AUC≈0.42). This is a confound, not a property of the consensus: the pooled
+cohort mixes single-gland and bilateral/combined parotid structure definitions, so a single
+Dmean/gEUD-based dose-response cannot rank cases coherently across the mixture. A calibration
+comparison built on mis-ranked predictions is not a fair test of *combination*. We therefore add:
+
+- **B7 — HN loco-regional control** (TCP endpoint, n=121, 20 events): a different endpoint family and
+  model set (tumour-control), same protocol (B2/B3/B4/B5), to test whether the median advantage is
+  endpoint-specific.
+- **B8 — clean parotid single-gland stratum** (volume ≤ 45 cm³, n=32, 20 events): the sub-cohort in
+  which the dose-response is recovered (AUC≈0.58) and models are not mis-ranked. This is the
+  scientifically clean calibration test; it, not the pooled cohort, is the fair comparison for
+  calibration, and we state that explicitly.
+- **B9** diagnoses the near-constant clean-case consensus; **B10** assesses generality; **B11** gives
+  the analytic condition; **B12** applies the evidence to the software default.
+
+**Decision rule for "the median advantage generalises".** Pre-specified: the median combiner is
+called generalisably preferable to inverse-variance weighting iff, across the three cohorts
+(HN, parotid-pooled, parotid-single-gland), (i) in the **B4 stress test** the median's worst-cell
+Brier damage is smaller than IVW's in **all three** (direction), and (ii) in the **clean** (un-poisoned)
+comparison the median is non-inferior to IVW on Brier (paired 95% CI upper bound ≤ +0.01) in **all
+three**. If clean-case differences are indistinguishable from noise (expected at 20–34 events) we say
+so and rest the claim on the stress-test direction + the B11 analytic argument, not on point estimates.
+No outcome-driven re-tuning; the median and disagreement-penalty combiners are used exactly as
+pre-registered in B5.
