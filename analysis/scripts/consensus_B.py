@@ -327,6 +327,43 @@ def stress_test(preds: list[PatientPred]):
     return pd.DataFrame(rows), base_m
 
 
+def b5_repairs(preds: list[PatientPred]):
+    """B5: do the pre-registered repairs fix the worst stress cell WITHOUT degrading the clean case?
+
+    Compares, at the clean set and at the worst poison (TD50 +50%, band x0.1 on probit):
+      - naive inverse-variance (the method), - disagreement penalty (sigma_i^2 += tau^2),
+      - median combination. Reports consensus Brier for each.
+    """
+    base = [{"event": p.event, "est": dict(p.est), "sd": dict(p.sd)} for p in preds]
+    y = np.array([b["event"] for b in base])
+
+    def poison(b, shift, narrow):
+        est, sd = dict(b["est"]), dict(b["sd"])
+        est["LKB_probit"] = float(np.clip(_sigmoid(_logit(est["LKB_probit"]) - 6.0 * shift), EPS, 1 - EPS))
+        sd["LKB_probit"] = sd["LKB_probit"] * narrow
+        return est, sd
+
+    def combine(est, sd, method):
+        e = np.array([est[m] for m in MODELS])
+        v = np.array([sd[m] ** 2 for m in MODELS])
+        if method == "median":
+            return float(np.median(e))
+        if method == "disagreement":
+            v = v + float(np.var(e, ddof=1))  # inflate every variance by between-model spread
+        c = inverse_variance_consensus(e.tolist(), v.tolist())
+        return c["mean"]
+
+    rows = []
+    for label, (shift, narrow) in {"clean": (0.0, 1.0), "worst_poison": (0.50, 0.1)}.items():
+        for method in ("naive_ivw", "disagreement", "median"):
+            preds_v = []
+            for b in base:
+                est, sd = poison(b, shift, narrow)
+                preds_v.append(combine(est, sd, "naive_ivw" if method == "naive_ivw" else method))
+            rows.append({"case": label, "method": method, "brier": brier(y, np.array(preds_v))})
+    return pd.DataFrame(rows)
+
+
 # ------------------------------------------------------------------ main
 
 
@@ -363,6 +400,10 @@ def main() -> int:
 
     stress, base_m = stress_test(preds)
     stress.to_csv(OUT / "stress_test.csv", index=False)
+
+    repairs = b5_repairs(preds)
+    repairs.to_csv(OUT / "b5_repairs.csv", index=False)
+    print("\nB5 repairs:\n" + repairs.to_string(index=False))
 
     # calibration curve inputs (apparent, per comparator, 10 bins)
     cal_rows = []
