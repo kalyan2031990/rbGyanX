@@ -3,12 +3,17 @@ message: "If you use this software, please cite it as below."
 authors:
   - family-names: Mondal
     given-names: Kalyan
-    # TODO(release): add ORCID — "orcid: https://orcid.org/0000-0000-0000-0000"
+    orcid: "https://orcid.org/0000-0001-7685-7391"
+  - family-names: Mandal
+    given-names: Abhijit
+    orcid: "https://orcid.org/0000-0001-5626-1072"
+  - family-names: Vijay
+    given-names: Anuj
+    orcid: "https://orcid.org/0000-0001-6610-3844"
 title: "rbGyanX: A radiobiology-guided clinical decision support framework"
 version: "1.0.0"
 date-released: 2026-06-10
-doi: "10.5281/zenodo.20623120"
-# identifiers: synthetic + real data DOIs in README after upload
+doi: "10.5281/zenodo.21757164"
 url: "https://github.com/kalyan2031990/rbGyanX"
 repository-code: "https://github.com/kalyan2031990/rbGyanX"
 license: MIT
@@ -24,7 +29,7 @@ abstract: "rbGyanX is a radiobiology-guided clinical decision support framework 
 # preferred-citation:
 #   type: article
 #   title: "<manuscript title>"
-#   authors: [{family-names: Mondal, given-names: Kalyan}]
-#   journal: "Medical Physics"
+#   authors: [{family-names: Mondal, given-names: Kalyan}, {family-names: Mandal, given-names: Abhijit}, {family-names: Vijay, given-names: Anuj}]
+#   journal: "Computer Methods and Programs in Biomedicine"
 #   year: 2026
 #   doi: "<article DOI>"
