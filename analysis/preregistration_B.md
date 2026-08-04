@@ -126,3 +126,44 @@ three**. If clean-case differences are indistinguishable from noise (expected at
 so and rest the claim on the stress-test direction + the B11 analytic argument, not on point estimates.
 No outcome-driven re-tuning; the median and disagreement-penalty combiners are used exactly as
 pre-registered in B5.
+
+---
+
+## Amendment 4 (2026-08-04, before the B13 runs)
+
+**B13 — is the inverse-variance "winner" decided by arbitrary uncertainty metadata?** B9 found that
+relative-seriality carries ~53 % of the 1/σ² weight un-poisoned because σ_RS≈0.062 < σ_probit≈0.137.
+B13 establishes whether that dominance is a property of the *models* or of the *σ specification*.
+
+**B13.1 — provenance of σ_i (reported, not computed).** Each model's MC σ is the SD over
+truncated-normal draws of its parameters (`NTCPUncertaintyConfig`). Perturbed parameters, default CVs,
+and cited sources (from `docs/archive/engine_rbGyanX_FIX_PROMPT.md`):
+LKB-LL → TD50 (0.15, Deasy 1997), γ50 (0.20, Marks 2010) — **2 params**;
+LKB-probit → TD50 (0.15), m (0.25), n (0.30, Deasy 1997) — **3 params**, and n enters as the gEUD
+exponent 1/n (variance amplification);
+RS → D50 (0.15), γ (0.20), s (0.25) (Källman 1992) — 3 params.
+We state plainly which are arbitrary: the CVs are **round-number defaults** (0.15/0.20/0.25/0.30)
+loosely attributed to those references, **not** values extracted from a specific table with a
+documented derivation. No per-parameter literature covariance is encoded. The number of perturbed
+parameters per model (2 vs 3) and the 1/n amplification are modelling choices, not data.
+
+**B13.2 — sensitivity grid (single-gland stratum, n=32/20ev, seed 0, N_MC=2000).** For each model
+m ∈ {LL, probit, RS} and scale k ∈ {0.5, 1, 2}, scale **only model m's CVs** by k (others at 1×) and
+recompute σ_m by real MC; also a global control (all CVs ×k). For each cell record: mean 1/σ² weight
+fraction per model, the **argmax (dominant model)**, and consensus Brier + calibration slope. Point
+estimates are unchanged by CV scaling (nominal parameters), so only the weighting moves.
+
+**B13.3 — decisive question, pre-committed answer rule.** If the identity of the dominant model
+**flips** within this plausible range (a 0.5×–2× CV change, i.e. within one reference's stated
+uncertainty), we conclude: *under inverse-variance weighting the ensemble output is determined by the
+analyst's uncertainty metadata rather than by the models' agreement with data.* If dominance is stable
+across the whole grid, we report stable dominance (a weaker but honest result).
+
+**B13.4 — median contrast.** Repeat B13.2 for the median combiner. Prediction (to be confirmed or
+refuted): the median point estimate is invariant to CV scaling (it ignores σ), so its consensus Brier
+is **constant** across the entire grid. If instead the median moves, that refutes the robustness claim
+and we say so. No outcome-driven tuning; CVs are scaled by fixed factors specified here in advance.
+
+**Literature-alternative CV set:** none is encoded in the engine and we will not fabricate one; the
+"alternative set" is realised as the ±2× reference-scale sweep above, which brackets the plausible
+range. Marked N/A with this justification rather than invented.
