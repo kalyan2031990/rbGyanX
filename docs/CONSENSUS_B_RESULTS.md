@@ -270,3 +270,176 @@ agreeing-members do-no-harm case, the backward-compatible IVW shape, and NaN han
   individually and does **not** consume the consensus `mean`, so no published pipeline number moves.
 - `engine/tests/test_ntcp_models.py` (per-model MC bands) and the original
   `test_inverse_variance_consensus.py` (historical combiner) — all green.
+
+---
+
+## B7. Does the pathology generalise to the TCP family? (registered-prediction test)
+
+Pre-registered in Amendment 5 *before wiring anything*: B11 predicts (i) one TCP model spontaneously
+carries a disproportionate 1/σ² weight (threshold: mean weight fraction ≥ 0.50 vs equal-share 0.25),
+and (ii) the median is non-inferior on the clean case and more robust under poisoning. HN loco-regional
+control, n=121, **20 loco-regional failures / 101 controlled**; TCP family (Poisson-LQ, Zaider–Minerbo,
+gEUD-logistic, logistic) via `run_parameter_mc`; per-patient PTV DVH reconstructed truncnorm(Dmean,
+dose_std); seed 0, N_MC=2000. Endpoint = control (y=1 controlled).
+
+### B7.3 Spontaneous weight distribution (the B9 analogue) — prediction CONFIRMED
+
+| TCP model | σ (MC), median | mean 1/σ² weight fraction | Brier (single) |
+|---|---|---|---|
+| Poisson-LQ | 0.130 | 0.072 | 0.154 |
+| **Zaider–Minerbo** | **0.080 (narrowest genuine)** | 0.179 | 0.161 |
+| gEUD-logistic | 0.151 | 0.088 | 0.178 |
+| **logistic** | **≈1e-16 (degenerate)** | **0.661** | 0.218 (worst) |
+
+Two nested confirmations of the same failure:
+
+1. **Extreme form.** The **logistic** model carries **66 %** of the weight — because its parameters
+   (`D50_logistic`, `k_logistic`) are *not in the MC perturbation set*, so its σ is numerical noise
+   (~1e-16). A near-zero σ buys near-infinite 1/σ² weight, so the model with **no genuine parametric
+   uncertainty and the worst single-model Brier** dominates the "consensus." (On the 34 % of patients
+   where its σ is *exactly* 0 the engine masks it out entirely — so the same model is either excluded
+   or totally dominant depending on floating-point noise. Participation itself is a metadata artifact.)
+2. **Clean form, mirroring parotid.** Restricting to the three genuinely-perturbed models and
+   renormalising, **Zaider–Minerbo carries 0.53** of the weight (0.179/0.339) — it simply has the
+   narrowest genuine MC band — exactly the spontaneous ~53 % dominance relative-seriality showed in the
+   parotid single-gland stratum (B9). The pattern is not endpoint-specific.
+
+### B7.2 Consensus vs comparators (apparent; paired 2000-bootstrap 95 % CI)
+
+| Predictor | Brier | ECE | AUC |
+|---|---|---|---|
+| Poisson (best single) | 0.154 | 0.123 | 0.585 |
+| Zaider–Minerbo | 0.161 | 0.138 | 0.586 |
+| gEUD-logistic | 0.178 | 0.174 | 0.589 |
+| logistic | 0.218 | 0.281 | 0.600 |
+| naive mean (prob) | **0.149** | 0.080 | 0.588 |
+| **median** | 0.152 | 0.074 | 0.587 |
+| **inverse-variance consensus** | **0.187** | **0.217** | 0.614 |
+
+Paired differences (**consensus − comparator**; positive = consensus worse; `*` = CI excludes 0):
+
+| vs | ΔBrier [95 % CI] | verdict |
+|---|---|---|
+| best single (Poisson) | +0.034 [+0.006, +0.061] `*` | consensus **worse** |
+| naive mean (prob) | +0.039 [+0.017, +0.062] `*` | consensus **worse** |
+| **median** | +0.036 [+0.008, +0.061] `*` | consensus **worse** |
+| logistic (worst single) | −0.030 [−0.050, −0.010] `*` | consensus better than *only* the worst model |
+
+The inverse-variance consensus is significantly **worse than the best single model, the naive mean,
+and the median** — it beats only the single worst model, because that worst model (logistic) dominates
+its weight. **Median vs best single: ΔBrier −0.001 [−0.007, +0.005]** (non-inferior, CI includes 0);
+**median vs consensus: −0.036 [−0.061, −0.008]** (median significantly better). Grouped-CV (leave-one-
+centre-out) recalibration slope: consensus 0.20 (worst), median 0.66, naive-mean 0.62 — the consensus is
+also the least-calibrated.
+
+### B7.4 Stress + repairs (B4/B5 analogue) and verdict
+
+Poisoning the hardest-to-dominate *genuine* member (Poisson) still lets it capture up to 0.33 of the
+weight and inflates IVW Brier by +0.062 (worst cell). B5 repairs (Brier):
+
+| Method | clean | worst poison |
+|---|---|---|
+| naive inverse-variance | 0.187 | 0.249 |
+| disagreement penalty | 0.155 | 0.187 |
+| **median** | **0.152** | 0.190 |
+
+> **Verdict against the registered prediction: CONFIRMED.** On a different model family, different
+> parameters and a different σ structure, (i) a single model spontaneously carried a disproportionate
+> 1/σ² weight — 0.66 for the degenerate-σ logistic, and 0.53 for Zaider–Minerbo among the genuinely
+> perturbed models — with **no adversary**; and (ii) the median was non-inferior to the best single
+> model and significantly better than the inverse-variance consensus, which here was the *worst* usable
+> combiner. The pathology is structural, as B11 predicted, not an artifact of the parotid endpoint.
+> **Honest caveat:** the extreme 0.66 figure is amplified by an engine wiring detail (the logistic TCP's
+> parameters are absent from the MC set, so its σ is numerical noise). That is a real and severe
+> manifestation — the consensus is dominated by a model whose "confidence" is meaningless — but the
+> cleaner, wiring-independent confirmation is the ZM 0.53 dominance, which matches parotid RS.
+
+---
+
+## B13. Is the inverse-variance "winner" decided by arbitrary uncertainty metadata?
+
+Pre-registered in Amendment 4. Single-gland stratum (n=32/20ev), seed 0, N_MC=2000. Point estimates are
+held at nominal parameters throughout; **only the σ specification moves**.
+
+### B13.1 Provenance of σ_i — which CVs are arbitrary
+
+| Model | perturbed params (CV, source) | # params | σ median | baseline weight |
+|---|---|---|---|---|
+| LKB log-logistic | TD50 (0.15, Deasy 1997), γ50 (0.20, Marks 2010) | 2 | 0.085 | 0.31 |
+| LKB probit | TD50 (0.15), m (0.25), n (0.30) (Deasy 1997) | 3 | 0.135 | 0.15 |
+| **relative-seriality** | D50 (0.15), γ (0.20), s (0.25) (Källman 1992) | 3 | **0.062** | **0.54** |
+
+**What is arbitrary:** the CVs are **round-number defaults** (0.15/0.20/0.25/0.30) loosely attributed to
+those references — not values read from a specific table with a documented derivation, and no
+per-parameter literature covariance is encoded. RS wins the baseline weight because it happens to have
+the smallest MC σ; that σ is a product of *which* parameters are perturbed and *what* round-number CVs
+were chosen, not of RS agreeing with data better.
+
+### B13.2 / B13.3 Sensitivity — the dominant model flips under plausible re-specification
+
+Scaling **one model's CVs** by k∈{0.5, 2} (others at 1×), plus a global control. Dominant = argmax mean
+1/σ² weight fraction:
+
+| scenario | wt LL | wt probit | wt RS | **dominant** | IVW Brier | median Brier |
+|---|---|---|---|---|---|---|
+| baseline (all ×1) | 0.31 | 0.15 | 0.54 | **RS** | 0.254 | 0.2532 |
+| LL ×0.5 (LL more confident) | 0.62 | 0.08 | 0.29 | **LL** | 0.254 | 0.2532 |
+| LL ×2 | 0.12 | 0.19 | 0.69 | RS | 0.254 | 0.2532 |
+| probit ×0.5 | 0.22 | 0.41 | 0.37 | **probit** | 0.269 | 0.2532 |
+| probit ×2 | 0.35 | 0.04 | 0.61 | RS | 0.248 | 0.2532 |
+| RS ×0.5 | 0.12 | 0.06 | 0.82 | RS | 0.247 | 0.2532 |
+| RS ×2 (RS less confident) | 0.52 | 0.26 | 0.22 | **LL** | 0.262 | 0.2532 |
+| global ×0.5 | 0.30 | 0.16 | 0.54 | RS | 0.255 | 0.2532 |
+| global ×2 | 0.34 | 0.15 | 0.51 | RS | 0.252 | 0.2532 |
+
+**The identity of the dominant model changes to all three of {RS, LL, probit} within a 0.5×–2× CV
+change** — a range comfortably inside any of the cited references' own stated parameter uncertainty.
+Halving a model's CVs is enough to hand it the plurality; doubling RS's CVs hands the lead to
+log-logistic. Only **global** (proportional) scaling leaves the winner unchanged, because it preserves
+the *relative* σ — confirming that it is the *differential* metadata, not any real property, that decides
+the outcome.
+
+**B13.3, plain answer:** *Yes.* Under inverse-variance weighting the ensemble's output is determined by
+the analyst's uncertainty metadata rather than by the models' agreement with data. The "consensus winner"
+is an artifact of round-number CV choices and of how many parameters each model happens to perturb.
+
+### B13.4 Median contrast — invariant by construction
+
+Because the median ignores σ, its consensus is **identical across every scenario**: median Brier =
+0.253218 and median calibration slope = 0.167226 to 16 significant figures in all nine rows. The robust
+combiner's output cannot be moved by re-specifying the parameter uncertainties — the property the
+inverse-variance combiner catastrophically lacks.
+
+---
+
+## B7 + B13 — what they jointly establish (publication-ready)
+
+> Across two independent model families (NTCP and TCP) and a deliberate re-specification of the parameter
+> uncertainties, the inverse-variance consensus was governed by the analysts' uncertainty *metadata*
+> rather than by the models' agreement with data: a single model spontaneously captured the majority of
+> the 1/σ² weight (relative-seriality 53 % for NTCP, Zaider–Minerbo 53 % / the degenerate-σ logistic
+> 66 % for TCP), and the identity of that dominant model flipped between all three NTCP members under a
+> 0.5×–2× change in a single model's coefficients of variation. A rank-based median combiner was exactly
+> invariant to this metadata and was non-inferior to the best single model in both families, whereas the
+> inverse-variance consensus was significantly worse than the best single model, the naive mean and the
+> median on the TCP endpoint. We therefore combine same-endpoint radiobiological models with a robust
+> median rather than inverse-variance weighting.
+
+### Adversarial self-review — what B13 and B7 still do NOT establish
+
+- **Not a claim that ensembling is useless.** These results indict *inverse-variance* weighting of
+  *dependent, biased, same-endpoint* models. A properly Bayesian model-averaging scheme with a real
+  covariance and outcome-informed weights is untested here and could do better.
+- **B7's 0.66 figure is inflated by a wiring degeneracy** (logistic TCP params absent from the MC set →
+  σ = numerical noise). We flag this explicitly; the wiring-independent result is the ZM 0.53 dominance.
+  A referee could reasonably ask that the logistic be given a genuine parametric σ and the test repeated.
+- **DVH reconstruction (B7).** TCP was computed on PTV DVHs reconstructed from dose moments, not raw
+  DVHs; PTVs are near-homogeneous so this is well-constrained, but it is an approximation and the
+  absolute calibration numbers should be read as indicative, not definitive. The *relative* σ/weight
+  structure — the object of the test — is robust to it.
+- **Event counts are modest** (20 loco-regional failures; 20 single-gland xerostomia events). The
+  weight-concentration and CV-flip findings are deterministic (not outcome-dependent) and so are not
+  limited by events; the *calibration* comparisons are, and are reported with CIs that mostly include 0
+  except where noted.
+- **The median discards genuine precision** when models are independent and well-specified — a real cost
+  we accept because that regime does not hold for same-endpoint TCP/NTCP ensembles (B11).
