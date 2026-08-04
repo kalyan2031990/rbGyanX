@@ -167,3 +167,47 @@ and we say so. No outcome-driven tuning; CVs are scaled by fixed factors specifi
 **Literature-alternative CV set:** none is encoded in the engine and we will not fabricate one; the
 "alternative set" is realised as the ±2× reference-scale sweep above, which brackets the plausible
 range. Marked N/A with this justification rather than invented.
+
+---
+
+## Amendment 5 (2026-08-04, before the B7 TCP-family runs)
+
+**B7 — does the 1/σ² pathology generalise to a DIFFERENT model family?** B11 asserts the failure is
+structural (dependence + bias + variance≠error), not endpoint-specific. That is a prediction; the TCP
+family (different models, parameters, σ structure) is the test.
+
+**B7.0 — REGISTERED PREDICTION (committed before wiring anything).** B11 predicts, on the TCP family:
+- **(i) spontaneous concentration:** one TCP model will carry a disproportionate share of the 1/σ²
+  weight with no adversary — pre-specified threshold: some model's mean weight fraction ≥ **0.50**
+  (vs the equal-share 0.25 for M=4 models).
+- **(ii) robust combiner wins:** the median is non-inferior to inverse-variance on the clean case
+  (paired Brier 95 % CI upper bound ≤ +0.01) **and** strictly more robust under poisoning (worst-cell
+  Brier damage smaller than IVW's).
+
+**What would REFUTE the prediction (pre-committed):** if the TCP members' MC σ are homogeneous so that
+**no** model's mean weight fraction exceeds ~0.40 **and** poisoning one member (shift + band-narrowing)
+does **not** let it capture a dominant share of the weight, then the pathology does *not* generalise to
+this family. In that case we report it plainly and give the structural reason (e.g. the four TCP models
+share dose-response steepness / saturate together at prescription dose, so their σ are comparable) —
+that is a more interesting result than a confirmation and will be reported as such. An indeterminate
+verdict (CIs include the thresholds at these 20 events) is also permitted and will be stated.
+
+**B7.1 — harness.** Wire the engine TCP family (Poisson-LQ, Zaider–Minerbo, gEUD-logistic, logistic;
+`uncertainty.parameter_mc.run_parameter_mc`, HN `TCPSiteParams`) into the same consensus/comparator
+code as NTCP. Models are used exactly as implemented — no numerics changed. Per-patient PTV DVH is
+**reconstructed** as a truncated-normal(mean=PTV_Dmean_gy, sd=PTV_dose_std_gy) discretised into 40
+physical-dose bins (volume_frac normalised to 1); this is a pre-registered approximation, justified
+because PTVs are near-homogeneous (small dose std) so the reconstruction is tightly constrained by the
+reported moments. n_fractions is the per-patient plan value. This DVH-reconstruction is a stated
+limitation and does not affect the *relative* σ structure that the prediction is about.
+
+**B7.2 — protocol.** HN loco-regional (n=121, 20 loco-regional failures). Endpoint = loco-regional
+**control**; calibration/discrimination target y = 1 − locoregional (1 = controlled). Comparators:
+each single TCP model; best single (apparent Brier); naive probability mean; naive logit mean;
+inverse-variance; median; disagreement-penalty. Apparent + grouped-CV (grouped by treating centre),
+paired bootstrap 95 % CIs (2000 resamples, seed 0, stratified by outcome). Interval quality (B3) and
+the B4 stress + B5 repairs run as for parotid, poisoning one TCP member.
+
+**B7.3** reports the spontaneous 1/σ² weight distribution across the four TCP models (the B9 analogue).
+**B7.4** delivers the verdict against the registered prediction: confirmed / refuted / indeterminate,
+with the structural explanation if refuted. Seed 0; pseudonymised, gitignored outputs; no re-tuning.
