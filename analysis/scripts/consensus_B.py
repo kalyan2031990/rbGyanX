@@ -394,6 +394,99 @@ def b5_repairs(preds: list[PatientPred]):
     return pd.DataFrame(rows)
 
 
+# --------------------------------------------- B13 CV-sensitivity of dominance
+
+# Which CVs each model perturbs (for scaling ONLY that model's uncertainty metadata).
+_MODEL_CV_FIELDS = {
+    "LKB_loglogit": ("TD50_cv", "gamma50_cv"),
+    "LKB_probit": ("TD50_cv", "m_cv", "n_cv"),
+    "RS": ("D50_rs_cv", "gamma_rs_cv", "s_rs_cv"),
+}
+_BASE_CV = {"TD50_cv": 0.15, "m_cv": 0.25, "n_cv": 0.30, "gamma50_cv": 0.20,
+            "D50_rs_cv": 0.15, "gamma_rs_cv": 0.20, "s_rs_cv": 0.25}
+_OUT_KEY = {"LKB_loglogit": "uNTCP_LKB_loglogit", "LKB_probit": "uNTCP_LKB_probit", "RS": "uNTCP_RS"}
+
+
+def _cfg_scaled(scale_fields: dict[str, float]) -> NTCPUncertaintyConfig:
+    """Config with the named CV fields scaled (others at engine default)."""
+    kw = dict(_BASE_CV)
+    for f, k in scale_fields.items():
+        kw[f] = _BASE_CV[f] * k
+    return NTCPUncertaintyConfig(n_samples=N_MC, seed=SEED, **kw)
+
+
+def b13_sensitivity(root: Path, cohort: pd.DataFrame) -> pd.DataFrame:
+    """Does the identity of the 1/sigma^2-dominant model change under plausible re-specification
+    of the parameter CVs? Point estimates are held at baseline (nominal params); only sigma moves."""
+    deid = root / "derived" / "parotid_deid"
+    diffs, est_base, sd_base, ys = [], [], [], []
+    for _, r in cohort.iterrows():
+        try:
+            parsed = parse_dvh_text_file(deid / str(r["dvh_file"]))
+            diff = dvh_object_to_dataframe(parsed.dvh_object)
+            res = run_untcp(diff, PAROTID, NTCPUncertaintyConfig(n_samples=N_MC, seed=SEED))
+        except Exception as exc:
+            print(f"  [b13 excluded] {r['pseudonym']}: {type(exc).__name__}")
+            continue
+        diffs.append(diff)
+        est_base.append({m: float(res[_OUT_KEY[m]]["mean"]) for m in MODELS})
+        sd_base.append({m: float(res[_OUT_KEY[m]]["sd"]) for m in MODELS})
+        ys.append(int(r["xerostomia_grade2plus"]))
+    y = np.array(ys)
+
+    # sigma cache: per-model scaled sigma (read ONLY the scaled model), and global-scaled all-model sigma
+    def sigma_scaled_one(i: int, model: str, k: float) -> float:
+        fields = {f: k for f in _MODEL_CV_FIELDS[model]}
+        res = run_untcp(diffs[i], PAROTID, _cfg_scaled(fields))
+        return float(res[_OUT_KEY[model]]["sd"])
+
+    def sigma_scaled_all(i: int, k: float) -> dict[str, float]:
+        res = run_untcp(diffs[i], PAROTID, _cfg_scaled({f: k for f in _BASE_CV}))
+        return {m: float(res[_OUT_KEY[m]]["sd"]) for m in MODELS}
+
+    scenarios: dict[str, list[dict]] = {}  # name -> per-patient sigma dict
+    scenarios["baseline(all x1)"] = list(sd_base)
+    for model in MODELS:
+        for k in (0.5, 2.0):
+            name = f"{model} x{k:g}"
+            rows = []
+            for i in range(len(diffs)):
+                sd = dict(sd_base[i])
+                sd[model] = sigma_scaled_one(i, model, k)
+                rows.append(sd)
+            scenarios[name] = rows
+    for k in (0.5, 2.0):
+        name = f"global x{k:g}"
+        scenarios[name] = [sigma_scaled_all(i, k) for i in range(len(diffs))]
+
+    out_rows = []
+    for name, sd_list in scenarios.items():
+        wfrac = {m: [] for m in MODELS}
+        ivw_pred, med_pred = [], []
+        for i in range(len(diffs)):
+            e = np.array([est_base[i][m] for m in MODELS])
+            v = np.array([sd_list[i][m] ** 2 for m in MODELS])
+            w = 1.0 / v
+            for j, m in enumerate(MODELS):
+                wfrac[m].append(w[j] / w.sum())
+            ivw_pred.append(float((w * e).sum() / w.sum()))
+            med_pred.append(float(np.median(e)))  # median ignores sigma entirely
+        ivw_pred, med_pred = np.array(ivw_pred), np.array(med_pred)
+        mean_wf = {m: float(np.mean(wfrac[m])) for m in MODELS}
+        dominant = max(MODELS, key=lambda m: mean_wf[m])
+        ivw_b, ivw_a = cal_slope_intercept(y, ivw_pred)
+        med_b, med_a = cal_slope_intercept(y, med_pred)
+        out_rows.append({
+            "scenario": name,
+            "wfrac_LKB_loglogit": mean_wf["LKB_loglogit"],
+            "wfrac_LKB_probit": mean_wf["LKB_probit"], "wfrac_RS": mean_wf["RS"],
+            "dominant_model": dominant, "dominant_weight_frac": mean_wf[dominant],
+            "ivw_brier": brier(y, ivw_pred), "ivw_cal_slope": ivw_b,
+            "median_brier": brier(y, med_pred), "median_cal_slope": med_b,
+        })
+    return pd.DataFrame(out_rows)
+
+
 # ------------------------------------------------------------------ main
 
 
@@ -411,12 +504,28 @@ def main() -> int:
     ap.add_argument("--volume-max", type=float, default=None,
                     help="B8: restrict to Parotid_volume_cc <= this (single-gland stratum)")
     ap.add_argument("--tag", default="pooled", help="output subdir under outputs/consensus_B/")
+    ap.add_argument("--b13", action="store_true",
+                    help="run ONLY the B13 CV-sensitivity-of-dominance grid on this stratum")
     args = ap.parse_args()
     root = Path(args.data_root)
     out = OUT / args.tag
     out.mkdir(parents=True, exist_ok=True)
 
     cohort = load_cohort(root, volume_max=args.volume_max)
+
+    if args.b13:
+        grid = b13_sensitivity(root, cohort)
+        grid.to_csv(out / "b13_sensitivity.csv", index=False)
+        prov = {"analysis": "B13 — CV-sensitivity of inverse-variance dominance",
+                "seed": SEED, "n_mc": N_MC, "volume_max": args.volume_max,
+                "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+                "git_commit": _git_commit(), "python": platform.python_version(),
+                "numpy": np.__version__, "pandas": pd.__version__,
+                "outputs": ["b13_sensitivity.csv"]}
+        (out / "b13_provenance.json").write_text(json.dumps(prov, indent=2), encoding="utf-8")
+        print("B13 CV-sensitivity grid:\n" + grid.to_string(index=False))
+        print("wrote ->", out)
+        return 0
     preds = per_patient_predictions(root, cohort)
     y = np.array([p.event for p in preds])
     print(f"parotid[{args.tag}]: analysed n={len(preds)}, events={int(y.sum())}")
