@@ -126,3 +126,88 @@ three**. If clean-case differences are indistinguishable from noise (expected at
 so and rest the claim on the stress-test direction + the B11 analytic argument, not on point estimates.
 No outcome-driven re-tuning; the median and disagreement-penalty combiners are used exactly as
 pre-registered in B5.
+
+---
+
+## Amendment 4 (2026-08-04, before the B13 runs)
+
+**B13 — is the inverse-variance "winner" decided by arbitrary uncertainty metadata?** B9 found that
+relative-seriality carries ~53 % of the 1/σ² weight un-poisoned because σ_RS≈0.062 < σ_probit≈0.137.
+B13 establishes whether that dominance is a property of the *models* or of the *σ specification*.
+
+**B13.1 — provenance of σ_i (reported, not computed).** Each model's MC σ is the SD over
+truncated-normal draws of its parameters (`NTCPUncertaintyConfig`). Perturbed parameters, default CVs,
+and cited sources (from `docs/archive/engine_rbGyanX_FIX_PROMPT.md`):
+LKB-LL → TD50 (0.15, Deasy 1997), γ50 (0.20, Marks 2010) — **2 params**;
+LKB-probit → TD50 (0.15), m (0.25), n (0.30, Deasy 1997) — **3 params**, and n enters as the gEUD
+exponent 1/n (variance amplification);
+RS → D50 (0.15), γ (0.20), s (0.25) (Källman 1992) — 3 params.
+We state plainly which are arbitrary: the CVs are **round-number defaults** (0.15/0.20/0.25/0.30)
+loosely attributed to those references, **not** values extracted from a specific table with a
+documented derivation. No per-parameter literature covariance is encoded. The number of perturbed
+parameters per model (2 vs 3) and the 1/n amplification are modelling choices, not data.
+
+**B13.2 — sensitivity grid (single-gland stratum, n=32/20ev, seed 0, N_MC=2000).** For each model
+m ∈ {LL, probit, RS} and scale k ∈ {0.5, 1, 2}, scale **only model m's CVs** by k (others at 1×) and
+recompute σ_m by real MC; also a global control (all CVs ×k). For each cell record: mean 1/σ² weight
+fraction per model, the **argmax (dominant model)**, and consensus Brier + calibration slope. Point
+estimates are unchanged by CV scaling (nominal parameters), so only the weighting moves.
+
+**B13.3 — decisive question, pre-committed answer rule.** If the identity of the dominant model
+**flips** within this plausible range (a 0.5×–2× CV change, i.e. within one reference's stated
+uncertainty), we conclude: *under inverse-variance weighting the ensemble output is determined by the
+analyst's uncertainty metadata rather than by the models' agreement with data.* If dominance is stable
+across the whole grid, we report stable dominance (a weaker but honest result).
+
+**B13.4 — median contrast.** Repeat B13.2 for the median combiner. Prediction (to be confirmed or
+refuted): the median point estimate is invariant to CV scaling (it ignores σ), so its consensus Brier
+is **constant** across the entire grid. If instead the median moves, that refutes the robustness claim
+and we say so. No outcome-driven tuning; CVs are scaled by fixed factors specified here in advance.
+
+**Literature-alternative CV set:** none is encoded in the engine and we will not fabricate one; the
+"alternative set" is realised as the ±2× reference-scale sweep above, which brackets the plausible
+range. Marked N/A with this justification rather than invented.
+
+---
+
+## Amendment 5 (2026-08-04, before the B7 TCP-family runs)
+
+**B7 — does the 1/σ² pathology generalise to a DIFFERENT model family?** B11 asserts the failure is
+structural (dependence + bias + variance≠error), not endpoint-specific. That is a prediction; the TCP
+family (different models, parameters, σ structure) is the test.
+
+**B7.0 — REGISTERED PREDICTION (committed before wiring anything).** B11 predicts, on the TCP family:
+- **(i) spontaneous concentration:** one TCP model will carry a disproportionate share of the 1/σ²
+  weight with no adversary — pre-specified threshold: some model's mean weight fraction ≥ **0.50**
+  (vs the equal-share 0.25 for M=4 models).
+- **(ii) robust combiner wins:** the median is non-inferior to inverse-variance on the clean case
+  (paired Brier 95 % CI upper bound ≤ +0.01) **and** strictly more robust under poisoning (worst-cell
+  Brier damage smaller than IVW's).
+
+**What would REFUTE the prediction (pre-committed):** if the TCP members' MC σ are homogeneous so that
+**no** model's mean weight fraction exceeds ~0.40 **and** poisoning one member (shift + band-narrowing)
+does **not** let it capture a dominant share of the weight, then the pathology does *not* generalise to
+this family. In that case we report it plainly and give the structural reason (e.g. the four TCP models
+share dose-response steepness / saturate together at prescription dose, so their σ are comparable) —
+that is a more interesting result than a confirmation and will be reported as such. An indeterminate
+verdict (CIs include the thresholds at these 20 events) is also permitted and will be stated.
+
+**B7.1 — harness.** Wire the engine TCP family (Poisson-LQ, Zaider–Minerbo, gEUD-logistic, logistic;
+`uncertainty.parameter_mc.run_parameter_mc`, HN `TCPSiteParams`) into the same consensus/comparator
+code as NTCP. Models are used exactly as implemented — no numerics changed. Per-patient PTV DVH is
+**reconstructed** as a truncated-normal(mean=PTV_Dmean_gy, sd=PTV_dose_std_gy) discretised into 40
+physical-dose bins (volume_frac normalised to 1); this is a pre-registered approximation, justified
+because PTVs are near-homogeneous (small dose std) so the reconstruction is tightly constrained by the
+reported moments. n_fractions is the per-patient plan value. This DVH-reconstruction is a stated
+limitation and does not affect the *relative* σ structure that the prediction is about.
+
+**B7.2 — protocol.** HN loco-regional (n=121, 20 loco-regional failures). Endpoint = loco-regional
+**control**; calibration/discrimination target y = 1 − locoregional (1 = controlled). Comparators:
+each single TCP model; best single (apparent Brier); naive probability mean; naive logit mean;
+inverse-variance; median; disagreement-penalty. Apparent + grouped-CV (grouped by treating centre),
+paired bootstrap 95 % CIs (2000 resamples, seed 0, stratified by outcome). Interval quality (B3) and
+the B4 stress + B5 repairs run as for parotid, poisoning one TCP member.
+
+**B7.3** reports the spontaneous 1/σ² weight distribution across the four TCP models (the B9 analogue).
+**B7.4** delivers the verdict against the registered prediction: confirmed / refuted / indeterminate,
+with the structural explanation if refuted. Seed 0; pseudonymised, gitignored outputs; no re-tuning.
