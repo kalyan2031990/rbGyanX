@@ -268,8 +268,16 @@ def parse_dvh_text_file(
     *,
     default_dose_per_fraction_gy: float = 2.0,
     default_target_type: str | None = None,
+    preserve_canonical: bool = False,
 ) -> TxtDVHResult:
-    """Parse one single-structure TPS DVH text export into a TxtDVHResult."""
+    """Parse one single-structure TPS DVH text export into a TxtDVHResult.
+
+    ``preserve_canonical=False`` (default, unchanged legacy behaviour) coerces the structure to a
+    target type (GTV/CTV/PTV), which is correct for target-only DVH exports but means an OAR export
+    (e.g. a single ``Parotid`` file) is treated as a PTV and can never match an NTCP organ.
+    Pass ``preserve_canonical=True`` for OAR-bearing exports to keep the ROI's true canonical name
+    (Parotid_R, Rectum, Bladder, …) so classical NTCP can be applied.
+    """
     text = path.read_text(encoding="utf-8", errors="ignore")
     return _parse_dvh_text(
         text,
@@ -277,6 +285,7 @@ def parse_dvh_text_file(
         fallback_name=path.stem,
         default_dose_per_fraction_gy=default_dose_per_fraction_gy,
         default_target_type=default_target_type,
+        preserve_canonical=preserve_canonical,
     )
 
 

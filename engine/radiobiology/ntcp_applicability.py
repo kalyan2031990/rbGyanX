@@ -59,8 +59,13 @@ def classify_definition(canonical: str, raw_name: str) -> str:
     # A merged/bilateral RAW name wins even if the canonical was mis-assigned a side — that IS the hazard.
     if is_merged and not raw_has_side:
         return "merged_bilateral"
-    if raw_has_side or canon.endswith(("_l", "_r")):
+    # Laterality counts as established only when it is present in the ROI's OWN name. A side that
+    # appears only in the canonical was *inferred* by the alias mapper (a side-less "Parotid" resolves
+    # to Parotid_R purely by lookup order), which is not evidence about the contour — so it stays
+    # unspecified and the caller flags NTCP_DEFINITION_UNVERIFIED rather than assuming a single gland.
+    if raw_has_side:
         return "single_gland"
+    _ = canon  # canonical laterality deliberately NOT treated as evidence
     return "unspecified"  # paired organ but side not established → cannot confirm single-gland
 
 

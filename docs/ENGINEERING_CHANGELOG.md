@@ -88,3 +88,23 @@ map **outside** the output tree (`--pseudonym-map-dir`, gitignored), runs the en
 with its **console output suppressed**, PHI-strips every harvested row (drops PatientID/DOB/StudyDate/
 Institution/AnonPatientID/…), and writes only pseudonymised rows. A test scans the whole tree and asserts
 no raw token leaks.
+
+## Phase 6 — Staged real-data testing (fixes found by real cohorts)
+
+All changes are **opt-in** (default behaviour byte-identical) unless stated. `baseline_numerics.json`
+re-verified after each.
+
+| Change | Why (found on real data) | Files | Risk | Baseline affected? |
+|---|---|---|---|---|
+| Expose `preserve_canonical` on the TPS-text reader + plumb through `RunConfig`/pipeline | **Blocker.** Single-structure TPS exports were always coerced to a target type, so an OAR export (54 parotid files) became a "PTV": it received meaningless TCP and **NTCP could never be computed** (organ lookup for a canonical named "PTV" always fails). Matches the authors' own documented gap. | `engine/dicom_io/txt_dvh_reader.py`, `engine/rbgyanx_engine/{run_config,pipeline,engine}.py` | Low — default `False` keeps legacy path exactly | **No** |
+| Multi-structure TPS parsing (`_read_txt_structures`) | **Blocker.** SPARK plan-level exports hold ~6 ROIs per file; the single-structure reader returned **only the last one**, silently discarding PTV/CTV/Bladder/Rectum. The correct multi-structure reader existed but was never called. | `engine/rbgyanx_engine/pipeline.py` | Low — only under `preserve_canonical` | **No** |
+| OAR-never-receives-TCP guard | Mirror of the TARGET-never-receives-NTCP rule; a parotid gland was being given tumour-control probability | `engine/rbgyanx_engine/pipeline.py` | Low — only under `preserve_canonical` | **No** |
+| Record ROI `raw_name` on NTCP/TCP rows | Lets the definition guard see the ROI's original name | `engine/rbgyanx_engine/pipeline.py` | none (extra column) | **No** |
+| Laterality is evidence only when in the ROI's own name | A side-less `Parotid` silently canonicalises to `Parotid_R`; treating that inferred side as "verified single gland" hid the hazard. Now yields `NTCP_DEFINITION_UNVERIFIED`. | `engine/radiobiology/ntcp_applicability.py` | Low — advisory flag only | **No** |
+| Folder-qualified patient keys | **Data-corrupting bug.** SPARK restarts numbering per centre, so `Center 1/Pat01` and `Center 4/Pat01` (different people) were merged into one patient. | `engine/rbgyanx_engine/cohort_runner.py` | none | **No** |
+| Suppress the engine's **logging tree** during patient runs | The pipeline logs the source-header patient id on MC/uNTCP failure; logging handlers bypass `redirect_stdout/stderr` (C2 leak path) | `engine/rbgyanx_engine/cohort_runner.py` | none | **No** |
+| Log exception **type** only, never the message | Exception messages can quote source paths/content (C2) | `engine/rbgyanx_engine/cohort_runner.py` | none | **No** |
+| Automatic post-run PHI scan | C2 "grep your own outputs before declaring done": harvests real identifier values from source headers (memory only) and asserts none appear in any output; writes `QA/phi_scan.json` | `engine/rbgyanx_engine/cohort_runner.py` | none | **No** |
+| `NO_STRUCT` is a documented reduced mode, not a failure | TCIA Lung has plan+dose but no contours; DVH is impossible, so it is a skip with a reason code | `engine/rbgyanx_engine/cohort_runner.py` | none | **No** |
+| `--file-pattern`, `--preserve-structure-canonical` CLI flags | Select a study arm (SPARK with/without KIM) and enable OAR-aware TPS parsing | `engine/rbgyanx_engine/cohort_runner.py` | none | **No** |
+| **New** run-report generator | Per-cohort `RUN_REPORT.md` from pseudonymised outputs only | **new** `scripts/make_run_report.py` | none | **No** |

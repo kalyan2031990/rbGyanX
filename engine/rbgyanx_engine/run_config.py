@@ -30,6 +30,9 @@ class RunConfig:
     user_config: Path | None = None
     user_ntcp_config: Path | None = None
     dvh_glob: str = "*.txt"
+    # TPS-text OAR support: keep the ROI's true canonical (Parotid_R, Rectum, ...) instead of
+    # coercing to a target type, so classical NTCP can match an organ. Default off = legacy.
+    preserve_txt_canonical: bool = False
     dose_per_fraction: float = 2.0
     cohort: bool = False
     no_uncertainty: bool = False

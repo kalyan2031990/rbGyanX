@@ -27,7 +27,11 @@ from dicom_io.site_detector import (
 from config.site_ntcp_params import allowed_oar_names, load_site_ntcp_params
 from dicom_io.structure_mapper import canon_target, get_oar_structures, get_target_structures
 from radiobiology.ntcp_calculator import NTCPCalculator
-from dicom_io.txt_dvh_reader import iter_dvh_text_files, parse_dvh_text_file
+from dicom_io.txt_dvh_reader import (
+    iter_dvh_text_files,
+    parse_dvh_text_file,
+    parse_multi_structure_dvh_text,
+)
 from radiobiology.tcp_calculator import TCPCalculator
 from statistical_models.epv_guard import EPV_MINIMUM
 from uncertainty import ParamUncertaintyConfig, run_parameter_mc
@@ -160,44 +164,67 @@ def collect_dicom_tcp(
     return results
 
 
+def _read_txt_structures(path: Path, default_dpf_gy: float, preserve_canonical: bool) -> list:
+    """Read every ROI in a TPS DVH text export.
+
+    Plan-level exports put ALL structures in one file. The single-structure reader returns only the
+    last block, silently discarding the rest (a real cohort had 6 ROIs per file — PTV, CTV, Bladder,
+    Rectum, Urethra, Urethra_PRV — of which 5 were dropped). When ``preserve_canonical`` is on we use
+    the multi-structure reader, which yields one result per ROI and keeps true canonical names; it
+    falls back to the single-structure path for single-ROI files. With the flag off, legacy behaviour
+    is preserved exactly.
+    """
+    if preserve_canonical:
+        return parse_multi_structure_dvh_text(path, default_dose_per_fraction_gy=default_dpf_gy)
+    return [parse_dvh_text_file(path, default_dose_per_fraction_gy=default_dpf_gy,
+                                preserve_canonical=False)]
+
+
 def collect_txt_tcp(
     dvh_dir: Path,
     site_override: str | None,
     user_config: Path | None,
     glob_pattern: str,
     default_dpf_gy: float,
+    preserve_canonical: bool = False,
 ) -> list[dict]:
     """Phase 1–2 from TPS DVH text exports."""
     calc = TCPCalculator()
     results: list[dict] = []
 
     for path in iter_dvh_text_files(dvh_dir, glob_pattern):
-        txt = parse_dvh_text_file(path, default_dose_per_fraction_gy=default_dpf_gy)
-        detection = detect_site_from_text(
-            txt.plan_metadata, txt.raw_name, txt.header_text
-        )
-        params_key, site_info = resolve_pipeline_site(site_override, detection)
-        site_params = load_site_params(params_key, user_config=user_config)
-        logger.info(
-            "DVH %s: site=%s (%s) confidence=%s",
-            path.name,
-            site_info.get("site"),
-            params_key,
-            site_info.get("confidence"),
-        )
-        row = calc.compute_all(
-            txt, txt.plan_metadata, site_params, target_type=txt.canonical_name
-        )
-        row["AnonPatientID"] = txt.patient_id
-        row["total_volume_cc"] = txt.total_volume_cc
-        row["site"] = params_key
-        _attach_site_metadata(row, site_info)
-        row["params_snapshot"] = {
-            "params_source": site_params.params_source,
-            "TCD50_gy": site_params.TCD50_gy,
-            "alpha_beta_gy": site_params.alpha_beta_gy,
-        }
-        results.append(row)
+        for txt in _read_txt_structures(path, default_dpf_gy, preserve_canonical):
+            # Symmetric to the "a TARGET never receives NTCP" rule: an OAR must never receive TCP.
+            # Only reachable when preserve_canonical is on (otherwise everything is coerced to a target).
+            if preserve_canonical and canon_target(txt.raw_name).get("category") != "TARGET":
+                logger.info("Skipping TCP for non-target structure %s", txt.canonical_name)
+                continue
+            detection = detect_site_from_text(
+                txt.plan_metadata, txt.raw_name, txt.header_text
+            )
+            params_key, site_info = resolve_pipeline_site(site_override, detection)
+            site_params = load_site_params(params_key, user_config=user_config)
+            logger.info(
+                "DVH %s: site=%s (%s) confidence=%s",
+                path.name,
+                site_info.get("site"),
+                params_key,
+                site_info.get("confidence"),
+            )
+            row = calc.compute_all(
+                txt, txt.plan_metadata, site_params, target_type=txt.canonical_name
+            )
+            row["AnonPatientID"] = txt.patient_id
+            row["raw_name"] = txt.raw_name
+            row["total_volume_cc"] = txt.total_volume_cc
+            row["site"] = params_key
+            _attach_site_metadata(row, site_info)
+            row["params_snapshot"] = {
+                "params_source": site_params.params_source,
+                "TCD50_gy": site_params.TCD50_gy,
+                "alpha_beta_gy": site_params.alpha_beta_gy,
+            }
+            results.append(row)
     return results
 
 
@@ -244,25 +271,30 @@ def collect_txt_ntcp(
     user_ntcp_config: Path | None,
     glob_pattern: str,
     default_dpf_gy: float,
+    preserve_canonical: bool = False,
 ) -> list[dict]:
     """NTCP from TPS DVH text when structure maps to a configured OAR."""
     calc = NTCPCalculator()
     results: list[dict] = []
 
     for path in iter_dvh_text_files(dvh_dir, glob_pattern):
-        txt = parse_dvh_text_file(path, default_dose_per_fraction_gy=default_dpf_gy)
-        detection = detect_site_from_text(
-            txt.plan_metadata, txt.raw_name, txt.header_text
-        )
-        params_key, site_info = resolve_pipeline_site(site_override, detection)
-        ntcp_site = load_site_ntcp_params(params_key, user_config=user_ntcp_config)
-        op = ntcp_site.organs.get(txt.canonical_name)
-        if op is None:
-            continue
-        row = calc.compute_all(txt, txt.plan_metadata, op, params_key)
-        row["AnonPatientID"] = txt.patient_id
-        _attach_site_metadata(row, site_info)
-        results.append(row)
+        for txt in _read_txt_structures(path, default_dpf_gy, preserve_canonical):
+            detection = detect_site_from_text(
+                txt.plan_metadata, txt.raw_name, txt.header_text
+            )
+            params_key, site_info = resolve_pipeline_site(site_override, detection)
+            ntcp_site = load_site_ntcp_params(params_key, user_config=user_ntcp_config)
+            op = ntcp_site.organs.get(txt.canonical_name)
+            if op is None:
+                continue
+            row = calc.compute_all(txt, txt.plan_metadata, op, params_key)
+            row["AnonPatientID"] = txt.patient_id
+            # Keep the ROI's ORIGINAL name alongside the canonical so downstream consumers can check
+            # that the structure definition matches what the model's published parameters assume (a
+            # side-less "Parotid" canonicalised to Parotid_R is not a verified single gland).
+            row["raw_name"] = txt.raw_name
+            _attach_site_metadata(row, site_info)
+            results.append(row)
     return results
 
 

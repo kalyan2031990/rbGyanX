@@ -191,6 +191,7 @@ def run_analysis(cfg: RunConfig) -> EngineResult:
                 user_tcp,
                 cfg.dvh_glob,
                 cfg.dose_per_fraction,
+                preserve_canonical=cfg.preserve_txt_canonical,
             )
         if cfg.endpoint in ("ntcp", "both"):
             ntcp_results = collect_txt_ntcp(
@@ -200,6 +201,7 @@ def run_analysis(cfg: RunConfig) -> EngineResult:
                 user_ntcp,
                 cfg.dvh_glob,
                 cfg.dose_per_fraction,
+                preserve_canonical=cfg.preserve_txt_canonical,
             )
 
     all_for_site = tcp_results or ntcp_results

@@ -71,6 +71,8 @@ class RunnerConfig:
     site: str | None = None
     endpoint: str = "both"
     pseudonym_map_dir: Path | None = None   # MUST be outside the repo; defaults beside output_root
+    file_pattern: str = "*.txt"             # dvh_txt only: which files form the cohort (e.g. one study arm)
+    preserve_txt_canonical: bool = False    # dvh_txt: keep true ROI canonical (OARs) so NTCP can apply
 
 
 @dataclass
@@ -124,9 +126,14 @@ def _discover_units(cfg: RunnerConfig) -> list[tuple[str, dict]]:
     root = Path(cfg.input_root)
     if cfg.input_kind == "dvh_txt":
         groups: dict[str, list[Path]] = {}
-        for f in sorted(root.rglob("*.txt")):
+        for f in sorted(root.rglob(cfg.file_pattern)):
             m = re.match(r"([^_/\\]+)_", f.name)
-            key = m.group(1) if m else f.stem
+            stem_key = m.group(1) if m else f.stem
+            # Qualify with the file's folder relative to the root. Cohorts that restart patient
+            # numbering per centre (e.g. "Center 1/.../Pat01" and "Center 4/.../Pat01" are DIFFERENT
+            # people) would otherwise be merged into one patient. Folder-qualified keys keep them apart.
+            rel_parent = f.parent.relative_to(root).as_posix()
+            key = stem_key if rel_parent in ("", ".") else f"{rel_parent}/{stem_key}"
             groups.setdefault(key, []).append(f)
         return [(k, {"kind": "dvh_txt", "files": groups[k]}) for k in sorted(groups)]
     # dicom — deterministic discovery + selection (Phase 2)
@@ -202,7 +209,9 @@ def _process_patient(cfg: RunnerConfig, pseudonym: str, unit: dict, patient_dir:
             rec.degraded_mode = man.degraded_mode
             rec.plan_selected = Path(man.rtplan_path).name if man.rtplan_path else ""
             rec.warnings = list(man.reason_codes)
-            if man.degraded_mode in ("INSUFFICIENT", "NO_DOSE"):
+            # A DVH needs BOTH a dose grid and contours. Missing either is a documented reduced-output
+            # mode (recorded with its reason code), not a failure — the engine would just raise.
+            if man.degraded_mode in ("INSUFFICIENT", "NO_DOSE", "NO_STRUCT"):
                 rec.status = "skipped"
                 rec.failure_reason = man.degraded_mode
                 return rec, harvest
@@ -214,9 +223,19 @@ def _process_patient(cfg: RunnerConfig, pseudonym: str, unit: dict, patient_dir:
             endpoint=cfg.endpoint, input_kind=input_kind, input_dir=input_dir,
             output_dir=engine_out, site=cfg.site, mode=cfg.mode, enable_ml=False,
             no_uncertainty=True, cohort=False, dvh_glob="*.txt",
+            preserve_txt_canonical=cfg.preserve_txt_canonical,
         )
+        # Suppress BOTH console streams and the logging tree. The engine logs the source-header
+        # patient id on MC/uNTCP failures (pipeline warns with AnonPatientID); logging handlers hold
+        # their own stream references and are NOT covered by redirect_stdout/stderr, so we mute the
+        # engine loggers for the duration of the call (C2).
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-            result = run_analysis(cfg2)  # suppress raw-ID console output (C2)
+            _prev = logging.root.manager.disable
+            logging.disable(logging.CRITICAL)
+            try:
+                result = run_analysis(cfg2)
+            finally:
+                logging.disable(_prev)
         for r in result.tcp_results:
             harvest["tcp"].append(_strip_phi(r))
         for r in result.ntcp_results:
@@ -234,11 +253,60 @@ def _process_patient(cfg: RunnerConfig, pseudonym: str, unit: dict, patient_dir:
     except Exception as exc:  # fail soft, log loud (C4)
         rec.status = "failed"
         rec.failure_reason = type(exc).__name__
-        logger.warning("patient %s failed: %s", pseudonym, exc)
+        # Log the pseudonym + exception TYPE only. Exception *messages* can quote source paths or
+        # file content, which may carry identifiers (C2) — never log them.
+        logger.warning("patient %s failed: %s", pseudonym, type(exc).__name__)
     finally:
         rec.processing_seconds = round(time.perf_counter() - t0, 3)
         shutil.rmtree(tmp_root / pseudonym, ignore_errors=True)  # drop temp engine files + raw inputs
     return rec, harvest
+
+
+_ID_HEADER_RE = re.compile(r"^﻿?\s*Patient\s+(Name|ID)\s*:\s*(.+?)\s*$", re.I | re.M)
+
+
+def harvest_source_identifiers(root: Path, patterns: tuple[str, ...] = ("*.txt",)) -> set[str]:
+    """Read identifier VALUES out of TPS-text headers (Patient Name / Patient ID) so the post-run scan
+    can prove they never reached an output. Values are held in memory only and never written."""
+    ids: set[str] = set()
+    for pat in patterns:
+        for f in root.rglob(pat):
+            try:
+                head = f.read_text(encoding="utf-8", errors="ignore")[:1200]
+            except Exception:
+                continue
+            for _field, value in _ID_HEADER_RE.findall(head):
+                v = value.strip()
+                if len(v) < 3:
+                    continue
+                ids.add(v)
+                # also the constituent word/number tokens (a surname alone must not leak either)
+                for tok in re.split(r"[^\w]+", v):
+                    if len(tok) >= 4 and not tok.isdigit() or tok.isdigit() and len(tok) >= 5:
+                        ids.add(tok)
+    return ids
+
+
+def verify_outputs_phi_free(out_dir: Path, identifiers: set[str]) -> dict:
+    """Scan every file under out_dir for any source identifier. Returns a verdict dict; the caller
+    fails loudly on a hit. This is the 'grep your own outputs before declaring done' guarantee (C2)."""
+    hits: list[str] = []
+    scanned = 0
+    lowered = {i.lower() for i in identifiers if i}
+    for f in out_dir.rglob("*"):
+        if not f.is_file():
+            continue
+        scanned += 1
+        try:
+            text = f.read_text(encoding="utf-8", errors="ignore").lower()
+        except Exception:
+            continue
+        for ident in lowered:
+            if ident in text:
+                hits.append(f"{f.name}::<identifier len={len(ident)}>")  # never echo the value
+                break
+    return {"files_scanned": scanned, "identifiers_checked": len(lowered),
+            "clean": not hits, "hits": hits}
 
 
 def _structure_of(r: dict) -> str:
@@ -275,10 +343,19 @@ def _accumulate(cfg: RunnerConfig, pseudonym: str, rec: PatientRecord, harvest: 
             site_written = True
     for r in harvest.get("ntcp", []):
         struct = _structure_of(r)
+        # Phase-3 applicability guard: record whether the ROI's definition matches what the model's
+        # published parameters assume (e.g. a side-less "Parotid" silently canonicalised to Parotid_R
+        # is NOT a verified single gland). Recorded per row so the hazard is visible, not hidden.
+        try:
+            from radiobiology.ntcp_applicability import evaluate_ntcp_applicability
+            verdict = evaluate_ntcp_applicability(struct, "OAR", str(r.get("raw_name", struct)))
+            definition_ok, codes = verdict["definition_ok"], ";".join(verdict["reason_codes"])
+        except Exception:
+            definition_ok, codes = "", ""
         for key in sorted(k for k in r if k.startswith("NTCP_")):
             accum["ntcp_results.csv"].append({"pseudonym": pseudonym, "structure": struct,
                 "model": key[5:], "ntcp": r.get(key, ""), "site_params_key": r.get("site_params_key", ""),
-                "definition_ok": r.get("definition_ok", ""), "reason_codes": r.get("reason_codes", "")})
+                "definition_ok": definition_ok, "reason_codes": codes})
             accum["benchmark.csv"].append({"pseudonym": pseudonym, "structure": struct,
                 "endpoint": "ntcp", "model": key[5:], "value": r.get(key, "")})
     accum["patient_features.csv"].append({"pseudonym": pseudonym, "site": cfg.site or "",
@@ -367,9 +444,21 @@ def run_cohort(cfg: RunnerConfig, progress: bool = False) -> dict:
         "note": "No PHI in this tree; raw IDs live only in the gitignored pseudonym map above.",
     }
     (out / "run_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-
     shutil.rmtree(tmp_root, ignore_errors=True)
-    return {"cohort": cfg.cohort, "output": str(out), **counts, "attempted": len(records)}
+
+    # --- C2 self-verification: prove no source identifier reached any output -------------------
+    phi = {"skipped": True}
+    if cfg.input_kind == "dvh_txt":
+        idents = harvest_source_identifiers(Path(cfg.input_root), (cfg.file_pattern,))
+        phi = verify_outputs_phi_free(out, idents)
+        (subdirs["QA"] / "phi_scan.json").write_text(
+            json.dumps({k: v for k, v in phi.items() if k != "hits"} |
+                       {"n_hits": len(phi.get("hits", []))}, indent=2), encoding="utf-8")
+        if not phi["clean"]:
+            logger.error("PHI SCAN FAILED for cohort %s: %d file(s) contain a source identifier",
+                         cfg.cohort, len(phi["hits"]))
+    return {"cohort": cfg.cohort, "output": str(out), **counts, "attempted": len(records),
+            "phi_scan_clean": phi.get("clean", None)}
 
 
 def _pkg_versions() -> dict:
@@ -405,6 +494,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--site", default=None, help="Override site detection (e.g. HN, LUNG)")
     p.add_argument("--mode", choices=["basic", "advanced"], default="basic")
     p.add_argument("--endpoint", choices=["tcp", "ntcp", "both"], default="both")
+    p.add_argument("--file-pattern", default="*.txt",
+                   help="dvh_txt only: which files form the cohort (e.g. '*PlanSumwithKIM.txt')")
+    p.add_argument("--preserve-structure-canonical", action="store_true",
+                   help="TPS text: keep the ROI's true canonical (Parotid_R, Rectum, ...) instead of "
+                        "coercing to a target type, so classical NTCP can be applied to OAR exports")
     p.add_argument("--pseudonym-map-dir", type=Path, default=None,
                    help="Where the raw-ID↔pseudonym map lives — MUST be OUTSIDE the repo (gitignored)")
     args = p.parse_args(argv)
@@ -413,6 +507,8 @@ def main(argv: list[str] | None = None) -> int:
         input_root=args.input_root, cohort=args.cohort, output_root=args.output_root,
         validation=args.validation, input_kind=args.input_kind, limit=args.limit, site=args.site,
         mode=args.mode, endpoint=args.endpoint, pseudonym_map_dir=args.pseudonym_map_dir,
+        file_pattern=args.file_pattern,
+        preserve_txt_canonical=args.preserve_structure_canonical,
     )
     print(f"[rbGyanX] cohort={cfg.cohort} kind={cfg.input_kind} → {cfg.output_root}", flush=True)
     summary = run_cohort(cfg, progress=True)
