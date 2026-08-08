@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 
 hypothesis = pytest.importorskip("hypothesis")
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from radiobiology.geud_tcp import compute_geud
@@ -25,7 +25,7 @@ pytestmark = pytest.mark.unit
     td50=st.floats(min_value=10.0, max_value=80.0),
     gamma=st.floats(min_value=0.5, max_value=6.0),
 )
-@settings(max_examples=50, deadline=None)
+@settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.too_slow])
 def test_lkb_loglogit_bounded_or_nan(geud, td50, gamma):
     n = calculate_ntcp_lkb_loglogit(geud, td50, gamma)
     assert math.isnan(n) or 0.0 <= n <= 1.0
@@ -36,14 +36,14 @@ def test_lkb_loglogit_bounded_or_nan(geud, td50, gamma):
     td50=st.floats(min_value=10.0, max_value=80.0),
     m=st.floats(min_value=0.05, max_value=1.0),
 )
-@settings(max_examples=50, deadline=None)
+@settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.too_slow])
 def test_lkb_probit_bounded_or_nan(geud, td50, m):
     n = calculate_ntcp_lkb_probit(geud, td50, m)
     assert math.isnan(n) or 0.0 <= n <= 1.0
 
 
 @given(dose=st.floats(min_value=55.0, max_value=75.0))
-@settings(max_examples=30, deadline=None)
+@settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.too_slow])
 def test_rs_uniform_bounded(dose):
     dvh = pd.DataFrame({"dose_gy": [dose], "volume_frac": [1.0]})
     n = calculate_ntcp_rs_poisson(dvh, D50=50.0, gamma=2.0, s=0.14)

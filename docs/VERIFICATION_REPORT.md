@@ -198,3 +198,84 @@ C1 fingerprint byte-identical; 22/22 controls.
   strict mode — it currently records, not blocks.
 
 **GATE 5 — PASSED.** Full suite green (exit 0); C1 fingerprint byte-identical; 22/22 controls.
+
+## Phase 6 — Staged real-data testing (all four cohorts)
+
+Ladder climbed 1 → 5 → full per cohort, fixing before ascending. Outputs and per-cohort `RUN_REPORT.md`
+live in `rbgaynx_desktop_paper/rbGyanX_runs/` (outside this repository).
+
+| Rung | Cohort | Result |
+|---|---|---|
+| 6.1 | 1 parotid | **PASS** after two fixes (see below) — 1.3 s |
+| 6.2 | 5 parotid | **PASS** — resume caching verified |
+| 6.3 | full parotid (54) | **PASS** — 54/54, 0 failed, 162 NTCP rows, 55 s |
+| 6.4 | 1 SPARK | **PASS** after the multi-structure fix — 5 ROIs (was 1) |
+| 6.5–6.6 | full SPARK, all centres (43) | **PASS** — 43/43, 0 failed |
+| 6.7 | 1 TCIA HN (DICOM) | **PASS** — 6 structures, 2.4 s |
+| 6.8 | TCIA lung (no contours) | **PASS** as a documented reduced mode after the `NO_STRUCT` fix |
+| 6.9 | full TCIA HN (235) + lung (70) | **PASS** — 186 completed / 49 skipped / **0 failed**; lung 70 skipped |
+
+**402 patients attempted, 283 completed, 119 documented reduced modes, 0 failures, 0 crashes.**
+
+### Defects found by real data and fixed (all opt-in; default behaviour unchanged)
+
+1. **OAR exports could never produce NTCP** — single-structure TPS files were always coerced to a target
+   type, so 54 parotid glands were treated as "PTV": they received meaningless TCP and no NTCP.
+2. **5 of 6 structures silently discarded** — SPARK plan-level exports hold ~6 ROIs; only the last was
+   read. The correct multi-structure reader existed but was never called.
+3. **OAR receiving TCP** — added the mirror of the TARGET-never-gets-NTCP rule.
+4. **Two patients merged into one** — SPARK restarts numbering per centre (`Center 1/Pat01` vs
+   `Center 4/Pat01`); patient keys are now folder-qualified.
+5. **Inferred laterality reported as verified** — a side-less `Parotid` canonicalises to `Parotid_R`;
+   this now yields `NTCP_DEFINITION_UNVERIFIED` rather than a false single-gland confirmation.
+6. **`NO_STRUCT` misreported as failure** — now a documented reduced mode.
+7. **Two C2 leak paths closed** — the engine's *logging* tree (which logs the source patient id and
+   bypasses stdout redirection) is muted during patient runs, and exception **messages** are never
+   logged (only the type).
+
+### PHI verification (C2) — the cohorts contain real identifiers
+
+The parotid source carries **real patient names**; SPARK carries **7-digit MRNs** (both reported to the
+owner, who directed running from raw sources under runner pseudonymisation). Every run self-verifies:
+identifier values are harvested from the source headers in memory and every output file is scanned.
+
+- **`phi_scan_clean: True`** for both TPS-text cohorts.
+- **Independent check**: 79 name tokens harvested from all 54 parotid files → **0 occurrences** in any
+  output file.
+- DICOM cohorts: outputs grepped for raw collection IDs (`0522c…`, `HN-CHUM…`, `HN_P…`) → **none**.
+- Raw IDs exist only in `_pseudonym_maps/`, outside the output tree and gitignored.
+
+### Measured performance (for the authors' own runs)
+
+| Input | Median / patient | Projection |
+|---|---:|---|
+| TPS text, 1 ROI | 0.22 s | ~1 min / 250 patients |
+| TPS text, ~6 ROIs | ~2.6 s | ~11 min / 250 patients |
+| DICOM-RT | ~2.0 s | ~8 min / 250 patients |
+
+**STILL UNCERTAIN (Phase 6):**
+- ADVANCED mode (ML/XAI/PINN/Bayesian) was **not** exercised through the cohort runner — every run was
+  `basic`, so those four CSVs are empty by design.
+- No outcome data was used: all TCP/NTCP values are predictions, not validated results.
+- The lung arm produced no clinical output at all (no contours exist in the supplied archive).
+- 49 TCIA HN patients were structure-set-only and could not be analysed; if the authors extract the
+  remaining `.part` downloads these may become processable.
+
+**GATE 6 — PASSED.**
+
+---
+
+## Final sign-off (D7)
+
+| Check | Result |
+|---|---|
+| `baseline_numerics.json` unchanged since Phase 0 | **Yes — 224 numbers byte-identical** (re-verified after every phase) |
+| 22 analytic positive controls | **22 / 22 passed** |
+| Full suite (verbatim) | `769 passed, 3 skipped` (Phase 0 baseline) — maintained green throughout |
+| Classical numerics moved? | **No.** Every change is additive/opt-in or I/O-only; no radiobiological kernel was edited |
+| Capabilities deleted? | **None.** PINN, Bayesian, XAI, dosiomics, legacy scripts all retained |
+
+**Two Hypothesis property tests (`test_lkb_loglogit_bounded_or_nan`, `test_lkb_probit_bounded_or_nan`)
+flaked under heavy I/O load** — both were proven non-defects by brute force (1.79 M and 1.92 M points
+across the full declared input ranges, **zero** [0,1] violations); the cause was Hypothesis' timing
+health check, now suppressed so the suite is deterministic under load.
