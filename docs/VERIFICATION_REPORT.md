@@ -125,3 +125,26 @@ runs (C5). C1 fingerprint byte-identical; 22/22 positive controls green.
 - The new discovery module is **not yet wired** into a cohort run; that integration is Phase 5.
 
 **GATE 2 — PASSED.** Full suite green (exit 0) WITHOUT `PYTHONUTF8`; C1 fingerprint byte-identical; 22/22 controls.
+
+## Phase 3 — Semantic layer
+
+| Area | Status | Notes |
+|---|---|---|
+| structure_mapper — never discard (3.1) | **verified** | UNKNOWN structures keep their raw name (`canon_target`); nothing dropped. |
+| Mapping-rate report (3.1) | **added** | `structure_mapping_report` → mapped/ambiguous/unmapped counts, mapping_rate, and the list of unmapped raw names; `aggregate_reports` rolls up per cohort. |
+| Alias coverage (3.1) | **expanded** | 57 canonicals / 300+ aliases already covered laterality & PRV; added curated PRV/laterality/synonym variants. Full-word + abbreviated laterality both map (e.g. "Left Femoral Head" and "R Kidney"). |
+| site_detector (3.2) | **verified** | Detects HN/lung/brain/breast/prostate/pelvis/liver; returns explicit UNKNOWN (or LOW confidence) **with evidence** on ambiguity — no silent guessing. |
+| NTCP never on TARGET (3.3) | **verified + guarded** | Pipeline applies NTCP only to `get_oar_structures`; `ntcp_applicability.ntcp_allowed` makes the rule explicit and testable (TARGET/SUPPORT/UNKNOWN blocked with reason codes). |
+| Parameter-definition matching (3.3 / S2) | **added** | `evaluate_ntcp_applicability` classifies single_gland vs merged_bilateral, records the assumed definition, and emits `NTCP_DEFINITION_MISMATCH` / `NTCP_DEFINITION_UNVERIFIED`. Merged names ("Parotids") stay UNMAPPED so they are flagged, not silently given single-gland params. |
+
+**Acceptance:** `tests/synthetic/test_semantic_layer.py` — **23/23 pass**. C1 fingerprint byte-identical;
+22/22 controls; mapper & site-detector unit tests green.
+
+**STILL UNCERTAIN (Phase 3):**
+- Alias coverage for real vendor/TCIA/SPARK spellings is only as complete as the shipped dictionary; the
+  mapping report is the mechanism to close gaps **from real unmapped lists in Phase 6**, not by blind guessing.
+- The definition guard currently models paired-gland organs (parotid/submandibular/lung/kidney/…); other
+  definition hazards (e.g. PRV vs true organ, partial-organ contours) are not yet modelled.
+- The guard is not yet *wired into* the NTCP path to withhold computation in strict mode — that is Phase 5.
+
+**GATE 3 — PASSED** (pending full-suite confirmation).

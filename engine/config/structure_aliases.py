@@ -236,3 +236,32 @@ STRUCTURE_ALIASES: dict[str, list[str]] = {
     "BOLUS": ["bolus", "virtualbolus"],
     "PROSTHESIS": ["prosthesis", "implant", "metalimplant", "hipimplant"],
 }
+
+
+# --- Phase 3 curated expansion (independent verification, 2026-08) ---------------------------------
+# High-confidence synonyms / abbreviations / PRV + laterality variants. All entries are pre-normalised
+# (lowercase, alphanumeric only) to match `structure_mapper.normalise_name`. Deliberately does NOT add
+# merged/bilateral names (e.g. "parotids") to single-sided canonicals — those must stay unmapped so the
+# NTCP definition guard (radiobiology.ntcp_applicability) can flag them.
+_PHASE3_EXTRA_ALIASES = {
+    "PRV_Cord": ["spinalcordprv", "prvspinalcord", "scprv3", "scprv5", "cordprv3", "cordprv5"],
+    "Brainstem": ["brainstemprv", "bstem", "prvbrainstem"],
+    "PharynxConstrictor": ["pcm", "constrictors", "pharyngealconstrictor", "constrictormuscle"],
+    "Larynx": ["voicebox", "glottis", "supraglotticlarynx"],
+    "OralCavity": ["mouthcavity", "oralmucosa"],
+    "FemoralHead_L": ["lfemoralhead", "leftfemoralhead", "femoralheadleft", "femheadl",
+                      "femurheadl", "hipjointl", "femurl"],
+    "FemoralHead_R": ["rfemoralhead", "rightfemoralhead", "femoralheadright", "femheadr",
+                      "femurheadr", "hipjointr", "femurr"],
+    "Kidney_L": ["lkidney", "leftkidney", "kidneyleft"],
+    "Kidney_R": ["rkidney", "rightkidney", "kidneyright"],
+    "Heart": ["wholeheart", "cardiac"],
+    "Mandible": ["jawbone", "mandibula"],
+    "Thyroid": ["thyroidgland"],
+    "Bladder": ["urinarybladder"],
+}
+for _canon, _aliases in _PHASE3_EXTRA_ALIASES.items():
+    STRUCTURE_ALIASES.setdefault(_canon, [])
+    for _alias in _aliases:
+        if _alias not in STRUCTURE_ALIASES[_canon]:
+            STRUCTURE_ALIASES[_canon].append(_alias)

@@ -35,3 +35,16 @@ byte-exact) re-checked after every phase.
 compatibility; the new discovery module is the robust front-end the Phase-5 runner will use). The
 `PatientRegistry` PHI-in-export issue (PrimaryPatientID/DOB/StudyDate/Institution reach
 `build_dataframe`) is **flagged** (C2) and will be handled in the Phase-5 output layer, not here.
+
+## Phase 3 — Semantic layer
+
+| Change | Why | Files | Risk | Baseline affected? |
+|---|---|---|---|---|
+| **New** structure mapping report | 3.1 — report mapped/ambiguous/unmapped per cohort + list unmapped raw names so authors extend the dictionary; every ROI accounted for (never silently discarded) | **new** `engine/dicom_io/structure_mapping_report.py` | Low — additive, wraps `canon_target` | **No** |
+| **New** NTCP applicability + definition guard | 3.3 / audit S2 — make explicit that TARGET/SUPPORT never receive NTCP, and flag single-gland-vs-merged-bilateral parameter-definition mismatches (record assumed definition) | **new** `engine/radiobiology/ntcp_applicability.py` | Low — advisory verdict only; no numeric kernel touched | **No** |
+| Curated alias expansion | 3.1 — PRV/laterality/abbreviation/synonym variants; **deliberately excludes** bilateral→single-sided mappings so the definition guard can flag merged contours | `engine/config/structure_aliases.py` (append-merge) | Low — only adds recognitions; "Parotids" stays UNKNOWN by design | **No** (synthetic fingerprint uses explicit names) |
+| **New** semantic-layer tests (23) | Phase 3 acceptance | **new** `tests/synthetic/test_semantic_layer.py` | none | **No** |
+
+**Verified unchanged (already correct):** `site_detector.detect_site` returns UNKNOWN/LOW with an
+`evidence` list on ambiguity and detects all 7 sites (HN/lung/brain/breast/prostate/pelvis/liver); the
+pipeline already applies NTCP only via `get_oar_structures` (targets structurally excluded).
