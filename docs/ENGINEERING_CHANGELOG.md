@@ -71,3 +71,20 @@ pipeline already applies NTCP only via `get_oar_structures` (targets structurall
   PINN stub / loads a checkpoint; heavy training runs only when `pinn_train=True`. Torch is CPU-only, so
   GPU training is inert by construction. **PINN not deleted, not altered.**
 - **4.6 Bayesian**: import + execution green (`test_bayesian_ntcp.py`), graceful fallback. Not deleted.
+
+## Phase 5 — Run system
+
+| Change | Why | Files | Risk | Baseline affected? |
+|---|---|---|---|---|
+| **New** cohort runner | 5.1–5.7 — one resumable, idempotent, deterministic, pseudonymised command per cohort; mandated tree; 16 always-written CSVs; run manifest; per-patient logs; cohort summary. Wraps `run_analysis` per patient (numerics unchanged). | **new** `engine/rbgyanx_engine/cohort_runner.py` | Medium — new orchestration, but reuses the validated per-patient engine; no numeric kernel touched | **No** |
+| **New** PowerShell launcher | one-command entry that needs no editable install | **new** `scripts/run_cohort.py` | none | **No** |
+| Gitignore cohort outputs + pseudonym maps | C2 — the `Outputs/` tree and `*_pseudonym_map.csv` are PHI-adjacent and must never be committed | `.gitignore` | none | **No** |
+| **New** cohort-runner acceptance tests (5) | Phase 5 acceptance: determinism, idempotency, 16 CSVs, degraded DICOM, PHI-free tree | **new** `tests/synthetic/test_cohort_runner.py` | none | **No** |
+| **New** runbook | D5 — copy-pasteable PowerShell per cohort | **new** `docs/RUNBOOK.md` | none | **No** |
+
+**C2 handling (the flagged `PatientRegistry` PHI-in-export issue):** the cohort runner never uses the
+PHI-bearing registry columns. It pseudonymises every patient (`<COHORT>-NNNN`), holds the raw-ID↔pseudonym
+map **outside** the output tree (`--pseudonym-map-dir`, gitignored), runs the engine into a **temp** dir
+with its **console output suppressed**, PHI-strips every harvested row (drops PatientID/DOB/StudyDate/
+Institution/AnonPatientID/…), and writes only pseudonymised rows. A test scans the whole tree and asserts
+no raw token leaks.

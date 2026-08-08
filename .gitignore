@@ -73,3 +73,10 @@ docs/NTCP_EXTVAL_DATASET_OPTIONS.md
 docs/NTCP_VALIDATION_PLAN.md
 docs/CLAUDE_CODE_FIX_AUDIT_GUI.md
 build_qt/
+
+# Phase 5 cohort-run outputs & pseudonym maps (PHI-adjacent) — never commit
+Outputs/
+**/Outputs/
+_pseudonym_maps/
+_private_maps/
+*_pseudonym_map.csv

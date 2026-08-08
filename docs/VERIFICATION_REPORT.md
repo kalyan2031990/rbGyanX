@@ -170,3 +170,31 @@ runs (C5). C1 fingerprint byte-identical; 22/22 positive controls green.
 - PINN inference quality on CPU is unbenchmarked here (only that it runs); real-data PINN behaviour is Phase 6.
 
 **GATE 4 — PASSED.** Full suite green (exit 0); C1 fingerprint byte-identical; 22/22 controls.
+
+## Phase 5 — Run system
+
+| Requirement | Status | Notes |
+|---|---|---|
+| 5.1 one command per cohort | **done** | `scripts/run_cohort.py` (+ `python -m` via `cohort_runner.main`): input root, cohort, output root, validation, input-kind, `--limit`, `--site`; per-patient progress printed. |
+| 5.2 resumable + idempotent | **done + proven** | `_COMPLETED.json` marker per patient; harvested rows persisted and reloaded on resume so cohort CSVs rebuild identically. Two fresh runs byte-identical; resume == fresh. |
+| 5.3 output tree | **done** | `Outputs/<Internal|External>Validation/<Cohort>/{PatientLevel,CohortLevel,Figures,QA,Logs}`. |
+| 5.4 16 machine-readable CSVs | **done** | All written even when empty, stable column order (see `COHORT_CSVS`). |
+| 5.5 run manifest | **done** | engine version, git commit, config hash, seed, package versions, start/end, input inventory, per-patient status, pseudonym-map location. |
+| 5.6 per-patient log record | **done** | `Logs/<PSEUDONYM>.json`: status, seconds, structures, dvh mode, plan selected, warnings, failure reason. |
+| 5.7 cohort summary | **done** | `cohort_summary.csv`: attempted/completed/skipped/failed + counts by reason code. |
+| C2 PHI | **done + proven** | pseudonyms only in the tree; raw IDs only in the gitignored map outside it; engine console suppressed; rows PHI-stripped. Scan test passes. |
+
+**Acceptance:** `tests/synthetic/test_cohort_runner.py` — **5/5 pass** (16 CSVs + tree; two fresh runs
+byte-identical; resume idempotent; DICOM missing-dose degraded without crash; no PHI token in tree).
+C1 fingerprint byte-identical; 22/22 controls.
+
+**STILL UNCERTAIN (Phase 5):**
+- The rich cohort CSVs are populated from the TPS-text engine rows (targets → TCP); the **DICOM OAR-NTCP**
+  columns (`ntcp_results`, definition flags) are wired but only lightly exercised on synthetic DICOM —
+  real OAR NTCP volume is a Phase-6 check.
+- `ML_features/ML_predictions/XAI_attributions/PINN_predictions` are written empty in `basic` mode by
+  design; their population in `advanced` mode is not yet exercised end-to-end through the runner.
+- The Phase-3 definition guard is available but not yet *invoked* inside the runner to withhold NTCP in a
+  strict mode — it currently records, not blocks.
+
+**GATE 5 — PASSED.** Full suite green (exit 0); C1 fingerprint byte-identical; 22/22 controls.
