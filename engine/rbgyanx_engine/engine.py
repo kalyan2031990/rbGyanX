@@ -42,6 +42,14 @@ def _write_provenance(cfg: RunConfig, result: EngineResult) -> Path:
         "n_tcp_rows": len(result.tcp_results),
         "n_ntcp_rows": len(result.ntcp_results),
         "n_physical_rows": len(getattr(result, "physical_results", []) or []),
+        # NTCP parameter provenance: which site parameter set(s) were applied (Phase 4.3).
+        "ntcp_site_params_keys": sorted(
+            {
+                str(r.get("site_params_key"))
+                for r in result.ntcp_results
+                if r.get("site_params_key")
+            }
+        ),
         "exit_code": result.exit_code,
     }
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")

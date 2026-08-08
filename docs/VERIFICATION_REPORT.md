@@ -148,3 +148,25 @@ runs (C5). C1 fingerprint byte-identical; 22/22 positive controls green.
 - The guard is not yet *wired into* the NTCP path to withhold computation in strict mode — that is Phase 5.
 
 **GATE 3 — PASSED.** Full suite green (exit 0); C1 fingerprint byte-identical; 22/22 controls.
+
+## Phase 4 — Computation layer
+
+| Area | Status | Notes |
+|---|---|---|
+| 4.1 DVH integrity (reject-not-repair) | **verified** | `validate_cumulative_dvh` raises on inverted/rising/negative/non-finite/empty; sorts valid. Zero-volume/empty → NaN/controlled raise, no crash. |
+| 4.2 Physical metrics + NaN | **verified** | NaN propagates through Dmean/Dmax/integral/CI/GI/gEUD/EQD2/NTCP; never silently 0. |
+| 4.3 TCP/NTCP + provenance | **fixed (additive)** | Row-level `site_params_key` already present; run manifest now also lists `ntcp_site_params_keys`. |
+| 4.4 dosiomics / ML / XAI | **verified** | Existing suites green; imports + basic runs OK; no silent failures. |
+| 4.5 PINN e2e + gating | **verified + confirmed off-by-default** | train/checkpoint/reload/infer covered by tests; heavy training gated behind `pinn_train` (default off) and advanced mode (default basic). CPU-only torch → GPU path inert. NOT deleted. |
+| 4.6 Bayesian | **verified** | Imports + executes; graceful fallback. NOT deleted. |
+
+**STILL UNCERTAIN (Phase 4):**
+- DICOM DVH monotonicity is trusted from dicompylercore rather than re-validated through
+  `validate_cumulative_dvh`; wiring the validator into the DICOM DVH path too would make the guarantee
+  uniform (deferred — would need care to avoid perturbing dicompylercore-derived numbers).
+- `params_source` (default vs user+default) is tracked on `SiteNTCPParams` but not yet surfaced per-row in
+  the NTCP CSV (only the site key is). Full parameter *values* + literature references are in config, not
+  echoed into each output row.
+- PINN inference quality on CPU is unbenchmarked here (only that it runs); real-data PINN behaviour is Phase 6.
+
+**GATE 4 — PASSED.** Full suite green (exit 0); C1 fingerprint byte-identical; 22/22 controls.

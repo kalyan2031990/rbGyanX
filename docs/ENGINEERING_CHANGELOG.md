@@ -48,3 +48,26 @@ compatibility; the new discovery module is the robust front-end the Phase-5 runn
 **Verified unchanged (already correct):** `site_detector.detect_site` returns UNKNOWN/LOW with an
 `evidence` list on ambiguity and detects all 7 sites (HN/lung/brain/breast/prostate/pelvis/liver); the
 pipeline already applies NTCP only via `get_oar_structures` (targets structurally excluded).
+
+## Phase 4 — Computation layer (verify; change only what's provably broken)
+
+| Change | Why | Files | Risk | Baseline affected? |
+|---|---|---|---|---|
+| Record NTCP parameter provenance in the run manifest | 4.3 — `provenance.json` did not say which NTCP parameter set(s) were applied; now lists the distinct `site_params_key`s used | `engine/rbgyanx_engine/engine.py` (`_write_provenance`) | Low — writes an extra JSON field; no numeric path | **No** |
+| **New** computation-layer verification locks | Lock 4.3 provenance + re-affirm 4.1 reject-not-repair and 4.2 NaN-not-zero | **new** `tests/synthetic/test_computation_provenance.py` (4 tests) | none | **No** |
+
+**Verified unchanged (already correct — no code change):**
+- **4.1 DVH integrity**: `dvh_integrity.validate_cumulative_dvh` rejects (raises) inverted/rising/negative/
+  non-finite/empty DVHs — never repairs — and sorts valid ones. Wired into the TPS text reader; DICOM DVHs
+  are monotone by dicompylercore construction. Zero-volume/empty → NaN or a controlled raise, never a crash
+  (`tests/test_dvh_integrity.py`, `tests/test_edge_cases_hardening.py`).
+- **4.2 Physical metrics / NaN**: `compute_dose_metrics` guards NaN on integral dose, CI, GI, Dmean/Dmax;
+  gEUD/EQD2/NTCP return NaN (not 0) on degenerate input (`test_edge_cases_hardening.py`). The only `or 0.0`
+  sites are missing-prescription **plan-metadata** defaults, not computed-metric coercion.
+- **4.3 provenance**: NTCP output rows already carry `site_params_key`; `params_source` on `SiteNTCPParams`.
+- **4.4 dosiomics / ML / XAI**: import + run green (`test_dosiomics.py`, `test_xai.py`).
+- **4.5 PINN**: registry/stub load + training e2e green (`test_pinn_registry.py`, `test_train_pinn.py`).
+  Training is **already gated** — default mode is `basic` (no advanced path); advanced only registers a
+  PINN stub / loads a checkpoint; heavy training runs only when `pinn_train=True`. Torch is CPU-only, so
+  GPU training is inert by construction. **PINN not deleted, not altered.**
+- **4.6 Bayesian**: import + execution green (`test_bayesian_ntcp.py`), graceful fallback. Not deleted.
