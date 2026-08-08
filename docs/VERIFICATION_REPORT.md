@@ -147,4 +147,4 @@ runs (C5). C1 fingerprint byte-identical; 22/22 positive controls green.
   definition hazards (e.g. PRV vs true organ, partial-organ contours) are not yet modelled.
 - The guard is not yet *wired into* the NTCP path to withhold computation in strict mode — that is Phase 5.
 
-**GATE 3 — PASSED** (pending full-suite confirmation).
+**GATE 3 — PASSED.** Full suite green (exit 0); C1 fingerprint byte-identical; 22/22 controls.
