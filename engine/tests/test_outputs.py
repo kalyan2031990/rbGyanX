@@ -172,6 +172,7 @@ def test_cli_help_exits_zero():
         [sys.executable, "-m", "rbgyanx_engine", "--help"],
         capture_output=True,
         text=True,
+        encoding="utf-8", errors="replace",
         cwd=str(pathlib.Path(__file__).resolve().parents[1]),
     )
     assert result.returncode == 0

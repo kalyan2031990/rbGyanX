@@ -25,7 +25,7 @@ def test_ntcp_with_synthetic_data(synthetic_data_dir, ntcp_template, temp_output
         "--ml_models"
     ]
     
-    result = subprocess.run(cmd, capture_output=True, text=True, cwd=Path.cwd())
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=Path.cwd())
     
     assert result.returncode == 0, f"NTCP failed: {result.stderr}"
     
@@ -68,7 +68,7 @@ def test_ntcp_validation(ntcp_template, temp_output_dir):
         "--output_dir", str(temp_output_dir)
     ]
     
-    result = subprocess.run(cmd, capture_output=True, text=True, cwd=Path.cwd())
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=Path.cwd())
     
     # Should fail with validation error
     assert result.returncode != 0 or "validation failed" in result.stdout.lower() or \

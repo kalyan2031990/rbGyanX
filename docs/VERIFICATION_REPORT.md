@@ -99,3 +99,29 @@ a∈{1,3,10,−10}, EQD2mean α/β∈{3,10}, NTCP LL/probit/RS = **224 numbers**
 2.12.0+cpu — no CUDA** (PINN CPU-only; governs Phase 4.5).
 
 **GATE 0 — PASSED.**
+
+## Phase 2 — Ingest robustness
+
+| Area | Status | Notes |
+|---|---|---|
+| Patient discovery / grouping (2.1) | **fixed (additive)** | New `cohort_discovery.discover_cohort` groups by **PatientID + FrameOfReferenceUID**, not folder name; handles nested folders, mixed studies, multiple patients per tree, series split across dirs. |
+| Multiplicity selection (2.2) | **fixed (additive)** | Deterministic rule (APPROVED→latest→SOP tiebreak for RTPLAN; plan-referenced/PLAN-summation for RTDOSE/RTSTRUCT), each choice logged with a reason code. Replaces the old non-deterministic "first-found via `rglob`". |
+| Missing modality (2.3) | **fixed (additive)** | Degrades to `FULL / NO_PLAN / NO_DOSE / NO_STRUCT / INSUFFICIENT` with `MISSING_*` reason codes; **no-CT is FULL** (TCIA-lung case). Never raises on one patient. |
+| Malformed / truncated / non-UTF8 (2.4) | **verified + covered** | Unreadable/non-DICOM files skipped; empty PatientID grouped by FoR with `NO_PATIENT_ID`. Battery includes truncated headers and a 0x00–0xFF byte file. |
+| Units & scaling (2.5) | **fixed (additive)** | `dose_units_check`: flags `DOSE_UNITS_NOT_GY`, `MISSING_DOSE_GRID_SCALING`, `CGY_SUSPECTED` (scaled max > 200 Gy), `UNEXPECTED_DOSE_SUMMATION`, and `DOSE_DVH_MISMATCH` (grid-vs-DVH mean-dose > 5 %). DVH dose math itself delegated to dicompylercore (unchanged). |
+| Windows console encoding (T7) | **fixed** | Engine CLI forces UTF-8 stdout/stderr; subprocess tests decode UTF-8. The suite is now green **without** `PYTHONUTF8`. |
+| `DicomPlanReader` legacy path | **unchanged** | Left intact for backward compatibility. |
+
+**Acceptance:** `tests/synthetic/test_ingest_robustness.py` — **17/17 pass**; no uncaught exception on any
+degradation path; every degradation carries a reason code; discovery proven byte-identical across two
+runs (C5). C1 fingerprint byte-identical; 22/22 positive controls green.
+
+**STILL UNCERTAIN (Phase 2):**
+- Real-DICOM edge cases not represented in synthetic fixtures (vendor-specific private tags, multi-frame
+  RTDOSE grid geometry mismatches, non-PLAN dose summation requiring beam-dose accumulation) — to be
+  exercised on real data in Phase 6.
+- `DOSE_DVH_MISMATCH` currently compares TPS-embedded DVH mean vs recomputed mean where both exist; a
+  full grid-mask-vs-DVH cross-check over every structure is not yet wired into the runner (Phase 5).
+- The new discovery module is **not yet wired** into a cohort run; that integration is Phase 5.
+
+**GATE 2 — PASSED.** Full suite green (exit 0) WITHOUT `PYTHONUTF8`; C1 fingerprint byte-identical; 22/22 controls.

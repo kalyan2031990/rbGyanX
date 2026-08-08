@@ -22,7 +22,7 @@ def test_full_integration_workflow(synthetic_data_dir, tcp_template, ntcp_templa
         "--outdir", str(tcp_dir),
         "--enable_ml"
     ]
-    result = subprocess.run(tcp_cmd, capture_output=True, text=True, cwd=Path.cwd())
+    result = subprocess.run(tcp_cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=Path.cwd())
     assert result.returncode == 0, f"TCP failed: {result.stderr}"
     
     # 2. Run NTCP
@@ -39,7 +39,7 @@ def test_full_integration_workflow(synthetic_data_dir, tcp_template, ntcp_templa
         "--output_dir", str(ntcp_dir),
         "--ml_models"
     ]
-    result = subprocess.run(ntcp_cmd, capture_output=True, text=True, cwd=Path.cwd())
+    result = subprocess.run(ntcp_cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=Path.cwd())
     assert result.returncode == 0, f"NTCP failed: {result.stderr}"
     
     # 3. Run Integration
@@ -50,7 +50,7 @@ def test_full_integration_workflow(synthetic_data_dir, tcp_template, ntcp_templa
         "--ntcp_dir", str(ntcp_dir),
         "--output_dir", str(int_dir)
     ]
-    result = subprocess.run(int_cmd, capture_output=True, text=True, cwd=Path.cwd())
+    result = subprocess.run(int_cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=Path.cwd())
     assert result.returncode == 0, f"Integration failed: {result.stderr}"
     
     # Verify integration outputs

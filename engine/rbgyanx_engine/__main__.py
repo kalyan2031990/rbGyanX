@@ -85,7 +85,17 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+def _force_utf8_console() -> None:
+    """Ensure console I/O is UTF-8 so the engine's Unicode output (σ, ✓, —, °) never crashes on
+    Windows' default cp1252 — for direct PowerShell use and for any parent capturing our stdout."""
+    import contextlib
+    for stream in (sys.stdout, sys.stderr):
+        with contextlib.suppress(Exception):
+            stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
+
+
 def main(argv: list[str] | None = None) -> int:
+    _force_utf8_console()
     args = build_parser().parse_args(argv)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,

@@ -20,7 +20,7 @@ def test_tcp_with_synthetic_data(synthetic_data_dir, tcp_template, temp_output_d
         "--enable_ml"
     ]
     
-    result = subprocess.run(cmd, capture_output=True, text=True, cwd=Path.cwd())
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=Path.cwd())
     
     # Check execution success
     assert result.returncode == 0, f"TCP analysis failed:\n{result.stderr}"
@@ -95,7 +95,7 @@ def test_tcp_without_metrics_file(synthetic_data_dir, tcp_template, temp_output_
         # Don't provide --physical_metrics_file
     ]
     
-    result = subprocess.run(cmd, capture_output=True, text=True, cwd=Path.cwd())
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=Path.cwd())
     
     assert result.returncode == 0, f"TCP failed: {result.stderr}"
     assert "Calculating TCP metrics from DVH" in result.stdout or \
@@ -146,7 +146,7 @@ def test_tcp_ml_with_minimal_clinical_data(synthetic_data_dir, temp_output_dir):
         "--enable_ml"
     ]
     
-    result = subprocess.run(cmd, capture_output=True, text=True, cwd=Path.cwd())
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=Path.cwd())
     
     assert result.returncode == 0, f"TCP failed with minimal data: {result.stderr}"
 
