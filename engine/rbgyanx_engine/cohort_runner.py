@@ -35,7 +35,8 @@ COHORT_CSVS: dict[str, list[str]] = {
                              "Dmax_gy", "D2_gy", "D98_gy"],
     "tcp_results.csv": ["pseudonym", "structure", "model", "tcp"],
     "ntcp_results.csv": ["pseudonym", "structure", "model", "ntcp", "site_params_key",
-                         "definition_ok", "reason_codes"],
+                         "definition_ok", "reason_codes",
+                         "uNTCP_mean", "uNTCP_sd", "uNTCP_p5", "uNTCP_p95", "uNTCP_n"],
     "plan_quality.csv": ["pseudonym", "target", "HI", "CI", "GI_pct"],
     "site_detection.csv": ["pseudonym", "site", "confidence", "evidence"],
     "structure_mapping.csv": ["pseudonym", "roi_number", "raw_name", "canonical", "category",
@@ -73,6 +74,11 @@ class RunnerConfig:
     pseudonym_map_dir: Path | None = None   # MUST be outside the repo; defaults beside output_root
     file_pattern: str = "*.txt"             # dvh_txt only: which files form the cohort (e.g. one study arm)
     preserve_txt_canonical: bool = False    # dvh_txt: keep true ROI canonical (OARs) so NTCP can apply
+    dose_per_fraction: float = 2.0          # TPS text: exports often omit fractionation entirely
+                                            # ("Prescribed dose: not defined"), and the reader then
+                                            # ASSUMES this value. Wrong for hypofractionation/SBRT.
+    n_mc: int = 1000                        # advanced: uNTCP Monte-Carlo draws
+    outcome_csv: Path | None = None         # advanced: required by the engine's ML/XAI branch
 
 
 @dataclass
@@ -221,8 +227,15 @@ def _process_patient(cfg: RunnerConfig, pseudonym: str, unit: dict, patient_dir:
         engine_out.mkdir(parents=True, exist_ok=True)
         cfg2 = RunConfig(
             endpoint=cfg.endpoint, input_kind=input_kind, input_dir=input_dir,
-            output_dir=engine_out, site=cfg.site, mode=cfg.mode, enable_ml=False,
-            no_uncertainty=True, cohort=False, dvh_glob="*.txt",
+            output_dir=engine_out, site=cfg.site, mode=cfg.mode,
+            # ADVANCED turns on the research depth: uNTCP Monte-Carlo uncertainty, the dosiomics /
+            # PINN-registration extensions, and the ML path (which additionally needs an outcome CSV).
+            # BASIC keeps the clinic-safe, fast defaults exactly as before.
+            enable_ml=(cfg.mode == "advanced"),
+            no_uncertainty=(cfg.mode != "advanced"),
+            n_mc=cfg.n_mc,
+            outcome_csv=cfg.outcome_csv,
+            cohort=False, dvh_glob="*.txt", dose_per_fraction=cfg.dose_per_fraction,
             preserve_txt_canonical=cfg.preserve_txt_canonical,
         )
         # Suppress BOTH console streams and the logging tree. The engine logs the source-header
@@ -343,6 +356,16 @@ def _accumulate(cfg: RunnerConfig, pseudonym: str, rec: PatientRecord, harvest: 
             site_written = True
     for r in harvest.get("ntcp", []):
         struct = _structure_of(r)
+        # OAR dose metrics must reach physical_metrics/dvh_summary too. Cohorts whose only structures
+        # are OARs (e.g. a parotid-only TPS export) have NO TCP rows by design, so populating those
+        # tables from TCP rows alone left them empty even though the DVH was extracted correctly.
+        accum["physical_metrics.csv"].append({"pseudonym": pseudonym, "structure": struct,
+            "category": "OAR", "volume_cc": r.get("total_volume_cc", ""),
+            "Dmean_gy": r.get("Dmean_gy", ""), "Dmax_gy": r.get("Dmax_gy", ""),
+            "D2_gy": r.get("D2_gy", ""), "D98_gy": r.get("D98_gy", "")})
+        accum["dvh_summary.csv"].append({"pseudonym": pseudonym, "structure": struct,
+            "volume_cc": r.get("total_volume_cc", ""), "Dmean_gy": r.get("Dmean_gy", ""),
+            "Dmax_gy": r.get("Dmax_gy", ""), "dvh_mode": r.get("extraction_mode", rec.dvh_mode)})
         # Phase-3 applicability guard: record whether the ROI's definition matches what the model's
         # published parameters assume (e.g. a side-less "Parotid" silently canonicalised to Parotid_R
         # is NOT a verified single gland). Recorded per row so the hazard is visible, not hidden.
@@ -353,11 +376,25 @@ def _accumulate(cfg: RunnerConfig, pseudonym: str, rec: PatientRecord, harvest: 
         except Exception:
             definition_ok, codes = "", ""
         for key in sorted(k for k in r if k.startswith("NTCP_")):
+            model = key[5:]
+            u = r.get(f"uNTCP_{model}") or {}
+            if not isinstance(u, dict):
+                u = {}
             accum["ntcp_results.csv"].append({"pseudonym": pseudonym, "structure": struct,
-                "model": key[5:], "ntcp": r.get(key, ""), "site_params_key": r.get("site_params_key", ""),
-                "definition_ok": definition_ok, "reason_codes": codes})
+                "model": model, "ntcp": r.get(key, ""), "site_params_key": r.get("site_params_key", ""),
+                "definition_ok": definition_ok, "reason_codes": codes,
+                "uNTCP_mean": u.get("mean", ""), "uNTCP_sd": u.get("sd", ""),
+                "uNTCP_p5": u.get("p5", ""), "uNTCP_p95": u.get("p95", ""),
+                "uNTCP_n": u.get("n_valid", "")})
             accum["benchmark.csv"].append({"pseudonym": pseudonym, "structure": struct,
                 "endpoint": "ntcp", "model": key[5:], "value": r.get(key, "")})
+    # Dosiomics (ADVANCED): the dose3d module attaches dosio_<organ>_<feature> keys to NTCP rows.
+    # Emit them as long-form ML features so they are machine-readable, not buried in the harvest.
+    for r in harvest.get("ntcp", []) + harvest.get("tcp", []):
+        for k, v in r.items():
+            if k.startswith("dosio_"):
+                accum["ML_features.csv"].append({"pseudonym": pseudonym, "feature": k, "value": v})
+
     accum["patient_features.csv"].append({"pseudonym": pseudonym, "site": cfg.site or "",
         "n_structures": rec.n_structures, "n_mapped": rec.n_structures, "n_unmapped": rec.n_missing,
         "dvh_mode": rec.dvh_mode, "plan_selected": rec.plan_selected, "degraded_mode": rec.degraded_mode})
@@ -496,6 +533,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--endpoint", choices=["tcp", "ntcp", "both"], default="both")
     p.add_argument("--file-pattern", default="*.txt",
                    help="dvh_txt only: which files form the cohort (e.g. '*PlanSumwithKIM.txt')")
+    p.add_argument("--dose-per-fraction", type=float, default=2.0,
+                   help="TPS text: dose per fraction when the export omits it "
+                        "(e.g. 7.25 for a 36.25 Gy / 5 fraction SBRT prescription)")
+    p.add_argument("--n-mc", type=int, default=1000, help="advanced: uNTCP Monte-Carlo draws")
+    p.add_argument("--outcome-csv", type=Path, default=None,
+                   help="advanced: outcome labels; REQUIRED by the engine's ML/XAI branch")
     p.add_argument("--preserve-structure-canonical", action="store_true",
                    help="TPS text: keep the ROI's true canonical (Parotid_R, Rectum, ...) instead of "
                         "coercing to a target type, so classical NTCP can be applied to OAR exports")
@@ -509,6 +552,8 @@ def main(argv: list[str] | None = None) -> int:
         mode=args.mode, endpoint=args.endpoint, pseudonym_map_dir=args.pseudonym_map_dir,
         file_pattern=args.file_pattern,
         preserve_txt_canonical=args.preserve_structure_canonical,
+        n_mc=args.n_mc, outcome_csv=args.outcome_csv,
+        dose_per_fraction=args.dose_per_fraction,
     )
     print(f"[rbGyanX] cohort={cfg.cohort} kind={cfg.input_kind} → {cfg.output_root}", flush=True)
     summary = run_cohort(cfg, progress=True)

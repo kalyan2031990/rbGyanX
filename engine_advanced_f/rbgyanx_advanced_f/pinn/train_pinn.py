@@ -123,17 +123,33 @@ def train_pinn_from_df(
     np.random.seed(seed)
 
     X, y, feat_means, feat_stds, feat_names = _prepare_tensors(df, FEATURE_COLUMNS)
+    # Per-patient physics inputs. Previously the trainer hard-coded 30 fractions and the validation
+    # pass hard-coded 50 Gy / 25 fx for EVERY patient, so the validation TCP ignored the actual plan
+    # and the reported val_loss (and the LR schedule driven by it) were meaningless.
+    if "total_dose_gy" in df.columns:
+        dose_all = torch.tensor(df["total_dose_gy"].astype(float).values, dtype=torch.float32)
+    else:
+        dose_all = torch.tensor(df[feat_names[0]].astype(float).values, dtype=torch.float32)
+    if "n_fractions" in df.columns:
+        nfx_all = torch.tensor(df["n_fractions"].astype(float).values, dtype=torch.float32)
+    else:
+        nfx_all = torch.full((len(X),), 30.0)
+    dose_all = torch.clamp(dose_all, min=0.1)
+    nfx_all = torch.clamp(nfx_all, min=1.0)
     n_features = X.shape[1]
     n = len(X)
     n_val = max(5, int(n * val_split))
     idx = torch.randperm(n)
     X_tr, y_tr = X[idx[n_val:]], y[idx[n_val:]]
     X_val, y_val = X[idx[:n_val]], y[idx[:n_val]]
+    d_tr, d_val = dose_all[idx[n_val:]], dose_all[idx[:n_val]]
+    f_tr, f_val = nfx_all[idx[n_val:]], nfx_all[idx[:n_val]]
 
     model = RadiobiologyPINN(n_features=n_features)
     optimiser = optim.Adam(model.parameters(), lr=lr)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimiser, patience=20, factor=0.5)
-    loader = DataLoader(TensorDataset(X_tr, y_tr), batch_size=min(batch_size, len(X_tr)), shuffle=True)
+    loader = DataLoader(TensorDataset(X_tr, y_tr, d_tr, f_tr),
+                        batch_size=min(batch_size, len(X_tr)), shuffle=True)
     X_zeros = torch.zeros(16, n_features)
     X_high = X_tr[: min(16, len(X_tr))].clone()
 
@@ -143,20 +159,19 @@ def train_pinn_from_df(
         "physics_loss": [],
         "data_loss": [],
     }
-    max_epochs = min(epochs, 200)
+    max_epochs = int(epochs)
+    best_val, best_state, patience, bad = float("inf"), None, 40, 0
 
     for epoch in range(max_epochs):
         model.train()
         epoch_data, epoch_phys = 0.0, 0.0
-        for X_b, y_b in loader:
+        for X_b, y_b, d_b, f_b in loader:
             optimiser.zero_grad()
             alpha, beta, n0 = model(X_b)
-            dose_col = feat_names.index("EQD2_gy") if "EQD2_gy" in feat_names else 0
-            total_dose = X_b[:, dose_col] * feat_stds[dose_col] + feat_means[dose_col]
-            total_dose = torch.clamp(total_dose, min=0.1)
-            n_fractions = torch.full((len(X_b),), 30.0)
+            total_dose = d_b            # the patient's ACTUAL prescribed/plan dose
+            n_fractions = f_b           # the patient's ACTUAL fraction count
             tcp_pred = model.tcp_from_params(alpha, beta, n0, total_dose, n_fractions)
-            tcp_pred = torch.clamp(tcp_pred.squeeze(), 1e-6, 1 - 1e-6)
+            tcp_pred = torch.clamp(tcp_pred.reshape(-1), 1e-6, 1 - 1e-6)
             loss_data = nn.BCELoss()(tcp_pred, y_b)
             loss_phys = lq_tcp_physics_residual(
                 tcp_pred, alpha, beta, n0, total_dose, n_fractions
@@ -172,8 +187,8 @@ def train_pinn_from_df(
         model.eval()
         with torch.no_grad():
             alpha_v, beta_v, n0_v = model(X_val)
-            dose_v = torch.full((len(X_val),), 50.0)
-            nfx_v = torch.full((len(X_val),), 25.0)
+            dose_v = d_val
+            nfx_v = f_val
             tcp_v = torch.clamp(
                 model.tcp_from_params(alpha_v, beta_v, n0_v, dose_v, nfx_v).squeeze(),
                 1e-6,
@@ -182,11 +197,25 @@ def train_pinn_from_df(
             val_loss = nn.BCELoss()(tcp_v, y_val).item()
 
         scheduler.step(val_loss)
+        if val_loss < best_val - 1e-5:
+            best_val, bad = val_loss, 0
+            best_state = {k: v.detach().clone() for k, v in model.state_dict().items()}
+        else:
+            bad += 1
+            if bad >= patience:
+                logger.info("PINN early stop at epoch %d (best val %.4f)", epoch, best_val)
+                history["train_loss"].append(epoch_data / max(len(loader), 1))
+                history["val_loss"].append(val_loss)
+                history["physics_loss"].append(epoch_phys / max(len(loader), 1))
+                history["data_loss"].append(epoch_data / max(len(loader), 1))
+                break
         history["train_loss"].append(epoch_data / max(len(loader), 1))
         history["val_loss"].append(val_loss)
         history["physics_loss"].append(epoch_phys / max(len(loader), 1))
         history["data_loss"].append(epoch_data / max(len(loader), 1))
 
+    if best_state is not None:
+        model.load_state_dict(best_state)   # restore BEST epoch, not the last one
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     save_path = output_dir / f"tcp_pinn_{site.lower()}.pt"

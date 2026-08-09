@@ -306,8 +306,15 @@ def parse_multi_structure_dvh_text(
     lines = text.splitlines()
     struct_idx = [i for i, ln in enumerate(lines) if ln.strip().lower().startswith("structure:")]
     if len(struct_idx) <= 1:
+        # Single-ROI file. This function's contract is "keep the ROI's true canonical name", so the
+        # fallback must preserve it too — otherwise a lone OAR export (e.g. one `Parotid` file) is
+        # silently coerced to a target type and can never match an NTCP organ.
         return [
-            parse_dvh_text_file(path, default_dose_per_fraction_gy=default_dose_per_fraction_gy)
+            parse_dvh_text_file(
+                path,
+                default_dose_per_fraction_gy=default_dose_per_fraction_gy,
+                preserve_canonical=True,
+            )
         ]
 
     preamble = lines[: struct_idx[0]]

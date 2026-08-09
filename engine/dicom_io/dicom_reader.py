@@ -171,7 +171,13 @@ class DicomPlanReader:
             if modality == "RTPLAN" and rt_plan is None:
                 rt_plan = ds
             elif modality == "RTDOSE" and rt_dose is None:
-                rt_dose = ds
+                # The scan pass uses stop_before_pixels for speed, but an RT Dose object's PixelData
+                # *is* the dose grid — without it every computed DVH is empty and all TCP/NTCP come
+                # back NaN. Re-read the chosen dose object in full.
+                try:
+                    rt_dose = pydicom.dcmread(path, force=True)
+                except Exception:
+                    rt_dose = ds
             elif modality == "RTSTRUCT" and rt_struct is None:
                 rt_struct = ds
 
