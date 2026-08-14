@@ -44,6 +44,9 @@ dev = ["pytest>=8.0", "pytest-cov>=5.0", "black>=24.0", "ruff>=0.4"]
 
 [project.scripts]
 rbgyanx-engine = "rbgyanx_engine.__main__:main"
+# the cohort runner's own --help advertises this name, but no entry point declared it, so
+# `rbgyanx-cohort` did not exist after install and only `python scripts/run_cohort.py` worked
+rbgyanx-cohort = "rbgyanx_engine.cohort_runner:main"
 
 [project.urls]
 Homepage = "https://github.com/kalyan2031990/rbGyanX_cdss"

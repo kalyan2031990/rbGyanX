@@ -444,19 +444,8 @@ class SelfTestEngine:
                     )
             
             # Check TCP config file
-            tcp_config = self.repo_root / "config" / "tcp_parameters.yaml"
-            if tcp_config.exists():
-                self._add_test_result(
-                    test_name, 'PASS',
-                    "TCP parameters configuration file found",
-                    f"Config file: {tcp_config.name}"
-                )
-            else:
-                self._add_test_result(
-                    test_name, 'WARN',
-                    "TCP parameters configuration file not found",
-                    "TCP analysis may use default parameters"
-                )
+            self._check_config_file(
+                test_name, self.repo_root / "config" / "tcp_parameters.yaml", "TCP")
                 
         except Exception as e:
             self._add_test_result(
@@ -465,6 +454,41 @@ class SelfTestEngine:
                 traceback.format_exc()
             )
     
+
+    def _check_config_file(self, test_name: str, path, label: str):
+        """A config check that an EMPTY file cannot pass.
+
+        Both TCP and NTCP config checks previously tested only `.exists()`, so a zero-byte
+        `config/ntcp_parameters.yaml` reported PASS while containing nothing at all. Parse it and
+        require real content.
+        """
+        import yaml
+        if not path.exists():
+            self._add_test_result(test_name, 'WARN',
+                                  f"{label} configuration file not found",
+                                  f"{label} analysis may use default parameters")
+            return
+        if path.stat().st_size == 0:
+            self._add_test_result(test_name, 'FAIL',
+                                  f"{label} configuration file is EMPTY",
+                                  f"{path.name} is zero bytes - it would silently provide nothing")
+            return
+        try:
+            content = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            self._add_test_result(test_name, 'FAIL',
+                                  f"{label} configuration file does not parse",
+                                  f"{path.name}: {type(exc).__name__}: {exc}")
+            return
+        if not content:
+            self._add_test_result(test_name, 'FAIL',
+                                  f"{label} configuration file parses to nothing",
+                                  f"{path.name} contains no usable keys")
+            return
+        self._add_test_result(test_name, 'PASS',
+                              f"{label} parameters configuration file found and valid",
+                              f"Config file: {path.name} ({len(content)} top-level keys)")
+
     def _test_ntcp_pipeline(self):
         """Test 4: Validate NTCP pipeline (dry-run)"""
         test_name = "NTCP Pipeline"
@@ -547,19 +571,8 @@ class SelfTestEngine:
                 )
             
             # Check NTCP config file
-            ntcp_config = self.repo_root / "config" / "ntcp_parameters.yaml"
-            if ntcp_config.exists():
-                self._add_test_result(
-                    test_name, 'PASS',
-                    "NTCP parameters configuration file found",
-                    f"Config file: {ntcp_config.name}"
-                )
-            else:
-                self._add_test_result(
-                    test_name, 'WARN',
-                    "NTCP parameters configuration file not found",
-                    "NTCP analysis may use default parameters"
-                )
+            self._check_config_file(
+                test_name, self.repo_root / "config" / "ntcp_parameters.yaml", "NTCP")
                 
         except Exception as e:
             self._add_test_result(
