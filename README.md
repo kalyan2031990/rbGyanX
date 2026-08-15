@@ -72,7 +72,7 @@ anchors, and UTCP factorisation. No patient data is required or included.
 Cite the archived release via its DOI — see [`CITATION.cff`](CITATION.cff), or:
 
 > Mondal, K., Mandal, A., & Vijay, A. *rbGyanX: A radiobiology-guided clinical decision support
-> framework* (v1.0.0). Zenodo. https://doi.org/10.5281/zenodo.21757164
+> framework* (v1.1.0). Zenodo. https://doi.org/10.5281/zenodo.21757164
 
 The accompanying manuscript will be added as the preferred citation on acceptance.
 
