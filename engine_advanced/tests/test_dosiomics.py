@@ -1,3 +1,9 @@
+"""Feature-maths tests on SYNTHETIC TEST FIXTURES (never a production dosiomics source).
+
+Production safety - that generated voxels cannot reach a real analysis - is covered separately in
+test_dosiomics_production_safety.py.
+"""
+
 import numpy as np
 
 from rbgyanx_advanced.dose3d.dose_grid_extractor import synthetic_oar_dose_voxels

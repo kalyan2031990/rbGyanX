@@ -34,7 +34,7 @@ def _read_pyproject() -> str:
 def test_version_single_source_of_truth():
     from rbgyanx_engine import __version__ as engine_ver
 
-    assert engine_ver == "1.0.0"
+    assert engine_ver == "1.1.0"
     assert _read_version_txt() == engine_ver
     assert _read_citation_cff() == engine_ver
     assert _read_pyproject() == engine_ver

@@ -1,4 +1,12 @@
-"""Dosiomics from OAR dose voxels (§28)."""
+"""Dosiomics from OAR dose voxels (§28).
+
+Scope note: this module computes first-order dose statistics only. The 3-D texture dosiomics
+(GLCM / GLRLM / GLSZM) reported in the manuscripts are produced by ``analysis/dosiomics/`` against
+real RTDOSE grids; see docs/DOSIOMICS_DATA_PROVENANCE.md for which engine produced which result.
+
+Features computed from generated voxels are surrogates, not dosiomics. Pass ``production=True``
+(or a ``dose_source``) to have that enforced rather than trusted.
+"""
 
 from __future__ import annotations
 
@@ -6,6 +14,11 @@ import logging
 import math
 
 import numpy as np
+
+from rbgyanx_advanced.dose3d.dose_grid_extractor import (
+    SOURCE_NOT_AVAILABLE,
+    assert_production_dose_source,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +104,22 @@ def extract_dosiomics_features(
     dose_voxels: np.ndarray | None,
     oar_name: str = "",
     use_pyradiomics: bool = False,
+    *,
+    dose_source: str | None = None,
+    production: bool = False,
 ) -> dict[str, float]:
+    """First-order dose features for one OAR.
+
+    ``dose_source`` records where the voxels came from (see ``dose_grid_extractor``). When
+    ``production=True`` the source must be a real RTDOSE grid, otherwise
+    :class:`SyntheticDoseInProductionError` is raised - a production run fails rather than emitting
+    surrogate features that look like measurements.
+    """
+    if production:
+        assert_production_dose_source(
+            dose_source if dose_source is not None else SOURCE_NOT_AVAILABLE,
+            context=f"dosiomics[{oar_name or 'unnamed_oar'}]",
+        )
     prefix = f"dosio_{oar_name}_" if oar_name else "dosio_"
     features = _first_order_features(dose_voxels)
     return {prefix + k.replace("dosio_", ""): v for k, v in features.items()}

@@ -26,9 +26,12 @@ Wiring: `engine.py` calls `enable_advanced_analysis()` when `mode == "advanced"`
 
 ## Part E
 
-- `rbgyanx_advanced/dose3d/dose_grid_extractor.py` (DICOM when deps present; synthetic voxels otherwise)
-- `rbgyanx_advanced/dose3d/dosiomics.py` (IBSI-style first-order features)
-- Dosiomics merged into cohort features in ADVANCED runs
+- `rbgyanx_advanced/dose3d/dose_grid_extractor.py` (real RTDOSE only in production; `NOT_AVAILABLE`
+  when no grid resolves. Synthetic voxels exist as a test fixture and require `allow_synthetic=True`)
+- `rbgyanx_advanced/dose3d/dosiomics.py` (IBSI-style first-order features; `production=True` enforces
+  a real dose source)
+- Dosiomics merged into cohort features in ADVANCED runs, only where a real grid was found
+- See `docs/DOSIOMICS_DATA_PROVENANCE.md` for real production dosiomics vs synthetic test data
 
 ## Full test suite
 

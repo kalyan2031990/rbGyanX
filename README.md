@@ -84,6 +84,7 @@ The accompanying manuscript will be added as the preferred citation on acceptanc
 | `rbgyanx/` | mode governance, headless services, Qt6 desktop app (`rbgyanx.qtapp`), AI panel |
 | `rbgyanx_gui.py` | the original Tkinter desktop app |
 | `engine_advanced/`, `engine_advanced_f/` | ADVANCED research modules (dosiomics, PINN, Bayesian NTCP) |
+| `analysis/` | the versioned scripts that produced every reported result, with per-analysis provenance in [`analysis/FINAL_ANALYSIS_CODE_MANIFEST.json`](analysis/FINAL_ANALYSIS_CODE_MANIFEST.json) |
 | `examples/` | shipped **synthetic** demo DVHs (a positive control for the reader) |
 | `packaging/` | PyInstaller + Inno Setup build scripts |
 | `legacy/` | quarantined earlier scripts, kept for provenance |
@@ -94,6 +95,9 @@ exercises a synthetic mirror only. Requires `pydicom<3.0`.
 
 ## More
 
+- [`analysis/README.md`](analysis/README.md) — which script produced which reported number
+- [`docs/DOSIOMICS_DATA_PROVENANCE.md`](docs/DOSIOMICS_DATA_PROVENANCE.md) — real production dosiomics vs synthetic test data
+- [`DATA_AVAILABILITY.md`](DATA_AVAILABILITY.md) — what is and is not distributed, and how to obtain the cohorts
 - [`docs/EXTVAL_RESULTS.md`](docs/EXTVAL_RESULTS.md) — external-validation benchmark (methods, seeds, tables)
 - [`docs/RBGYANX_1.0_DESKTOP.md`](docs/RBGYANX_1.0_DESKTOP.md) — desktop feature guide
 - [`CHANGELOG.md`](CHANGELOG.md) · [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`SECURITY.md`](SECURITY.md)

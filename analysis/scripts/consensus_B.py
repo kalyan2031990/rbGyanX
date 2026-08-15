@@ -9,7 +9,7 @@ analysis/outputs/consensus_B/. No patient identifier, source filename or raw ID 
 Seed 0 everywhere. See analysis/preregistration_B.md (committed before this ran).
 
 Run (private data on this machine):
-  python analysis/scripts/consensus_B.py --data-root "C:/Users/Sampa/OneDrive/Desktop/rbgaynx_desktop_paper/validation_study"
+  python analysis/scripts/consensus_B.py --data-root "<PRIVATE_DATA_ROOT>/validation_study"
 """
 
 from __future__ import annotations

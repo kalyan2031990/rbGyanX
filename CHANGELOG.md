@@ -5,6 +5,53 @@ All notable changes to this project are documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-08-15 — release identifier FINAL_V3.2
+
+Release-repair and freeze. **No scientific result changed**: every headline value was independently
+recomputed and matched before this release was built, and nothing was rerun to produce it. Four
+release blockers from the final completion audit are closed.
+
+### Added
+
+- **`analysis/` — the code that produced the reported results is now versioned** (blocker B1).
+  Eleven analyses across `cohort/`, `radiomics/`, `ibsi/`, `dosiomics/`, `pinn/`, `bayesian/`,
+  `ccs/`, `statistics/` and `provenance/`. `analysis/FINAL_ANALYSIS_CODE_MANIFEST.json` maps each
+  headline result to its exact script (path + SHA-256 + line count), configuration, input and output
+  manifests, random seed, package versions and source commit. Previously the engine was versioned
+  but the analysis layer was not, so no commit described how the reported numbers were computed.
+- `docs/DOSIOMICS_DATA_PROVENANCE.md` — the real-production-dosiomics vs synthetic-test-data
+  distinction, stated explicitly.
+- `engine_advanced/tests/test_dosiomics_production_safety.py` — 11 regression tests proving both
+  halves of the guard: a missing real dose yields no production dosiomics, and explicit test mode
+  still exercises the pipeline.
+
+### Changed
+
+- **Synthetic dose voxels can no longer enter a production dosiomics pathway** (blocker B2).
+  `extract_oar_dose_volume()` previously ended in an unconditional
+  `return synthetic_oar_dose_voxels(...)`, and the only production caller invoked it with no RTDOSE
+  path at all — so every ADVANCED run populated `dosio_*` columns from generated voxels. Those
+  surrogates were retracted and underlie no reported result. Now:
+  - real RTDOSE is the only production source, resolved by `integration.find_rt_files()`;
+  - with no real grid the extractor returns `(None, "NOT_AVAILABLE")` and logs loudly;
+  - synthetic output requires an explicit `allow_synthetic=True` that no production path passes;
+  - `assert_production_dose_source()` raises `SyntheticDoseInProductionError` for any other source,
+    and an omitted `dose_source` is treated as `NOT_AVAILABLE` rather than trusted;
+  - NTCP rows carry `dosiomics_status` / `dosiomics_source`, and a patient without a real grid gets
+    no `dosio_*` column at all, so a missing measurement is visibly missing.
+- `analysis/dosiomics/real_dosiomics.py`: the `--repo` default was an absolute local path; it now
+  resolves from the file's own location. Same tree, no behavioural change.
+- Version identifiers separated: software semver `1.1.0`, release identifier `FINAL_V3.2`.
+
+### Documentation
+
+- Manuscript B section 3.2: the two `[from manifest]` placeholders resolved to QC_PASSED **219** and
+  OUTCOME_LINKED **127**, each cited to its `radiomics_manifest.json` key, with the 219 → 127 drop
+  attributed to clinical-data loss rather than imaging QC (blocker B4).
+- `docs/AUDIT.md` and `docs/IMPLEMENTATION_ROADMAP.md` corrected: the engine's `dose3d` module
+  computes first-order dose features only; the reported 3-D texture dosiomics come from
+  `analysis/dosiomics/real_dosiomics.py`.
+
 ## [1.0.0] - 2026-08-02
 
 First public, citable release. BASIC (clinic decision-support) and ADVANCED (research)

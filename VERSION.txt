@@ -1,4 +1,21 @@
-rbGyanX Version 1.0.0
-Release Date: 2026-06-10
+rbGyanX Version 1.1.0
+Release Identifier: FINAL_V3.2
+Release Date: 2026-08-15
 Type: Production Release
 
+Two identifiers are in use and they mean different things:
+
+  Software version   1.1.0        semantic version of the codebase (engine + GUI + analysis)
+  Release identifier FINAL_V3.2   generation of the validation/analysis programme that this
+                                  release freezes (V1 -> V2 -> V3 -> V3.1 -> V3.2)
+
+FINAL_V3.2 supersedes FINAL_V3.1. It adds no new scientific result: every headline value is
+unchanged and was independently verified before this release was built. It exists to close four
+release blockers found in the final completion audit:
+
+  B1  the analysis code that produced the reported results is now versioned, under analysis/,
+      with analysis/FINAL_ANALYSIS_CODE_MANIFEST.json mapping each result to its script, config,
+      seed, package set and SHA-256;
+  B2  synthetic dose voxels can no longer enter a production dosiomics pathway;
+  B3  the release candidate and Zenodo package are rebuilt from the current commit;
+  B4  the two unfilled placeholders in the Manuscript B draft are resolved from the manifest.

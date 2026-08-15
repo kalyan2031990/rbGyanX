@@ -38,7 +38,8 @@ Baseline: `main @ b366cbc`; 22/22 positive controls; 769 passed / 3 skipped (`PY
 | `engine/xai/{shap_tcp,lime_tcp,pdp_ice}.py` | Explainability | Advanced (ADVANCED) | OK |
 | `engine/validation/outcome_pinn.py` | PINN outcome model (in-engine) | Advanced (ADVANCED) | OK |
 | `engine_advanced/rbgyanx_advanced/pinn/**` | PINN training/models (torch) | Advanced (ADVANCED) | OK (CPU) |
-| `engine_advanced/rbgyanx_advanced/dose3d/dosiomics.py` | 3-D dosiomics | Advanced (ADVANCED) | OK |
+| `engine_advanced/rbgyanx_advanced/dose3d/dosiomics.py` | First-order dose features (real RTDOSE only) | Advanced (ADVANCED) | OK |
+| `analysis/dosiomics/real_dosiomics.py` | Reported 3-D texture dosiomics (GLCM/GLRLM/GLSZM) | Analysis | OK |
 | `engine_advanced_f/rbgyanx_advanced_f/bayesian/ntcp_bayesian.py` | Bayesian NTCP | Advanced (ADVANCED) | OK |
 | `engine_advanced_f/rbgyanx_advanced_f/pinn/train_pinn.py` | PINN trainer (alt) | Advanced (ADVANCED) | OK |
 | `engine/outputs/ntcp_reporter.py` | Report/export writer | **Yes** | OK |

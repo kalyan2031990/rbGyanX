@@ -31,27 +31,87 @@ def register_pinn_models(model_dir: Path | None, site: str) -> bool:
     return True
 
 
+def find_rt_files(input_dir: Path | None) -> tuple[Path | None, Path | None]:
+    """Locate the RTDOSE and RTSTRUCT in a staged single-patient input directory.
+
+    The cohort runner stages exactly one RTPLAN/RTDOSE/RTSTRUCT per patient, so a modality scan is
+    sufficient and avoids a dependency on the engine's discovery layer. Returns ``(None, None)``
+    when either is absent - which is a legitimate answer, not a failure to paper over.
+    """
+    if not input_dir:
+        return None, None
+    try:
+        import pydicom
+    except ImportError:
+        return None, None
+    root = Path(input_dir)
+    if not root.is_dir():
+        return None, None
+    rtdose: Path | None = None
+    rtstruct: Path | None = None
+    for path in sorted(root.rglob("*.dcm")):
+        try:
+            modality = str(pydicom.dcmread(str(path), stop_before_pixels=True).Modality)
+        except Exception:
+            continue
+        if modality == "RTDOSE" and rtdose is None:
+            rtdose = path
+        elif modality == "RTSTRUCT" and rtstruct is None:
+            rtstruct = path
+        if rtdose and rtstruct:
+            break
+    return rtdose, rtstruct
+
+
 def attach_dosiomics_to_ntcp_results(
     ntcp_results: list[dict],
     input_dir: Path | None,
 ) -> bool:
-    from rbgyanx_advanced.dose3d.dose_grid_extractor import extract_oar_dose_volume
+    """Attach first-order dosiomics computed from the patient's REAL RTDOSE grid.
+
+    Production pathway: real dose only. This function used to call the extractor with
+    ``(None, None, organ, fallback_mean_dose_gy=...)``, which meant every ADVANCED run silently
+    populated ``dosio_*`` columns from generated voxels. Those surrogates were retracted. Now, when
+    no real grid resolves, the row is marked NOT_AVAILABLE and no ``dosio_*`` feature is written.
+
+    Returns True only if at least one ROI yielded real RTDOSE-derived features.
+    """
+    from rbgyanx_advanced.dose3d.dose_grid_extractor import (
+        SOURCE_NOT_AVAILABLE,
+        SOURCE_REAL_RTDOSE,
+        extract_oar_dose_volume_with_source,
+    )
     from rbgyanx_advanced.dose3d.dosiomics import extract_dosiomics_features
 
-    any_attached = False
+    rtdose_path, rtstruct_path = find_rt_files(input_dir)
+    if not (rtdose_path and rtstruct_path):
+        logger.warning(
+            "dosiomics: no RTDOSE+RTSTRUCT pair found under %s - dosiomics NOT_AVAILABLE for this "
+            "patient. No synthetic substitute is generated.",
+            input_dir,
+        )
+
+    any_real = False
     for row in ntcp_results:
         organ = str(row.get("structure", ""))
-        mean_d = row.get("Dmean_gy") or row.get("gEUD_gy")
-        voxels = extract_oar_dose_volume(
-            None,
-            None,
+        voxels, source = extract_oar_dose_volume_with_source(
+            rtdose_path,
+            rtstruct_path,
             organ,
-            fallback_mean_dose_gy=float(mean_d) if mean_d is not None else 45.0,
+            allow_synthetic=False,  # production: never
         )
-        feats = extract_dosiomics_features(voxels, oar_name=organ)
+        if source != SOURCE_REAL_RTDOSE or voxels is None:
+            row["dosiomics_status"] = SOURCE_NOT_AVAILABLE
+            row["dosiomics_source"] = source
+            continue
+        feats = extract_dosiomics_features(
+            voxels, oar_name=organ, dose_source=source, production=True
+        )
         row.update(feats)
-        any_attached = True
-    return any_attached
+        row["dosiomics_status"] = "OK"
+        row["dosiomics_source"] = source
+        any_real = True
+    return any_real
 
 
 def merge_dosiomics_features(

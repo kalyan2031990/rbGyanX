@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rbgyanx"
-version = "1.0.0"
+version = "1.1.0"
 description = "Radiobiology clinical decision support system (TCP/NTCP/UTCP/QUANTEC)"
 readme = "README.md"
 license = { text = "MIT" }

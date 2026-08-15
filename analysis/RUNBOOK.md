@@ -4,9 +4,10 @@ Deterministic, seed-0, provenance-stamped. **PHI never leaves the private folder
 committed** — `analysis/.gitignore` excludes `inputs/` and `outputs/`. Every step writes a
 `provenance.json` (inputs, seed, versions, git commit, timestamp).
 
-Repo: `C:\Users\Sampa\OneDrive\Desktop\project_rbGyanx`
-Private data (PHI, outside repo): `C:\Users\Sampa\OneDrive\Desktop\rbgaynx_desktop_paper`
-(`HNSCC\`, `SPARK_data\`, `internal_validation_data_NTCP\`, `validation_study\`).
+Repo: `<REPO_ROOT>` — this checkout.
+Private data (PHI, outside repo): `<PRIVATE_DATA_ROOT>` — a directory you choose OUTSIDE the
+repository, containing `HNSCC\`, `SPARK_data\`, `internal_validation_data_NTCP\` and
+`validation_study\`. Its real location is deliberately not recorded here.
 
 Status legend:  ✅ implemented + smoke-tested  ·  🧩 script scaffolded, runs on your private data  ·  📐 designed, script to be added
 
@@ -15,7 +16,7 @@ Status legend:  ✅ implemented + smoke-tested  ·  🧩 script scaffolded, runs
 ## Step 0 — environment (once) ✅
 
 ```powershell
-cd C:\Users\Sampa\OneDrive\Desktop\project_rbGyanx
+cd <REPO_ROOT>
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
