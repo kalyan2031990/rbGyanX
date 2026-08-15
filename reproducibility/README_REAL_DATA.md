@@ -20,7 +20,7 @@ Validation run outputs (`_validation_*`, `_integration_*`) are **excluded** from
 Extract to:
 
 ```
-C:\Users\<you>\Desktop\input_folders\rbgyanx_test_data\
+<YOUR_DATA_ROOT>\input_folders\rbgyanx_test_data\
 ```
 
 (or set `INPUT_ROOT` in `scripts/run_validation_report.py` / pass `--input-root` to inventory script).
