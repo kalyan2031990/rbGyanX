@@ -1,7 +1,7 @@
 # Build Zenodo reproduction archives: synthetic (public) + real (restricted upload).
 # Usage: .\scripts\build_zenodo_bundle.ps1 [-InputRoot "C:\...\input_folders"]
 param(
-    [string]$InputRoot = "C:\Users\Sampa\OneDrive\Desktop\input_folders",
+    [string]$InputRoot = $(if ($env:RBGYANX_INPUT_FOLDERS) { $env:RBGYANX_INPUT_FOLDERS } else { "./input_folders" }),
     [string]$Version = "1.0.0"
 )
 

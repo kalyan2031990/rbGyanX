@@ -9,7 +9,7 @@
 |------|------|
 | [py_tcpx](../) | Clean Phases 1–8 TCP library + CLI |
 | [py_ntcpx](https://github.com/kalyan2031990/py_ntcpx) | Operationally mature NTCP pipeline (H&N real data) |
-| `C:\Users\Sampa\OneDrive\Desktop\rbgyanx_dual` | **rbGyanX** — TCP+NTCP GUI prototype, clinic-facing |
+| `<rbgyanx_dual checkout>` | **rbGyanX** — TCP+NTCP GUI prototype, clinic-facing |
 
 ---
 

@@ -6,8 +6,8 @@ $DualRoot = $PSScriptRoot
 $EngineCandidates = @(
     (Join-Path $DualRoot "engine"),
     (Join-Path (Split-Path $DualRoot -Parent) "rbGyanX_cdss"),
-    "C:\Users\Sampa\OneDrive\Desktop\rbGyanX_cdss",
-    "C:\Users\Sampa\OneDrive\Desktop\project_rbGyanx\engine"
+    # Candidate engine roots. Add your own checkout here, or set RBGYANX_ENGINE_PATH.
+    (Join-Path $PSScriptRoot "engine")
 )
 $EngineRoot = $null
 foreach ($c in $EngineCandidates) {

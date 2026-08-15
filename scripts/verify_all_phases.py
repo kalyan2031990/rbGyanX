@@ -2,6 +2,7 @@
 """Verify Phases 1-5 + integration test harness."""
 from __future__ import annotations
 
+import os
 import shutil
 import sys
 import tempfile
@@ -10,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-TEST_DATA = Path(r"C:\Users\Sampa\OneDrive\Desktop\input_folders\rbgyanx_test_data")
+TEST_DATA = Path(os.environ.get("RBGYANX_INPUT_FOLDERS", "./input_folders")) / "rbgyanx_test_data"
 DICOM = TEST_DATA / "DICOM_samples"
 ECLIPSE = TEST_DATA / "HN57_OAR_Eclipse"
 CSV_DIR = TEST_DATA / "HN57_dDVH_CSV"

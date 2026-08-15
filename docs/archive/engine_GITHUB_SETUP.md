@@ -13,7 +13,7 @@ GitHub CLI auth was **invalid** during automated setup. Create the remote repo o
 
 ```powershell
 gh auth login -h github.com
-cd C:\Users\Sampa\OneDrive\Desktop\rbGyanX_cdss
+cd <rbGyanX_cdss_ROOT>
 gh repo create rbGyanX_cdss --public --source=. --remote=origin --description "Open-source TCP/NTCP engine for rbGyanX CDSS"
 git push -u origin main
 ```
@@ -21,7 +21,7 @@ git push -u origin main
 ## 2. First push (if repo created on web)
 
 ```powershell
-cd C:\Users\Sampa\OneDrive\Desktop\rbGyanX_cdss
+cd <rbGyanX_cdss_ROOT>
 git init
 git add .
 git commit -m "feat: rbgyanx-engine R1 — TCP+NTCP, DICOM, multi-site, run_analysis API"

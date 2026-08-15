@@ -42,9 +42,12 @@ if sys.platform == 'win32':
         )
 
 # Test configuration
-REPO_ROOT = Path(r"C:\Users\Sampa\OneDrive\Desktop\rbgyanx_dual")
-INPUT_DATA_ROOT = Path(r"C:\Users\Sampa\OneDrive\Desktop\input_data")
-GLOBAL_OUTPUT_ROOT = Path(r"C:\Users\Sampa\OneDrive\Desktop\rbgx_basic_global_output")
+# Machine-specific roots, overridable by environment. Previously hard-coded to the author's
+# Desktop; this is quarantined legacy code kept for provenance and is not part of the release
+# pipeline, but it must not ship a private path either.
+REPO_ROOT = Path(os.environ.get("RBGYANX_ROOT", Path(__file__).resolve().parents[1]))
+INPUT_DATA_ROOT = Path(os.environ.get("RBGYANX_INPUT_DATA", "./input_data"))
+GLOBAL_OUTPUT_ROOT = Path(os.environ.get("RBGYANX_OUTPUT_ROOT", "./rbgx_basic_global_output"))
 
 # Test results storage
 test_results = {

@@ -9,7 +9,7 @@ Publish **two Zenodo records** linked to the GitHub software. Software stays on 
 3. Build bundles:
 
 ```powershell
-cd C:\Users\Sampa\OneDrive\Desktop\project_rbGyanx
+cd <REPO_ROOT>
 .\scripts\build_zenodo_bundle.ps1
 ```
 

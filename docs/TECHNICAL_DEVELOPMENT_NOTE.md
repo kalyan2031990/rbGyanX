@@ -329,7 +329,8 @@ python -m pytest tests/ --import-mode=importlib -q --tb=no -r s
 
 <!-- VALIDATION_REPORT_START -->
 *Last automated validation: 2026-06-08 04:48:21 UTC via `scripts/run_validation_report.py`.*
-*Real data root (local only): `C:\Users\Sampa\OneDrive\Desktop\input_folders`*
+*Real data root (local only): `$RBGYANX_INPUT_FOLDERS` - a machine-specific directory outside
+the repository; its actual location is deliberately not recorded here.*
 
 ### 7.3 Real data inventory (`input_folders`)
 
@@ -355,7 +356,7 @@ python -m pytest tests/ --import-mode=importlib -q --tb=no -r s
 
 ### 7.4 Synthetic cohort (generated for legacy ML tests)
 
-Generated **30 patients** at `C:\Users\Sampa\OneDrive\Desktop\project_rbGyanx\test_data\synthetic_cohort` (450 DVH CSVs + `clinical_data_TCP.xlsx` + `clinical_data_NTCP.xlsx`).
+Generated **30 patients** at `<REPO_ROOT>\test_data\synthetic_cohort` (450 DVH CSVs + `clinical_data_TCP.xlsx` + `clinical_data_NTCP.xlsx`).
 
 In-repo fixtures (`engine/tests/synthetic_data/dvh_fixtures.py`, publication suite helpers) remain the primary CI anchors; the generated cohort supplements code3/code6 workflow tests.
 

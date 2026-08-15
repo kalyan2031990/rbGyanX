@@ -28,7 +28,7 @@ Uninstall: **Settings → Apps → rbGyanX → Uninstall**.
 ## For developers
 
 ```powershell
-cd C:\Users\Sampa\OneDrive\Desktop\rbgyanx_dual
+cd <REPO_ROOT>
 .\Install-rbGyanX.ps1
 python rbgyanx_gui.py
 ```

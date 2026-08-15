@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import shutil
 from datetime import date
 from pathlib import Path
@@ -61,10 +62,32 @@ def should_copy(p: Path, root: Path) -> bool:
     return not any(p.match(g) for g in EXCLUDE_GLOBS)
 
 
+def tracked_files(root: Path) -> list[Path] | None:
+    """Every file git tracks under ``root``, or None if this is not a git checkout.
+
+    The release is the committed tree. Selecting by rglob+denylist shipped whatever happened to be
+    sitting in the working directory - operator-specific workspace builders full of absolute paths
+    into one machine's home directory came along that way. Anything worth releasing is worth
+    committing first.
+    """
+    try:
+        out = subprocess.run(["git", "-C", str(root), "ls-files", "-z"],
+                             capture_output=True, text=True, check=True).stdout
+    except Exception:
+        return None
+    return [root / rel for rel in out.split("\0") if rel]
+
+
+# The scanner's own pattern definitions match the patterns, for obvious reasons.
+SCAN_SELF_EXEMPT = {"analysis/release/build_release.py"}
+
+
 def scan(root: Path) -> list[dict]:
     hits = []
     for f in root.rglob("*"):
         if not f.is_file() or f.suffix.lower() not in TEXT_EXT:
+            continue
+        if str(f.relative_to(root)).replace("\\", "/") in SCAN_SELF_EXEMPT:
             continue
         try:
             text = f.read_text(encoding="utf-8", errors="ignore")
@@ -96,14 +119,21 @@ def main() -> int:
         shutil.rmtree(a.dest)
     a.dest.mkdir(parents=True)
 
+    candidates = tracked_files(a.source)
+    selection = "git-tracked files"
+    if candidates is None:
+        candidates = [p for p in a.source.rglob("*") if p.is_file()]
+        selection = "filesystem walk (source is not a git checkout)"
+
     n = 0
-    for p in a.source.rglob("*"):
+    for p in candidates:
         if not p.is_file() or not should_copy(p, a.source):
             continue
         rel = p.relative_to(a.source)
         (a.dest / rel).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(p, a.dest / rel)
         n += 1
+    print(f"selection: {selection}")
 
     hits = scan(a.dest)
     by_gate: dict[str, int] = {}

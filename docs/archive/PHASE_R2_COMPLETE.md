@@ -3,7 +3,7 @@
 ## rbGyanX_cdss (engine)
 
 - **149 tests passed** (full suite)
-- Package: `rbgyanx-engine` at `C:\Users\Sampa\OneDrive\Desktop\rbGyanX_cdss`
+- Package: `rbgyanx-engine` at `<rbGyanX_cdss_ROOT>`
 
 ## rbgyanx_dual (private GUI)
 
@@ -21,10 +21,10 @@
 ### Install engine for GUI
 
 ```powershell
-pip install -e "C:\Users\Sampa\OneDrive\Desktop\rbGyanX_cdss"
+pip install -e "<rbGyanX_cdss_ROOT>"
 ```
 
-Or set `RBGYANX_ENGINE_PATH=C:\Users\Sampa\OneDrive\Desktop\rbGyanX_cdss`.
+Or set `RBGYANX_ENGINE_PATH=<rbGyanX_cdss_ROOT>`.
 
 ### Usage
 

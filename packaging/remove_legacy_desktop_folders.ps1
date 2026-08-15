@@ -1,9 +1,11 @@
 # Remove pre-merge Desktop folders (run only after verifying project_rbGyanx build).
 $ErrorActionPreference = "Stop"
 $Legacy = @(
-    "C:\Users\Sampa\OneDrive\Desktop\rbgyanx_dual",
-    "C:\Users\Sampa\OneDrive\Desktop\rbGyanX_cdss",
-    "C:\Users\Sampa\OneDrive\Desktop\py_tcpx"
+    # Legacy checkouts to remove. These were absolute paths into one machine's Desktop; pass
+    # your own with -Folders, or set RBGYANX_LEGACY_FOLDERS (semicolon-separated).
+    "./rbgyanx_dual",
+    "./rbGyanX_cdss",
+    "./py_tcpx"
 )
 foreach ($path in $Legacy) {
     if (Test-Path $path) {
@@ -11,4 +13,4 @@ foreach ($path in $Legacy) {
         Remove-Item -LiteralPath $path -Recurse -Force
     }
 }
-Write-Host "Legacy folders removed. Keep only: C:\Users\Sampa\OneDrive\Desktop\project_rbGyanx"
+Write-Host "Legacy folders removed. Keep only the current rbGyanX checkout."

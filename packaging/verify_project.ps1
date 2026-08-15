@@ -1,6 +1,6 @@
 # Pre-delete verification for project_rbGyanx (run before removing legacy Desktop folders)
 $ErrorActionPreference = "Stop"
-$Root = "C:\Users\Sampa\OneDrive\Desktop\project_rbGyanx"
+$Root = if ($env:RBGYANX_ROOT) { $env:RBGYANX_ROOT } else { Split-Path -Parent $PSScriptRoot }
 Set-Location $Root
 
 Write-Host "=== project_rbGyanx verification ===" -ForegroundColor Cyan

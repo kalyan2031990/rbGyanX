@@ -9,6 +9,7 @@ for BASIC/ADVANCED x TCP/NTCP modes where data exists.
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import sys
 import tempfile
@@ -19,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-TEST_DATA = Path(r"C:\Users\Sampa\OneDrive\Desktop\input_folders\rbgyanx_test_data")
+TEST_DATA = Path(os.environ.get("RBGYANX_INPUT_FOLDERS", "./input_folders")) / "rbgyanx_test_data"
 
 SCENARIOS = [
     {

@@ -2,7 +2,7 @@
 # Usage: .\packaging\consolidate_project.ps1 [-Dest "C:\...\project_rbGyanx"]
 
 param(
-    [string]$Dest = "C:\Users\Sampa\OneDrive\Desktop\project_rbGyanx",
+    [string]$Dest = $(if ($env:RBGYANX_ROOT) { $env:RBGYANX_ROOT } else { Split-Path -Parent $PSScriptRoot }),
     [string]$DualRoot = "",
     [string]$EngineRoot = "",
     [string]$PyTcpxRoot = ""
@@ -16,11 +16,11 @@ if (-not $DualRoot) {
 if (-not $EngineRoot) {
     $EngineRoot = (Join-Path (Split-Path $DualRoot -Parent) "rbGyanX_cdss")
     if (-not (Test-Path (Join-Path $EngineRoot "rbgyanx_engine\__init__.py"))) {
-        $EngineRoot = "C:\Users\Sampa\OneDrive\Desktop\rbGyanX_cdss"
+        $EngineRoot = $(if ($env:RBGYANX_ENGINE_PATH) { $env:RBGYANX_ENGINE_PATH } else { Join-Path $Dest "engine" })
     }
 }
 if (-not $PyTcpxRoot) {
-    $PyTcpxRoot = "C:\Users\Sampa\OneDrive\Desktop\py_tcpx"
+    $PyTcpxRoot = $(if ($env:RBGYANX_PYTCPX_PATH) { $env:RBGYANX_PYTCPX_PATH } else { "./py_tcpx" })
 }
 
 $EngineRoot = (Resolve-Path $EngineRoot).Path

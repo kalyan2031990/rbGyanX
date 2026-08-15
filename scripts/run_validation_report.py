@@ -14,12 +14,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-INPUT_ROOT = Path(r"C:\Users\Sampa\OneDrive\Desktop\input_folders")
+INPUT_ROOT = Path(os.environ.get("RBGYANX_INPUT_FOLDERS", "./input_folders"))
 TEST_DATA = INPUT_ROOT / "rbgyanx_test_data"
 REPORT_JSON = ROOT / "docs" / "validation_report.json"
 SYNTHETIC_OUT = ROOT / "test_data" / "synthetic_cohort"
 NOTE_REPO = ROOT / "docs" / "TECHNICAL_DEVELOPMENT_NOTE.md"
-NOTE_DESKTOP = Path(r"C:\Users\Sampa\OneDrive\Desktop\technical note.md")
+NOTE_DESKTOP = Path(os.environ.get("RBGYANX_NOTE_COPY", "./technical note.md"))
 
 
 def json_safe(obj):

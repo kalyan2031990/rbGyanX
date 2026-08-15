@@ -7,7 +7,9 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-DEFAULT_INPUT_ROOT = Path(r"C:\Users\Sampa\OneDrive\Desktop\input_folders")
+# Local, machine-specific data root. Was hard-coded to the author's Desktop, which leaked a
+# private path into the release and worked on exactly one machine.
+DEFAULT_INPUT_ROOT = Path(os.environ.get("RBGYANX_INPUT_FOLDERS", "./input_folders"))
 
 SKIP_DIR_NAMES = {
     "_validation_engine_adv",

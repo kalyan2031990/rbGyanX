@@ -36,7 +36,7 @@ Wiring: `engine.py` calls `enable_advanced_analysis()` when `mode == "advanced"`
 ## Full test suite
 
 ```powershell
-cd C:\Users\Sampa\OneDrive\Desktop\project_rbGyanx
+cd <REPO_ROOT>
 $env:PYTHONUTF8 = "1"
 .\scripts\run_all_tests.ps1
 ```

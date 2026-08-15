@@ -12,7 +12,7 @@ Single desktop distribution combining:
 ## Quick start (developers)
 
 ```powershell
-cd $env:USERPROFILE\OneDrive\Desktop\project_rbGyanx
+cd <REPO_ROOT>
 .\Install-rbGyanX.ps1
 python rbgyanx_gui.py
 ```

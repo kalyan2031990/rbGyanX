@@ -7,7 +7,7 @@ import pandas as pd
 _INPUT_ROOT = Path(
     os.environ.get(
         "RBGYANX_INPUT_FOLDERS",
-        r"C:\Users\Sampa\OneDrive\Desktop\input_folders",
+        "./input_folders",
     )
 )
 _CLINICAL_DIR = _INPUT_ROOT / "rbgyanx_test_data" / "clinical_data"

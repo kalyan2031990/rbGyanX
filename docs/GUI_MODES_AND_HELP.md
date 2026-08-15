@@ -29,7 +29,7 @@
 ## Verify without opening GUI
 
 ```powershell
-cd C:\Users\Sampa\OneDrive\Desktop\project_rbGyanx
+cd <REPO_ROOT>
 python scripts\verify_gui_modes.py
 python qa\self_test_engine.py   # or Tools → Self-Test in GUI
 ```

@@ -37,8 +37,8 @@ if (-not $EngineRoot) {
     $candidates = @(
         (Join-Path $DualRoot "engine"),
         (Join-Path (Split-Path $DualRoot -Parent) "rbGyanX_cdss"),
-        "C:\Users\Sampa\OneDrive\Desktop\rbGyanX_cdss",
-        "C:\Users\Sampa\OneDrive\Desktop\project_rbGyanx\engine"
+        # Candidate engine roots; set RBGYANX_ENGINE_PATH to override.
+        (Join-Path $PSScriptRoot ".." "engine")
     )
     foreach ($c in $candidates) {
         if (Test-Path (Join-Path $c "rbgyanx_engine\__init__.py")) {
