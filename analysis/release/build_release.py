@@ -78,8 +78,11 @@ def tracked_files(root: Path) -> list[Path] | None:
     return [root / rel for rel in out.split("\0") if rel]
 
 
-# The scanner's own pattern definitions match the patterns, for obvious reasons.
-SCAN_SELF_EXEMPT = {"analysis/release/build_release.py"}
+# Files that match the patterns by construction and would otherwise inflate the count with
+# self-reference: the scanner's own pattern definitions, and the scan report, which quotes every
+# token it found. Matched by path suffix, since inside the Zenodo package these sit under
+# software/rbGyanX/.
+SCAN_SELF_EXEMPT = {"analysis/release/build_release.py", "RELEASE_SCAN_REPORT.json"}
 
 
 def scan(root: Path) -> list[dict]:
@@ -87,7 +90,9 @@ def scan(root: Path) -> list[dict]:
     for f in root.rglob("*"):
         if not f.is_file() or f.suffix.lower() not in TEXT_EXT:
             continue
-        if str(f.relative_to(root)).replace("\\", "/") in SCAN_SELF_EXEMPT:
+        rel_posix = str(f.relative_to(root)).replace("\\", "/")
+        # suffix match: inside the Zenodo package the same file sits under software/rbGyanX/
+        if any(rel_posix == e or rel_posix.endswith("/" + e) for e in SCAN_SELF_EXEMPT):
             continue
         try:
             text = f.read_text(encoding="utf-8", errors="ignore")
