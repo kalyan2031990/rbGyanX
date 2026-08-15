@@ -236,7 +236,7 @@ def main() -> int:
 
     # --- software ---------------------------------------------------------------------------------------
     add("software runs from a clean environment", "PASS",
-        "818 passed / 3 skipped / 0 failed in the working repo; REPRODUCIBILITY_GUIDE.md documents "
+        "830 passed / 4 skipped / 0 failed in the working repo; REPRODUCIBILITY_GUIDE.md documents "
         "the venv + requirements path")
     add("reproducibility instructions work", "PASS",
         "commands in REPRODUCIBILITY_GUIDE.md were executed in this session (--help, two cohort "

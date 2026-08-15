@@ -57,7 +57,7 @@ PY
 Desktop GUIs: `python -m rbgyanx.qtapp` (Qt6, needs the `qt` extra) or `python rbgyanx_gui.py`
 (Tkinter).
 
-## Verify (763 tests, synthetic data only)
+## Verify (834 tests, synthetic data only)
 
 ```bash
 pytest -q
