@@ -678,5 +678,89 @@
         "analysis/statistics/p6_numerical_consistency.py": "f4a961a49906a374483003df08278e86c274e442b4cc5f2a00000a82371345d0"
       }
     }
-  ]
+  ],
+  "unversioned_at_time_of_run": {
+    "purpose": "These nine scripts were untracked when the frozen V3.2 analyses ran and carried no entry in this manifest, yet they built the derived cohort tables behind the Manuscript B numbers. They are recorded here for provenance completeness.",
+    "recorded": "2026-08-15",
+    "committed_at": "4b7bfc91db67852e52355de33657418bbfe004f8",
+    "committed_retrospectively": true,
+    "rerun_performed": false,
+    "rerun_note": "None of these scripts was executed as part of this consolidation. Their outputs are frozen and hashed; the hashes below are of the committed source, not of a new run.",
+    "edits_made": "De-localisation only. Thirteen path literals resolved from one absolute root in the author's home directory; they now read RBGYANX_WORKSPACE, defaulting to the first rbGyanX_Manuscript_Workspace found walking up from the file. No computation, constant, parameter or threshold was changed. The hashes below are therefore of the de-localised source, which differs from the source as it ran only in those path expressions.",
+    "phi_scan": "clean - no patient identifier, MRN, name or date of birth in any of the nine files",
+    "scripts": [
+      {
+        "path": "scripts/build_parotid_cohort_workspace.py",
+        "sha256": "1abae00897b0968db1e1356dac8307b7685ef2029fb0d607b16bdb84ff95400e",
+        "lines": 100,
+        "role": "built parotid_cohort.csv - the de-identified Parotid NTCP cohort table (n=54)",
+        "committed_retrospectively": true,
+        "rerun": false
+      },
+      {
+        "path": "scripts/run_ntcp_benchmark_workspace.py",
+        "sha256": "ea15b65da544205a32d0117cff8ce43713b16f5b5d6561beb951e656eb794317",
+        "lines": 193,
+        "role": "ran the four-tier NTCP benchmark over the derived cohort tables",
+        "committed_retrospectively": true,
+        "rerun": false
+      },
+      {
+        "path": "scripts/audit_spark_dataset.py",
+        "sha256": "dbed1a2e776fb2323d5cb96c4776dc16e28faaab9129c2524971ba3f51743615",
+        "lines": 140,
+        "role": "audited the SPARK source archive before cohort construction",
+        "committed_retrospectively": true,
+        "rerun": false
+      },
+      {
+        "path": "scripts/cohort_builder/build_spark_cohort.py",
+        "sha256": "15a9fad829b1b7b9c6a74872ed18990782c26c2cbe1906887b153f9497031b5a",
+        "lines": 206,
+        "role": "built spark_cohort.csv - the SPARK cohort table (n=43)",
+        "committed_retrospectively": true,
+        "rerun": false
+      },
+      {
+        "path": "scripts/cohort_builder/match_spark_patients.py",
+        "sha256": "7896e339a575bd9cbe4541b92fb43b6b275ddba2130615d30be53809813de095",
+        "lines": 172,
+        "role": "matched SPARK patients to their outcome records",
+        "committed_retrospectively": true,
+        "rerun": false
+      },
+      {
+        "path": "scripts/cohort_builder/temp_discovery.py",
+        "sha256": "710fe4ece8490e178d14b389093dcea5177a24619f08410b104a5d157824dc9e",
+        "lines": 29,
+        "role": "one-off listing of SPARK Center 1 outcome files; discovery only, produces no result file",
+        "committed_retrospectively": true,
+        "rerun": false
+      },
+      {
+        "path": "scripts/dvh_builder/audit_structures.py",
+        "sha256": "b28404b659b365877865f1945cd32997f8f06f5af2970e90215ba3684be58745",
+        "lines": 58,
+        "role": "audited RTSTRUCT structure names during DVH construction",
+        "committed_retrospectively": true,
+        "rerun": false
+      },
+      {
+        "path": "scripts/dvh_builder/inspect_dose.py",
+        "sha256": "cd81c7e616e4d43682c9ef78687035c56e5ebd301ef0e984e4a38eaef2133b1f",
+        "lines": 45,
+        "role": "inspected RTDOSE headers during DVH construction",
+        "committed_retrospectively": true,
+        "rerun": false
+      },
+      {
+        "path": "scripts/dvh_builder/inspect_patient.py",
+        "sha256": "606724e9bd9347c7cf0ae50d1b6dcb09f5311b8b703461f3f33ec60d9e46eaa5",
+        "lines": 56,
+        "role": "inspected per-patient DICOM during DVH construction",
+        "committed_retrospectively": true,
+        "rerun": false
+      }
+    ]
+  }
 }
