@@ -30,8 +30,13 @@ def _sha(path: Path) -> str:
 
 def _cfg(out_root: Path, maps: Path) -> RunnerConfig:
     return RunnerConfig(
-        input_root=_EXAMPLES, cohort="DEMO", output_root=out_root / "Outputs",
-        validation="InternalValidation", input_kind="dvh_txt", site="HN", pseudonym_map_dir=maps,
+        input_root=_EXAMPLES,
+        cohort="DEMO",
+        output_root=out_root / "Outputs",
+        validation="InternalValidation",
+        input_kind="dvh_txt",
+        site="HN",
+        pseudonym_map_dir=maps,
     )
 
 
@@ -62,15 +67,24 @@ def test_resume_is_idempotent(tmp_path):
     before = {n: _sha(cohort_dir / n) for n in COHORT_CSVS}
     s2 = run_cohort(cfg)  # resume
     after = {n: _sha(cohort_dir / n) for n in COHORT_CSVS}
-    assert before == after                      # cohort CSVs unchanged on resume
-    assert s1["completed"] == s2["completed"]   # same completion count (cached, not lost)
+    assert before == after  # cohort CSVs unchanged on resume
+    assert s1["completed"] == s2["completed"]  # same completion count (cached, not lost)
 
 
 def test_no_phi_token_in_output_tree(tmp_path):
     run_cohort(_cfg(tmp_path, tmp_path / "_maps"))
     tree = tmp_path / "Outputs"
-    phi_tokens = ("EX-001", "EX-002", "EX-003", "EX-004", "PatientName", "PatientBirthDate",
-                  "StudyDate", "InstitutionName", "AnonPatientID")
+    phi_tokens = (
+        "EX-001",
+        "EX-002",
+        "EX-003",
+        "EX-004",
+        "PatientName",
+        "PatientBirthDate",
+        "StudyDate",
+        "InstitutionName",
+        "AnonPatientID",
+    )
     for f in tree.rglob("*"):
         if f.is_file():
             text = f.read_text(encoding="utf-8", errors="ignore")
@@ -95,8 +109,12 @@ def test_dicom_cohort_degrades_missing_dose(tmp_path):
     save_dataset(p, root / "SYN-C" / "RP.dcm")
 
     cfg = RunnerConfig(
-        input_root=root, cohort="HN", output_root=tmp_path / "Outputs",
-        validation="ExternalValidation", input_kind="dicom", site="HN",
+        input_root=root,
+        cohort="HN",
+        output_root=tmp_path / "Outputs",
+        validation="ExternalValidation",
+        input_kind="dicom",
+        site="HN",
         pseudonym_map_dir=tmp_path / "_maps",
     )
     summary = run_cohort(cfg)  # must not raise

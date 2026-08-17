@@ -34,6 +34,7 @@ def _place(folder: Path, *datasets, prefix: str = "IM") -> None:
 
 # ---------------------------------------------------------------- discovery / grouping
 
+
 def test_two_patients_grouped_by_patient_id(tmp_path):
     s1, d1, p1 = build_rt_triple(patient_id="SYN-001")
     s2, d2, p2 = build_rt_triple(patient_id="SYN-002")
@@ -152,8 +153,14 @@ def test_discovery_is_deterministic(tmp_path):
 
     def snapshot():
         return [
-            (m.patient_key, str(m.rtplan_path), str(m.rtdose_path), str(m.rtstruct_path),
-             tuple(sorted(m.reason_codes)), m.degraded_mode)
+            (
+                m.patient_key,
+                str(m.rtplan_path),
+                str(m.rtdose_path),
+                str(m.rtstruct_path),
+                tuple(sorted(m.reason_codes)),
+                m.degraded_mode,
+            )
             for m in discover_cohort(tmp_path)
         ]
 
@@ -161,6 +168,7 @@ def test_discovery_is_deterministic(tmp_path):
 
 
 # ---------------------------------------------------------------- units / scaling (2.5)
+
 
 def test_units_ok_for_plausible_gy_dose(tmp_path):
     _s, dose, _p = build_rt_triple(patient_id="SYN-001", dose_gy=70.0)
@@ -170,7 +178,9 @@ def test_units_ok_for_plausible_gy_dose(tmp_path):
 
 
 def test_cgy_magnitude_is_flagged():
-    _s, dose, _p = build_rt_triple(patient_id="SYN-001", dose_gy=7000.0)  # cGy-magnitude stored as "Gy"
+    _s, dose, _p = build_rt_triple(
+        patient_id="SYN-001", dose_gy=7000.0
+    )  # cGy-magnitude stored as "Gy"
     assert "CGY_SUSPECTED" in check_dose_units(dose)["reason_codes"]
 
 
@@ -187,7 +197,7 @@ def test_non_gy_units_flagged():
 
 
 def test_mean_dose_agreement_tolerance():
-    assert mean_dose_agreement(30.0, 30.6)["ok"] is True         # within 5%
-    bad = mean_dose_agreement(30.0, 45.0)                        # 50% off
+    assert mean_dose_agreement(30.0, 30.6)["ok"] is True  # within 5%
+    bad = mean_dose_agreement(30.0, 45.0)  # 50% off
     assert bad["ok"] is False and bad["reason"] == "DOSE_DVH_MISMATCH"
     assert mean_dose_agreement(float("nan"), 30.0)["ok"] is True  # missing != disagreement

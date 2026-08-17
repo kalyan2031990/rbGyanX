@@ -21,13 +21,32 @@ from __future__ import annotations
 # Paired / bilateral organs whose single-structure NTCP parameters (QUANTEC/HyTEC-era) are defined for
 # ONE gland. Applying them to a merged bilateral contour is a definition mismatch.
 _SINGLE_GLAND_STEMS = {
-    "parotid", "submandibular", "lung", "kidney", "cochlea", "opticnerve",
-    "hippocampus", "lacrimal", "temporallobe",
+    "parotid",
+    "submandibular",
+    "lung",
+    "kidney",
+    "cochlea",
+    "opticnerve",
+    "hippocampus",
+    "lacrimal",
+    "temporallobe",
 }
 # Tokens in a raw ROI name that indicate a MERGED / bilateral / combined structure.
 _MERGED_TOKENS = (
-    "bilat", "combined", "total", "both", "whole", "pair", "glands",
-    "parotids", "submandibulars", "lungs", "_lr", "_rl", "l+r", "lr_",
+    "bilat",
+    "combined",
+    "total",
+    "both",
+    "whole",
+    "pair",
+    "glands",
+    "parotids",
+    "submandibulars",
+    "lungs",
+    "_lr",
+    "_rl",
+    "l+r",
+    "lr_",
 )
 _SIDE_TOKENS = ("_l", "_r", "-l", "-r", " l", " r", "left", "right", "lt", "rt")
 

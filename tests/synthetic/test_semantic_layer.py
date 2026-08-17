@@ -37,12 +37,18 @@ class _Struct:
 
 # ---------------------------------------------------------------- 3.1 mapping report
 
+
 def test_report_maps_all_and_lists_unmapped():
-    st = _Struct([
-        ("PTV70", "PTV"), ("Parotid_L", "ORGAN"), ("Larynx", "ORGAN"), ("ZZ_WeirdBlob", "ORGAN"),
-    ])
+    st = _Struct(
+        [
+            ("PTV70", "PTV"),
+            ("Parotid_L", "ORGAN"),
+            ("Larynx", "ORGAN"),
+            ("ZZ_WeirdBlob", "ORGAN"),
+        ]
+    )
     rep = structure_mapping_report(st)
-    assert rep["total"] == 4                       # nothing silently dropped
+    assert rep["total"] == 4  # nothing silently dropped
     assert len(rep["rows"]) == 4
     assert "ZZ_WeirdBlob" in rep["unmapped_raw_names"]
     assert rep["mapped"] >= 2 and 0.0 < rep["mapping_rate"] <= 1.0
@@ -63,15 +69,19 @@ def test_aggregate_reports_unions_unmapped():
 
 # ---------------------------------------------------------------- 3.2 site detection
 
-@pytest.mark.parametrize("label,expected", [
-    ("HN_chemoRT_70Gy", "HN"),
-    ("LUNG_SBRT", "LUNG"),
-    ("BrainMets_WBRT", "BRAIN"),
-    ("Breast_LtWholeBreast", "BREAST"),
-    ("Prostate_78Gy", "PROSTATE"),
-    ("Pelvis_Cervix_EBRT", "PELVIS"),
-    ("Liver_SBRT_HCC", "LIVER"),
-])
+
+@pytest.mark.parametrize(
+    "label,expected",
+    [
+        ("HN_chemoRT_70Gy", "HN"),
+        ("LUNG_SBRT", "LUNG"),
+        ("BrainMets_WBRT", "BRAIN"),
+        ("Breast_LtWholeBreast", "BREAST"),
+        ("Prostate_78Gy", "PROSTATE"),
+        ("Pelvis_Cervix_EBRT", "PELVIS"),
+        ("Liver_SBRT_HCC", "LIVER"),
+    ],
+)
 def test_site_detected_from_label(label, expected):
     out = detect_site({"plan_label": label}, [])
     assert out["site"] == expected
@@ -81,7 +91,12 @@ def test_site_detected_from_label(label, expected):
 def test_ambiguous_plan_is_unknown_or_low_with_evidence():
     # No anatomical label, curative-range dose → explicitly ambiguous
     out = detect_site(
-        {"plan_label": "", "prescription_dose_gy": 70.0, "n_fractions": 35, "dose_per_fraction_gy": 2.0},
+        {
+            "plan_label": "",
+            "prescription_dose_gy": 70.0,
+            "n_fractions": 35,
+            "dose_per_fraction_gy": 2.0,
+        },
         [{"canonical": "PTV"}],
     )
     assert out["site"] == "UNKNOWN" or out["confidence"] == "LOW"
@@ -89,6 +104,7 @@ def test_ambiguous_plan_is_unknown_or_low_with_evidence():
 
 
 # ---------------------------------------------------------------- 3.3 NTCP applicability
+
 
 def test_targets_excluded_from_oar_list():
     st = _Struct([("PTV70", "PTV"), ("GTV", "GTV"), ("Parotid_L", "ORGAN")])
@@ -98,11 +114,14 @@ def test_targets_excluded_from_oar_list():
     assert not (oar_names & {"PTV", "GTV", "CTV", "ITV", "BOOST"})  # no target ever in the OAR list
 
 
-@pytest.mark.parametrize("category,code", [
-    ("TARGET", "NTCP_ON_TARGET_BLOCKED"),
-    ("SUPPORT", "NTCP_ON_SUPPORT_BLOCKED"),
-    ("UNKNOWN", "NTCP_ON_UNKNOWN_BLOCKED"),
-])
+@pytest.mark.parametrize(
+    "category,code",
+    [
+        ("TARGET", "NTCP_ON_TARGET_BLOCKED"),
+        ("SUPPORT", "NTCP_ON_SUPPORT_BLOCKED"),
+        ("UNKNOWN", "NTCP_ON_UNKNOWN_BLOCKED"),
+    ],
+)
 def test_ntcp_blocked_off_oar(category, code):
     allowed, reason = ntcp_allowed(category)
     assert allowed is False and reason == code
