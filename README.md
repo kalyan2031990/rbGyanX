@@ -33,7 +33,7 @@ Python **3.10–3.12**. From a clone:
 
 ```bash
 python -m venv .venv && . .venv/bin/activate      # Windows: .venv\Scripts\activate
-pip install -e "./engine" -e ".[dev]"             # add ,qt for the desktop GUI, ,ml for the research stack
+pip install -e "./engine" -e ".[dev,ml]"          # add ,qt for the desktop GUI
 ```
 
 ## 5-minute example (shipped synthetic data — no patient data)
