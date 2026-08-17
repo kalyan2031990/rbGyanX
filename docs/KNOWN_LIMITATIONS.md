@@ -1,92 +1,106 @@
-# rbGyanX — Known Limitations (honest register)
+# Known limitations and planned work
 
-Written during the independent engineering verification. Everything here is either a real constraint, a
-thing deliberately left off, or a thing not proven. Nothing is hidden to make the software look better.
+Recorded openly so that a reviewer or contributor does not have to discover them by reading the
+tree. Each item is a real constraint on the current release, not a placeholder.
 
 ---
 
-## 1. Data-readiness limitations (found on the authors' own cohorts)
+## Code structure
 
-**1.1 The parotid source folder is not de-identified.**
-`internal_validation_data_NTCP/input_txtdvh` — all 54 files carry a **real patient name** in the
-`Patient Name` header. A de-identified equivalent exists (`validation_study/derived/parotid_deid`, names
-reduced to a bracketed token). The runs were executed from the raw folder at the owner's explicit
-instruction, relying on the runner's pseudonymisation; **no identifier reached any output** (verified by
-an automatic scan plus an independent check across 79 harvested name tokens). The raw files themselves
-remain identifiable and must not be shared.
+### `rbgyanx_gui.py` is a 9,093-line monolith
 
-**1.2 SPARK DVH files embed hospital MRNs.** All 81 plan-sum exports set `Patient Name` and `Patient ID`
-to the same 7-digit MRN. Same mitigation and same verification result as 1.1.
+The original Tkinter desktop application is a single module of roughly 9,100 lines (~396 KB). It
+works, it is exercised by the GUI integration tests, and the service layer beneath it is properly
+factored — but the file itself is too large to review comfortably and mixes widget construction,
+event handling, threading and presentation logic.
 
-**1.3 The TCIA/AIRTP archive is partially downloaded.** Two `.part` files (≈2.5 GB) are unfinished. The
-extracted `HaN_valid` folders contain **RTPLAN + RTDOSE only**; the structure sets live inside the
-collection zips. Analysis therefore ran from a selective extraction of the zips.
+This is a legacy-first artefact: the Tkinter app predates the Qt6 application
+(`rbgyanx.qtapp`) and the headless service layer, both of which are cleanly separated. It is
+retained because some users depend on it and because rewriting a working clinical-facing UI
+carries its own risk.
 
-**1.4 The lung arm has no contours at all.** `Lung_valid_RTPLAN+RTDOSE.zip` contains plan and dose for
-~70 patients but **no RTSTRUCT**, so DVHs — and hence TCP/NTCP — are impossible for that arm. It is
-processed as a documented reduced mode (`NO_STRUCT`), not as a result. There is no runnable
-"TCIA lung with structures" cohort in the supplied data.
+**Planned split**, in dependency order:
 
-**1.5 CT series were deliberately not extracted.** DVHs are computed from RTDOSE + RTSTRUCT; the CT is
-unused. Skipping it reduced staging from 29.6 GB to 11.5 GB. If a future feature needs image data
-(e.g. image-based dosiomics), the CT must be extracted.
+1. `gui/widgets/` — pure widget construction, no business logic
+2. `gui/controllers/` — event handling delegating to `rbgyanx.services`
+3. `gui/workers/` — the threading and progress-streaming layer
+4. `gui/app.py` — assembly only
 
-## 2. Scientific limitations
+The Qt6 application already follows this arrangement and is the reference. No behaviour change is
+intended; `tests/test_gui_service_equivalence.py` exists specifically to pin the two front-ends to
+identical service-layer results and should stay green throughout.
 
-**2.1 Side-less OAR names get an arbitrary laterality.** A structure named simply `Parotid`
-canonicalises to `Parotid_R` purely by alias-lookup order. The numbers are still computed, but every
-such row is flagged `NTCP_DEFINITION_UNVERIFIED`. **Do not treat those rows as left/right-specific.**
-For the parotid cohort this applies to all 54 patients.
+Contributors: please do not add new features to `rbgyanx_gui.py`. Add them to the service layer
+and surface them in `rbgyanx.qtapp`.
 
-**2.2 NTCP parameter CVs are round-number defaults.** The Monte-Carlo coefficients of variation
-(0.15/0.20/0.25/0.30) are attributed to Deasy 1997 / Marks 2010 / Källman 1992 but are not values with a
-documented per-parameter derivation, and no parameter covariance is encoded.
+---
 
-**2.3 A divergent degenerate-value contract still exists.** `engine/radiobiology` returns **NaN** on
-degenerate input; the parallel `rbgyanx/core/tcp/*` implementation returns **0.0** (~14 sites). The
-latter is off the cohort critical path (self-imports only) and was **not** changed — a validated
-calculation is not something to "improve" in an engineering pass. Flagged for the authors.
+## Scientific scope
 
-**2.4 TCP on prostate SPARK targets is model-limited, not verified.** TCP was produced for CTV/PTV using
-the configured prostate parameters; no outcome data was used, so these are predictions, not validated
-results. Same for all NTCP values reported.
+### IBSI compliance is not claimed
 
-**2.5 Structure-definition guards cover paired glands only.** PRV-vs-organ, partial-organ contours and
-merged multi-organ contours other than the bilateral case are not modelled.
+The radiomics implementation is benchmarked against the IBSI-1 digital phantom and reproduces
+**56 of 63** reference features. Two families reproduce only in part: neighbouring grey-level
+dependence (3 of 7) and morphology (1 of 4). See
+`analysis/ibsi/v3_ibsi_benchmark.py` and the compliance matrix it writes.
 
-## 3. Engineering limitations
+Compliance is a status; what this release supports is a benchmark measurement. Any downstream
+radiomic result is bounded by the two partial families.
 
-**3.1 The definition guard records, it does not withhold.** `NTCP_DEFINITION_MISMATCH` /
-`_UNVERIFIED` appear in `ntcp_results.csv`; there is no strict mode that refuses to emit the number.
+### Poisson TCP saturates
 
-**3.2 ADVANCED-mode columns are empty by design in these runs.** `ML_features`, `ML_predictions`,
-`XAI_attributions`, `PINN_predictions` are written (stable columns) but unpopulated because every cohort
-ran in `basic` mode. Their population through the cohort runner is **not** exercised end-to-end.
+The Poisson linear-quadratic tumour-control implementation saturates at the dose levels present in
+the validation cohorts (median indistinguishable from 1.000, negligible interquartile range). It
+is correct at the doses it was designed for and is retained for completeness, but a saturated
+probability carries no information and it should not be quoted as one.
 
-**3.3 PINN is CPU-only here.** `torch 2.12.0+cpu`, no CUDA. Training is gated behind `pinn_train`
-(default off) and ADVANCED mode. It was verified to import, train, checkpoint, reload and infer in the
-test suite, but **PINN inference quality was not benchmarked** — only that it runs. **Not deleted.**
+### Delivery uncertainty is implemented but not propagated
 
-**3.4 Bayesian NTCP verified only at import/execution level.** Not exercised on the real cohorts.
+Dosimetric (ICRU 91 / TG-119) and setup (van Herk) uncertainty modules are implemented and unit
+tested, but were not propagated into the published cohort analyses because the archives carry no
+per-patient setup data. Reported uncertainty spreads are **parameter uncertainty only** and
+understate total uncertainty.
 
-**3.5 DICOM DVH monotonicity is trusted, not re-validated.** `validate_cumulative_dvh` guards the TPS
-text path; DICOM DVHs are assumed monotone as produced by dicompylercore. Wiring the validator into the
-DICOM path too would make the guarantee uniform.
+### Dosiomics require a real 3-D dose grid
 
-**3.6 The `PatientRegistry` PHI columns still exist.** `build_dataframe()` can emit
-`PrimaryPatientID`/`PatientDOB`/`StudyDate`/`Institution`. The cohort runner bypasses it entirely, but
-**any other caller of that class can still export PHI**. Flagged, not changed (backward compatibility).
+Spatial dose texture is computed only where an RTDOSE grid exists. Planning-system DVH text
+cohorts return a `NOT APPLICABLE` status rather than a feature vector. An earlier internal
+analysis that synthesised texture features for such cohorts has been **retracted**; the current
+engine refuses to fabricate `dosio_*` columns from synthetic voxels.
 
-**3.7 Legacy duplication retained.** Seven-plus overlapping entry points and a second TCP implementation
-remain (`docs/AUDIT.md` T1–T4). Nothing was deleted — capability preservation was a hard constraint.
+### Parotid laterality cannot be reconstructed from DVH text exports
 
-**3.8 Grid-vs-DVH mean-dose cross-check is available but not wired into the runner.**
-`dose_units_check.mean_dose_agreement` exists; the runner does not yet call it per structure.
+Where a structure export carries a single parotid volume per patient, single-gland and bilateral
+contouring conventions are indistinguishable. The engine's `Parotid_R` label in such cases is an
+ordering artefact. The manuscript-facing name is `Parotid_unspecified` and affected rows carry
+`NTCP_DEFINITION_UNVERIFIED`. No lateralised parotid result should be reported from these inputs.
 
-## 4. What was *not* tested
+### Cohort Consistency Score thresholds are uncalibrated
 
-- Vendor-specific private DICOM tags, multi-frame RTDOSE geometry mismatches, and beam-level dose
-  accumulation (`DoseSummationType=BEAM`) — no such data was present.
-- The full 48 GB TCIA archive (explicitly out of scope; the authors will run it).
-- Any Windows environment other than this one (Python 3.14.2, Windows 11).
-- GUI paths — the cohort runner is headless only.
+The 0.5 decision threshold is not an established boundary. CCS verdicts are directional signals,
+not calibrated judgements.
+
+---
+
+## Reproducibility
+
+### Two cohorts are not independently reproducible
+
+The public head-and-neck analysis is fully reproducible from public archives. The internal parotid
+and external prostate cohorts are institutional and cannot be redistributed; reproduction requires
+a data-transfer agreement. De-identified derived tables sufficient to regenerate the reported
+values accompany the associated publications.
+
+### Analysis provenance and software release carry distinct commits
+
+`analysis/FINAL_ANALYSIS_CODE_MANIFEST.json` stamps a different `source_commit` from the software
+release tag. This is deliberate and should not be reconciled: which code produced a number and
+which version was distributed are different questions.
+
+---
+
+## Reporting an issue
+
+Security-sensitive reports: see [`SECURITY.md`](../SECURITY.md). Everything else: please open an
+issue with the release identifier from `VERSION.txt` and, where relevant, the analysis manifest
+entry.

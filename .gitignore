@@ -80,3 +80,10 @@ Outputs/
 _pseudonym_maps/
 _private_maps/
 *_pseudonym_map.csv
+
+# Release assets staged locally and attached to the GitHub release, plus the
+# publication migration notes. Kept on disk, never in the public repo history.
+release_assets/
+PUBLISH_RUNBOOK.md
+PUBLISH_COMPARISON.md
+CLAUDE_CODE_PUBLISH_PROMPT.md
