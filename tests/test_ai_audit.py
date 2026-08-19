@@ -22,11 +22,11 @@ from rbgyanx.ai.audit import (
 
 #: A payload containing every identifier shape the log must not persist.
 DIRTY_PAYLOAD = (
-    "PatientName: Smith, John  PatientID 1234567  DOB 1964-03-12  "
-    r"C:\Data\PAROTID\Smith_John_1234567\RTDOSE.dcm  jane.doe@hospital.example"
+    "PatientName: Doe, Jane  PatientID 1234567  DOB 1964-03-12  "
+    r"C:\Data\PAROTID\Doe_Jane_1234567\RTDOSE.dcm  jane.doe@hospital.example"
 )
 
-IDENTIFIERS = ("Smith", "John", "1234567", "1964-03-12", "PAROTID", "hospital.example")
+IDENTIFIERS = ("Doe", "Jane", "1234567", "1964-03-12", "PAROTID", "hospital.example")
 
 
 def _log(tmp_path):

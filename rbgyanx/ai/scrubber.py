@@ -24,7 +24,7 @@ For tracebacks the module goes further and works by reconstruction rather than r
 paths are re-derived from known-safe roots (the install tree, the interpreter, site-packages)
 and anything outside those roots is dropped entirely rather than trimmed. A path outside the
 software tree is a data path, and every component of it - not just the leaf - can be a name.
-``C:\\Users\\jsmith\\...`` leaks a person before you ever reach the patient folder.
+``C:\\Users\\<name>\\...`` leaks a person before you ever reach the patient folder.
 
 The pattern set is kept deliberately in step with ``scripts/pre_publish_check.py``. It is
 re-declared here rather than imported: that script chdirs at import time and is itself a frozen
@@ -415,7 +415,7 @@ def _rewrite_path(raw: str) -> str:
 
     Reconstruction, not trimming: anything outside the software tree is a data path, and every
     component of a data path can be an identifier - the home directory as readily as the patient
-    folder. Trimming only the leaf would still publish ``C:\\Users\\jsmith``.
+    folder. Trimming only the leaf would still publish ``C:\\Users\\<name>``.
     """
     try:
         candidate = Path(raw).resolve()

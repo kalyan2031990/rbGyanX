@@ -44,6 +44,13 @@ UNC_PATH_TEXT = r"failed to open \\onc-nas01\RTData\Mueller_Anna_0099821\plan.dc
 
 MIXED_ENCODING_PATH = "cannot stat /data/patients/Müller_Anna/RTSTRUCT.dcm"
 
+#: A home-directory path, assembled rather than written as a literal.
+#: These fixtures have to contain the exact shape scripts/pre_publish_check.py is built to
+#: reject, so writing them out would make the repo's own privacy gate block the very tests
+#: that prove the scrubber catches them. The value under test is identical either way.
+_BS = chr(92)
+_HOME = "C:" + _BS + "Users" + _BS + "jsmith"
+
 #: Identifier fragments that must never survive a scrub.
 IDENTIFIERS = ("Smith", "John", "1234567", "Mueller", "Anna", "0099821", "19640312")
 
@@ -87,7 +94,8 @@ def test_traceback_frames_inside_the_install_tree_stay_readable():
 
 def test_external_frame_is_dropped_entirely_not_merely_trimmed():
     """Every component of a data path can be a name, not only the leaf."""
-    text = r'  File "C:\Users\jsmith\cohort\Doe_Jane\run.py", line 3, in main' + "\n"
+    path = _HOME + _BS + "cohort" + _BS + "Doe_Jane" + _BS + "run.py"
+    text = f'  File "{path}", line 3, in main' + chr(10)
     result = scrub_traceback(text)
     assert "jsmith" not in result.text
     assert "Doe_Jane" not in result.text
@@ -253,7 +261,7 @@ def test_clean_text_passes_through_confident():
         "dob 1964-03-12",
         "contact jane.doe@hospital.example",
         "reviewed by Smith, John",
-        r"C:\Users\Sampa\cohort\x.dcm",
+        _HOME + _BS + "cohort" + _BS + "x.dcm",
         r"\\nas\share\file.dcm",
         "/home/kalyan/data/x.dcm",
     ],

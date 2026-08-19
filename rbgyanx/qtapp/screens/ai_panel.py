@@ -29,7 +29,6 @@ from PySide6.QtWidgets import (
 )
 
 from rbgyanx.ai import (
-    PROVIDERS,
     AiConfig,
     LLMClient,
     LLMMessage,
@@ -37,6 +36,7 @@ from rbgyanx.ai import (
     scan_for_phi,
     summarise_run,
 )
+from rbgyanx.ai.session import AssistantSession
 from rbgyanx.qtapp.branding import PALETTE
 from rbgyanx.services.ui_policy import UiFeature, UiPolicy
 
@@ -84,6 +84,9 @@ class AiPanelScreen(QWidget):
         self._transport = transport  # injectable; real HTTP transport built lazily otherwise
         self._worker: _AskWorker | None = None
 
+        # Qt-free state object: it decides what is allowed, the widgets only render it.
+        self.session = AssistantSession()
+
         root = QVBoxLayout(self)
 
         self.notice = QLabel(_SAFETY_NOTICE)
@@ -96,7 +99,9 @@ class AiPanelScreen(QWidget):
 
         bar = QHBoxLayout()
         self.provider_combo = QComboBox()
-        for key, prov in PROVIDERS.items():
+        # Filtered, not the raw registry: a provider disabled by institutional policy must not
+        # be selectable in the first place, rather than refused after the user picks it.
+        for key, prov in self.session.selectable_providers().items():
             self.provider_combo.addItem(prov.label, key)
         self.provider_combo.currentIndexChanged.connect(lambda _=0: self._refresh_status())
         self.model_edit = QLineEdit()
@@ -112,6 +117,22 @@ class AiPanelScreen(QWidget):
         self.attach_context = QCheckBox("Attach the current run's aggregate summary")
         self.attach_context.setChecked(True)
         root.addWidget(self.attach_context)
+
+        # Opt-in and off by default: a fresh install has the tool layer inert.
+        self.enable_tools = QCheckBox(
+            "Enable assistant tools (experimental) - read code, run tests, propose edits"
+        )
+        self.enable_tools.setChecked(False)
+        self.enable_tools.stateChanged.connect(lambda _=0: self._refresh_status())
+        root.addWidget(self.enable_tools)
+
+        # What the assistant is allowed to do right now, always visible.
+        self.capabilities = QLabel()
+        self.capabilities.setWordWrap(True)
+        self.capabilities.setStyleSheet(
+            f"color: {PALETTE['muted']}; font-size: 11px; padding: 2px 0;"
+        )
+        root.addWidget(self.capabilities)
 
         self.status = QLabel()
         self.status.setStyleSheet(f"color: {PALETTE['muted']};")
@@ -143,6 +164,7 @@ class AiPanelScreen(QWidget):
             self.provider_combo,
             self.model_edit,
             self.attach_context,
+            self.enable_tools,
             self.input_edit,
             self.send_btn,
         ):
@@ -170,15 +192,18 @@ class AiPanelScreen(QWidget):
 
     def _refresh_status(self) -> None:
         cfg = self.current_config()
-        if not cfg.is_remote:
-            self.status.setText("Local endpoint — nothing leaves this machine.")
-        elif cfg.is_ready:
-            self.status.setText(
-                f"Remote ({cfg.preset.label}) — key found. Sends leave this machine."
-            )
-        else:
+        self.session.provider_key = self.current_provider()
+        self.session.base_url = cfg.base_url
+        self.session.tools_enabled = self.enable_tools.isChecked()
+
+        text = self.session.locality_text()
+        if self.session.remote and not cfg.is_ready and cfg.preset.api_key_env:
             env_names = " or ".join(cfg.preset.api_key_env)
-            self.status.setText(f"Remote ({cfg.preset.label}) — set {env_names} to enable.")
+            text = f"Remote ({cfg.preset.label}) - set {env_names} to enable."
+        self.status.setText(text)
+
+        lines = [self.session.header_text(), *self.session.notes()]
+        self.capabilities.setText("\n".join(lines))
 
     # ---------------------------------------------------------------- messages
 
