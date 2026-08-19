@@ -33,8 +33,10 @@ CI_LOCAL = ToolContext(LOCAL, InstallType.CI, env=NO_ENV)
 # --------------------------------------------------------------------------- the registry
 
 
-def test_all_five_tools_are_registered():
+def test_every_tool_is_registered():
+    """The write tool joins the registry in phase 5; it is gated the same way as the rest."""
     assert REGISTRY.names() == [
+        "edit_code",
         "explain_run",
         "read_code",
         "read_error",
@@ -128,6 +130,7 @@ def _dummy_kwargs(name: str) -> dict:
         "run_tests": {"selector": "tests"},
         "run_synthetic": {"input_path": "examples/data"},
         "explain_run": {"result": None},
+        "edit_code": {"path": "README.md", "new_text": "x"},
     }[name]
 
 

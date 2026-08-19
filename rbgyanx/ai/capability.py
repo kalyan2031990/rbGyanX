@@ -439,3 +439,150 @@ def granted_capabilities(
         for cap in Capability
         if is_allowed(cap, provider, install_type, base_url=base_url, env=env).allowed
     ]
+
+
+# --------------------------------------------------------------------------- the frozen set
+#
+# WHY THIS EXISTS. This is a software safety property, not a policy preference. A radiobiology
+# CDSS computes numbers a clinician may act on. An agent that can edit the numeric core - or the
+# tests that verify it - can change what a complication probability means and then make the suite
+# green, and the change would look like a passing build. Freezing both closes that.
+#
+# The set therefore covers three things, not one:
+#
+#   1. What produces the numbers.   engine/radiobiology, engine/uncertainty, the EPV guard, and
+#                                   engine/config, which holds the LKB parameter triples. Editing
+#                                   a TD50 changes a complication probability exactly as surely
+#                                   as editing the model that consumes it.
+#   2. What verifies the numbers.   tests/**, and also the test *configuration* - pyproject.toml
+#                                   (addopts can inject --ignore or -p no:...), any conftest.py,
+#                                   and the CI workflows. Freezing the tests while leaving the
+#                                   configuration writable leaves the identical hole open.
+#   3. What constrains the agent.   capability.py (it must not widen its own permissions),
+#                                   scrubber.py (it must not weaken its own PHI guard), the tool
+#                                   registry and path guard that enforce them, audit.py (it must
+#                                   not hide what it did), config.py - whose Provider.remote flag
+#                                   is the whole basis of data locality - and the existing
+#                                   scope_guard and mode_controller gates.
+#
+# None of this is configurable. A setting that can switch off a safety property is not a safety
+# property.
+
+#: Directory prefixes (repo-relative, forward slashes). Everything beneath them is frozen.
+FROZEN_PREFIXES: tuple[str, ...] = (
+    "engine/radiobiology/",
+    "engine/validation/",
+    "engine/uncertainty/",
+    "engine/config/",
+    "tests/",
+    "rbgyanx/ai/tools/",
+    ".github/workflows/",
+)
+
+#: Individual frozen files.
+FROZEN_FILES: frozenset[str] = frozenset(
+    {
+        "engine/statistical_models/epv_guard.py",
+        "rbgyanx/ai/capability.py",
+        "rbgyanx/ai/scrubber.py",
+        "rbgyanx/ai/audit.py",
+        "rbgyanx/ai/config.py",
+        "ask_rbgyanx/scope_guard.py",
+        "rbgyanx/logic/mode_controller.py",
+        "scripts/pre_publish_check.py",
+        "baseline_numerics.json",
+        "pyproject.toml",
+    }
+)
+
+#: Frozen wherever they appear in the tree.
+FROZEN_BASENAMES: frozenset[str] = frozenset({"conftest.py", "pytest.ini", "setup.cfg", "tox.ini"})
+
+#: Files that must never be *created*, because each one re-opens everything else.
+#: A .pth file executes at interpreter start; sitecustomize/usercustomize are imported
+#: automatically; a new conftest.py can autouse-skip the suite that verifies the numbers.
+CREATION_FORBIDDEN_BASENAMES: frozenset[str] = frozenset(
+    {
+        "sitecustomize.py",
+        "usercustomize.py",
+        "conftest.py",
+        "pytest.ini",
+        "setup.cfg",
+        "tox.ini",
+        ".pth",
+    }
+)
+CREATION_FORBIDDEN_SUFFIXES: frozenset[str] = frozenset({".pth"})
+
+
+def _normalise(rel_path: str) -> str:
+    """Repo-relative, forward-slashed, with any leading "./" removed.
+
+    Note the deliberate avoidance of ``lstrip("./")``: lstrip takes a *character set*, so it
+    would eat the leading dot of ".github/workflows/ci.yml" and quietly unfreeze CI.
+    """
+    rel = str(rel_path).replace("\\", "/")
+    while rel.startswith("./"):
+        rel = rel[2:]
+    return rel.lstrip("/")
+
+
+def frozen_reason(rel_path: str) -> str | None:
+    """Why ``rel_path`` may not be modified, or None if it may be."""
+    rel = _normalise(rel_path)
+    if not rel:
+        return "an empty path is not editable"
+
+    if rel in FROZEN_FILES:
+        return f"{rel} is in the frozen set and can never be modified by the assistant"
+
+    for prefix in FROZEN_PREFIXES:
+        if rel.startswith(prefix):
+            return (
+                f"{rel} is under {prefix}, which is in the frozen set and can never be "
+                "modified by the assistant"
+            )
+
+    basename = rel.rsplit("/", 1)[-1]
+    if basename in FROZEN_BASENAMES:
+        return (
+            f"{basename} configures how the test suite runs, so it is frozen wherever it "
+            "appears; the assistant must not be able to weaken what verifies it"
+        )
+    return None
+
+
+def creation_reason(rel_path: str) -> str | None:
+    """Why ``rel_path`` may not be created, or None if it may be.
+
+    Restricting edits alone is not enough. Without touching a single frozen file, a new
+    ``sitecustomize.py``, ``.pth`` or ``conftest.py`` re-opens everything - and a package
+    directory named after a frozen module (``rbgyanx/ai/capability/``) shadows it outright.
+    """
+    rel = _normalise(rel_path)
+    basename = rel.rsplit("/", 1)[-1]
+
+    if basename in CREATION_FORBIDDEN_BASENAMES:
+        return (
+            f"refusing to create {basename}: it is loaded automatically by the interpreter or "
+            "by pytest, so creating one would bypass the frozen set entirely"
+        )
+    if any(basename.endswith(suffix) for suffix in CREATION_FORBIDDEN_SUFFIXES):
+        return f"refusing to create {rel}: a .pth file executes at interpreter start-up"
+
+    # A directory named after a frozen module shadows it: rbgyanx/ai/capability/__init__.py
+    # is imported in preference to rbgyanx/ai/capability.py.
+    parts = rel.split("/")
+    for depth in range(1, len(parts)):
+        shadowed = "/".join(parts[:depth]) + ".py"
+        if shadowed in FROZEN_FILES:
+            return (
+                f"refusing to create {rel}: the package {'/'.join(parts[:depth])}/ would shadow "
+                f"the frozen module {shadowed}"
+            )
+    return frozen_reason(rel)
+
+
+def is_frozen(rel_path: str) -> bool:
+    """True when ``rel_path`` may not be modified by the assistant."""
+    return frozen_reason(rel_path) is not None

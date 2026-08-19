@@ -8,6 +8,7 @@ function is entered.
 
 from __future__ import annotations
 
+from rbgyanx.ai.tools.edit import Snapshot, edit_code
 from rbgyanx.ai.tools.paths import PathRefused, is_within, resolve_within
 from rbgyanx.ai.tools.readonly import (
     explain_run,
@@ -42,4 +43,6 @@ __all__ = [
     "run_tests",
     "run_synthetic",
     "explain_run",
+    "edit_code",
+    "Snapshot",
 ]
