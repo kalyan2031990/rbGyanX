@@ -33,11 +33,33 @@ CI_LOCAL = ToolContext(LOCAL, InstallType.CI, env=NO_ENV)
 # --------------------------------------------------------------------------- the registry
 
 
+#: Sample arguments for every registered tool. Kept in one place and asserted complete below,
+#: so adding a tool fails with one clear message rather than a KeyError deep in another test.
+SAMPLE_KWARGS: dict[str, dict] = {
+    "read_code": {"path": "README.md"},
+    "read_error": {"traceback": "boom"},
+    "run_tests": {"selector": "tests"},
+    "run_synthetic": {"input_path": "examples/data"},
+    "explain_run": {"result": None},
+    "edit_code": {"path": "README.md", "new_text": "x"},
+    "literature_compare": {"organ": "Parotid", "observed": {"Dmean": 26.4}},
+}
+
+
+def test_every_registered_tool_has_sample_arguments():
+    """Adding a tool without covering it here is itself a failure, not a silent gap."""
+    assert set(REGISTRY.names()) == set(SAMPLE_KWARGS), (
+        "a tool was added or removed without updating SAMPLE_KWARGS; "
+        f"registry={sorted(REGISTRY.names())} sample={sorted(SAMPLE_KWARGS)}"
+    )
+
+
 def test_every_tool_is_registered():
-    """The write tool joins the registry in phase 5; it is gated the same way as the rest."""
+    """The full inventory, written out so a new tool is a deliberate change to this list."""
     assert REGISTRY.names() == [
         "edit_code",
         "explain_run",
+        "literature_compare",
         "read_code",
         "read_error",
         "run_synthetic",
@@ -118,20 +140,9 @@ def test_refusal_reason_names_the_failed_condition():
 
 def test_ci_refuses_every_tool():
     for name in REGISTRY.names():
-        result = invoke(name, CI_LOCAL, **_dummy_kwargs(name))
+        result = invoke(name, CI_LOCAL, **SAMPLE_KWARGS[name])
         assert result.ok is False, f"{name} ran in CI"
         assert "CI" in result.reason
-
-
-def _dummy_kwargs(name: str) -> dict:
-    return {
-        "read_code": {"path": "README.md"},
-        "read_error": {"traceback": "boom"},
-        "run_tests": {"selector": "tests"},
-        "run_synthetic": {"input_path": "examples/data"},
-        "explain_run": {"result": None},
-        "edit_code": {"path": "README.md", "new_text": "x"},
-    }[name]
 
 
 # ---------------------------------------------------------------------------- read_code

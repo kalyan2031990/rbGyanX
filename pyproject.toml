@@ -80,6 +80,11 @@ include = [
 ]
 exclude = ["engine*", "engine_advanced*", "engine_advanced_f*", "tests*", "packaging*", "legacy*"]
 
+[tool.setuptools.package-data]
+# The reference packs are data the literature tool reads at run time, so they have to be in
+# the wheel as well as in the checkout.
+"rbgyanx.ai.reference_packs" = ["*.json"]
+
 [tool.pytest.ini_options]
 testpaths = [
     "engine/tests",

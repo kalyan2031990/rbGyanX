@@ -9,6 +9,16 @@ function is entered.
 from __future__ import annotations
 
 from rbgyanx.ai.tools.edit import Snapshot, edit_code
+from rbgyanx.ai.tools.literature import (
+    ORIENTATION_NOTICE,
+    ComparisonRow,
+    ExportRefused,
+    Provenance,
+    export,
+    literature_compare,
+    load_all_packs,
+    render_table,
+)
 from rbgyanx.ai.tools.paths import PathRefused, is_within, resolve_within
 from rbgyanx.ai.tools.readonly import (
     explain_run,
@@ -45,4 +55,12 @@ __all__ = [
     "explain_run",
     "edit_code",
     "Snapshot",
+    "literature_compare",
+    "Provenance",
+    "ComparisonRow",
+    "ExportRefused",
+    "ORIENTATION_NOTICE",
+    "export",
+    "render_table",
+    "load_all_packs",
 ]

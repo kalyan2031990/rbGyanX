@@ -1,0 +1,170 @@
+{
+  "pack_id": "quantec-2010",
+  "pack_version": "1.0.0",
+  "title": "QUANTEC normal-tissue dose/volume constraints (2010)",
+  "description": "Selected constraints from the QUANTEC series, Int J Radiat Oncol Biol Phys 2010;76(3 Suppl). Conventional fractionation (approximately 2 Gy per fraction) unless the entry says otherwise. These are orientation values for a single organ at a time; they are not a plan-acceptance standard and they do not compose.",
+  "applicability": "Conventional fractionation, photon external-beam. Not applicable to SBRT/SRS, re-irradiation, or paediatric patients without separate justification.",
+  "maintainer_review": "required",
+  "entries": [
+    {
+      "organ": "Parotid (bilateral, whole)",
+      "endpoint": "Long-term salivary function reduced to <25% of baseline",
+      "metric": "Dmean",
+      "comparator": "<",
+      "value": 25.0,
+      "units": "Gy",
+      "risk_pct": 20,
+      "citation": "Deasy JO, Moiseenko V, Marks LB, et al. Radiotherapy dose-volume effects on salivary gland function. Int J Radiat Oncol Biol Phys 2010;76(3 Suppl):S58-S63."
+    },
+    {
+      "organ": "Parotid (single gland)",
+      "endpoint": "Long-term salivary function reduced to <25% of baseline",
+      "metric": "Dmean",
+      "comparator": "<",
+      "value": 20.0,
+      "units": "Gy",
+      "risk_pct": 20,
+      "citation": "Deasy JO, Moiseenko V, Marks LB, et al. Radiotherapy dose-volume effects on salivary gland function. Int J Radiat Oncol Biol Phys 2010;76(3 Suppl):S58-S63."
+    },
+    {
+      "organ": "Spinal cord",
+      "endpoint": "Myelopathy",
+      "metric": "Dmax",
+      "comparator": "<=",
+      "value": 50.0,
+      "units": "Gy",
+      "risk_pct": 0.2,
+      "citation": "Kirkpatrick JP, van der Kogel AJ, Schultheiss TE. Radiation dose-volume effects in the spinal cord. Int J Radiat Oncol Biol Phys 2010;76(3 Suppl):S42-S49."
+    },
+    {
+      "organ": "Spinal cord",
+      "endpoint": "Myelopathy",
+      "metric": "Dmax",
+      "comparator": "<=",
+      "value": 60.0,
+      "units": "Gy",
+      "risk_pct": 6.0,
+      "citation": "Kirkpatrick JP, van der Kogel AJ, Schultheiss TE. Radiation dose-volume effects in the spinal cord. Int J Radiat Oncol Biol Phys 2010;76(3 Suppl):S42-S49."
+    },
+    {
+      "organ": "Brainstem",
+      "endpoint": "Permanent cranial neuropathy or necrosis",
+      "metric": "Dmax",
+      "comparator": "<",
+      "value": 54.0,
+      "units": "Gy",
+      "risk_pct": 5,
+      "citation": "Mayo C, Yorke E, Merchant TE. Radiation associated brainstem injury. Int J Radiat Oncol Biol Phys 2010;76(3 Suppl):S36-S41."
+    },
+    {
+      "organ": "Optic nerve / chiasm",
+      "endpoint": "Optic neuropathy",
+      "metric": "Dmax",
+      "comparator": "<",
+      "value": 55.0,
+      "units": "Gy",
+      "risk_pct": 3,
+      "citation": "Mayo C, Martel MK, Marks LB, et al. Radiation dose-volume effects of optic nerves and chiasm. Int J Radiat Oncol Biol Phys 2010;76(3 Suppl):S28-S35."
+    },
+    {
+      "organ": "Lung (paired, minus GTV)",
+      "endpoint": "Symptomatic pneumonitis",
+      "metric": "V20",
+      "comparator": "<=",
+      "value": 30.0,
+      "units": "%",
+      "risk_pct": 20,
+      "citation": "Marks LB, Bentzen SM, Deasy JO, et al. Radiation dose-volume effects in the lung. Int J Radiat Oncol Biol Phys 2010;76(3 Suppl):S70-S76."
+    },
+    {
+      "organ": "Lung (paired, minus GTV)",
+      "endpoint": "Symptomatic pneumonitis",
+      "metric": "Dmean",
+      "comparator": "<=",
+      "value": 20.0,
+      "units": "Gy",
+      "risk_pct": 20,
+      "citation": "Marks LB, Bentzen SM, Deasy JO, et al. Radiation dose-volume effects in the lung. Int J Radiat Oncol Biol Phys 2010;76(3 Suppl):S70-S76."
+    },
+    {
+      "organ": "Heart",
+      "endpoint": "Long-term cardiac mortality",
+      "metric": "V25",
+      "comparator": "<",
+      "value": 10.0,
+      "units": "%",
+      "risk_pct": 1,
+      "citation": "Gagliardi G, Constine LS, Moiseenko V, et al. Radiation dose-volume effects in the heart. Int J Radiat Oncol Biol Phys 2010;76(3 Suppl):S77-S85."
+    },
+    {
+      "organ": "Esophagus",
+      "endpoint": "Grade 3+ acute esophagitis",
+      "metric": "Dmean",
+      "comparator": "<",
+      "value": 34.0,
+      "units": "Gy",
+      "risk_pct": 5,
+      "citation": "Werner-Wasik M, Yorke E, Deasy J, et al. Radiation dose-volume effects in the esophagus. Int J Radiat Oncol Biol Phys 2010;76(3 Suppl):S86-S93."
+    },
+    {
+      "organ": "Larynx",
+      "endpoint": "Vocal dysfunction",
+      "metric": "Dmean",
+      "comparator": "<",
+      "value": 44.0,
+      "units": "Gy",
+      "risk_pct": 20,
+      "citation": "Rancati T, Schwarz M, Allen AM, et al. Radiation dose-volume effects in the larynx and pharynx. Int J Radiat Oncol Biol Phys 2010;76(3 Suppl):S64-S69."
+    },
+    {
+      "organ": "Cochlea",
+      "endpoint": "Sensorineural hearing loss",
+      "metric": "Dmean",
+      "comparator": "<=",
+      "value": 45.0,
+      "units": "Gy",
+      "risk_pct": 30,
+      "citation": "Bhandare N, Jackson A, Eisbruch A, et al. Radiation therapy and hearing loss. Int J Radiat Oncol Biol Phys 2010;76(3 Suppl):S50-S57."
+    },
+    {
+      "organ": "Kidney (bilateral)",
+      "endpoint": "Clinically relevant renal dysfunction",
+      "metric": "Dmean",
+      "comparator": "<",
+      "value": 18.0,
+      "units": "Gy",
+      "risk_pct": 5,
+      "citation": "Dawson LA, Kavanagh BD, Paulino AC, et al. Radiation-associated kidney injury. Int J Radiat Oncol Biol Phys 2010;76(3 Suppl):S108-S115."
+    },
+    {
+      "organ": "Liver (normal liver, minus GTV)",
+      "endpoint": "Classic radiation-induced liver disease",
+      "metric": "Dmean",
+      "comparator": "<",
+      "value": 30.0,
+      "units": "Gy",
+      "risk_pct": 5,
+      "citation": "Pan CC, Kavanagh BD, Dawson LA, et al. Radiation-associated liver injury. Int J Radiat Oncol Biol Phys 2010;76(3 Suppl):S94-S100."
+    },
+    {
+      "organ": "Rectum",
+      "endpoint": "Grade 2+ late rectal toxicity",
+      "metric": "V70",
+      "comparator": "<",
+      "value": 20.0,
+      "units": "%",
+      "risk_pct": 15,
+      "citation": "Michalski JM, Gay H, Jackson A, et al. Radiation dose-volume effects in radiation-induced rectal injury. Int J Radiat Oncol Biol Phys 2010;76(3 Suppl):S123-S129."
+    },
+    {
+      "organ": "Bladder",
+      "endpoint": "Grade 3+ late urinary toxicity",
+      "metric": "V70",
+      "comparator": "<=",
+      "value": 35.0,
+      "units": "%",
+      "risk_pct": 10,
+      "citation": "Viswanathan AN, Yorke ED, Marks LB, et al. Radiation dose-volume effects of the urinary bladder. Int J Radiat Oncol Biol Phys 2010;76(3 Suppl):S116-S122."
+    }
+  ]
+}
