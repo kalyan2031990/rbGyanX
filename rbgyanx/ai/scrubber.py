@@ -142,10 +142,6 @@ _RESIDUAL: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("an absolute path survived redaction", re.compile(r"[A-Za-z]:[\\/]|\\\\\w|/home/|/Users/")),
     ("a long digit run survived redaction", re.compile(r"(?<![\d.])\d{7,}(?![\d.])")),
     (
-        "a non-ASCII letter is present, which may be a name with diacritics",
-        re.compile(r"[^\x00-\x7f]"),
-    ),
-    (
         "a capitalised token is adjacent to a patient-related keyword",
         re.compile(
             r"\b(?:patient|subject|case|mrn|name|dob|born)\b[^\r\n]{0,20}?\b[A-Z][a-z]{2,}\b",
@@ -344,7 +340,21 @@ def _apply_deny_list(text: str) -> tuple[str, list[Finding]]:
 
 
 #: Residual checks that need code rather than a regex.
+def _has_non_ascii_letter(text: str) -> bool:
+    """A non-ASCII *letter* may be a name with diacritics.
+
+    Deliberately not "any byte above 0x7f": an en-dash in a numeric range or a bullet in a
+    summary is typography, not an identifier. Refusing on those would make the gate fire on
+    rbGyanX's own output, which is how a safety control ends up switched off.
+    """
+    return any(ch.isalpha() and ord(ch) > 127 for ch in text)
+
+
 _RESIDUAL_CHECKS: tuple[tuple[str, object], ...] = (
+    (
+        "a non-ASCII letter is present, which may be a name with diacritics",
+        _has_non_ascii_letter,
+    ),
     (
         "a structure-like label carries an unrecognised segment, which may be a name",
         _has_unrecognised_structure_segment,
@@ -352,7 +362,13 @@ _RESIDUAL_CHECKS: tuple[tuple[str, object], ...] = (
 )
 
 
+#: Our own markers. They must be stripped before the residual scan, or a redaction that
+#: succeeded would itself read as evidence that something risky survived it.
+_MARKER = re.compile(r"\[REDACTED:[^\]]*\]")
+
+
 def _residual_reasons(text: str) -> list[str]:
+    text = _MARKER.sub(" ", text)
     reasons = [reason for reason, pattern in _RESIDUAL if pattern.search(text)]
     reasons += [reason for reason, check in _RESIDUAL_CHECKS if check(text)]
     return reasons
