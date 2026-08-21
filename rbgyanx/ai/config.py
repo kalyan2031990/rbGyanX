@@ -110,12 +110,28 @@ class AiConfig:
 
     @property
     def is_remote(self) -> bool:
-        """True when using this config would send data off the machine."""
-        return self.preset.remote
+        """True when using this config would send data off the machine.
+
+        Delegates to :func:`rbgyanx.ai.capability.effective_remote` so there is exactly one
+        implementation of the rule. ``preset.remote`` alone is not enough: ``base_url`` is
+        user-overridable, so a preset flagged local can be pointed at a remote endpoint. This
+        property is what the send-confirmation dialog reads, which makes it the one place a
+        human looks for reassurance about where their data is going - it has to be true.
+        """
+        from rbgyanx.ai.capability import effective_remote
+
+        return effective_remote(self.preset, self.base_url)
 
     @property
     def is_ready(self) -> bool:
-        """Enough is configured to make a request (local: always; remote: key present)."""
+        """Enough is configured to make a request (local: always; remote: key present).
+
+        Deliberately still keyed on the declarative ``preset.remote`` rather than on
+        :attr:`is_remote`. This answers a usability question - do we have what we need to send -
+        not a safety one. A self-hosted endpoint on the LAN is *remote* for data-locality
+        purposes but legitimately needs no API key, and treating it as "not ready" would break
+        a valid configuration without protecting anything.
+        """
         return (not self.preset.remote) or bool(self.api_key)
 
     def redacted(self) -> AiConfig:

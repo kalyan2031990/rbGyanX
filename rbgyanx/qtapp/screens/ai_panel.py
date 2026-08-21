@@ -260,25 +260,44 @@ class AiPanelScreen(QWidget):
             return
         self._dispatch(user_text)
 
-    def _confirm_send(self, cfg: AiConfig, preview: str, findings) -> bool:
-        where = (
-            f"the REMOTE provider {cfg.preset.label} — this leaves your machine over the internet"
-            if cfg.is_remote
-            else f"the LOCAL endpoint {cfg.preset.label} — this stays on your machine"
-        )
-        warn = ""
+    def confirmation_prompt(self, cfg: AiConfig, findings) -> tuple[bool, str]:
+        """``(warn, text)`` for the send dialog.
+
+        Pure, and separate from the widget, so the warning path can be tested. ``cfg.is_remote``
+        is loopback-aware, so a preset flagged local but pointed off-machine reaches the REMOTE
+        branch here rather than reassuring the user that nothing is leaving.
+        """
+        remote = cfg.is_remote
+        if not remote:
+            where = f"the LOCAL endpoint {cfg.preset.label} — this stays on your machine"
+        elif not cfg.preset.remote:
+            # Declared local, resolved elsewhere. Say exactly that: a user who chose "Local"
+            # and sees a remote warning needs to be told why, not just warned.
+            where = (
+                f"{cfg.preset.label} pointed at {cfg.resolved_base_url} — that endpoint is NOT "
+                "on this machine, so it is treated as REMOTE and this leaves your machine"
+            )
+        else:
+            where = (
+                f"the REMOTE provider {cfg.preset.label} — this leaves your machine "
+                "over the internet"
+            )
+
+        warn_text = ""
         if findings:
             cats = ", ".join(sorted({f.category for f in findings}))
-            warn = (
+            warn_text = (
                 f"\n\n⚠ The PHI guard flagged possible identifiers ({cats}). "
                 "Review before sending — this is a warning, not a block."
             )
+        return bool(remote or findings), f"Send this text to {where}?{warn_text}"
+
+    def _confirm_send(self, cfg: AiConfig, preview: str, findings) -> bool:
+        warn, text = self.confirmation_prompt(cfg, findings)
         box = QMessageBox(self)
-        box.setIcon(
-            QMessageBox.Icon.Warning if (cfg.is_remote or findings) else QMessageBox.Icon.Question
-        )
+        box.setIcon(QMessageBox.Icon.Warning if warn else QMessageBox.Icon.Question)
         box.setWindowTitle("Confirm send")
-        box.setText(f"Send this text to {where}?{warn}")
+        box.setText(text)
         box.setDetailedText(preview)
         box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel)
         box.setDefaultButton(QMessageBox.StandardButton.Cancel)
