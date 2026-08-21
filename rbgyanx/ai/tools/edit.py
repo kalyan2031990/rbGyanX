@@ -166,10 +166,17 @@ def edit_code(
     if reason:
         return ToolResult.refused("edit_code", Capability.MODIFY_CODE.value, reason)
 
-    # newline="" on both sides. The default write_text translates a line feed to
-    # os.linesep, which on Windows would silently rewrite every line ending in the file
-    # and turn a one-line change into a whole-file diff.
-    old_text = target.read_text(encoding="utf-8", newline="") if target.exists() else ""
+    # newline="" on both sides. The default translates a line feed to os.linesep on write,
+    # which on Windows would silently rewrite every line ending in the file and turn a
+    # one-line change into a whole-file diff.
+    #
+    # Via the builtin open() rather than Path.read_text(newline=...): that keyword only exists
+    # from Python 3.13, and this project supports 3.10-3.12.
+    if target.exists():
+        with open(target, encoding="utf-8", newline="") as handle:
+            old_text = handle.read()
+    else:
+        old_text = ""
     diff = _diff(old_text, new_text, resolved_label)
 
     if not diff:
@@ -196,7 +203,8 @@ def edit_code(
     # 4. Snapshot -> apply -> verify -> revert on any failure.
     snapshot = Snapshot.take(target)
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(new_text, encoding="utf-8", newline="")
+    with open(target, "w", encoding="utf-8", newline="") as handle:
+        handle.write(new_text)
 
     failures: list[str] = []
     verdicts: dict[str, int] = {}

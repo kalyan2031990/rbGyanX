@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import contextlib
 import functools
+import os
 import re
 import sys
 import sysconfig
@@ -543,6 +544,14 @@ def _rewrite_path(raw: str) -> str:
     component of a data path can be an identifier - the home directory as readily as the patient
     folder. Trimming only the leaf would still publish ``C:\\Users\\<name>``.
     """
+    # A path written in the OTHER platform's convention cannot be inside this platform's
+    # install tree, and resolve() will not say so: on POSIX a backslash is an ordinary
+    # character, so a drive-lettered path resolves to a relative name under the cwd and can
+    # land inside the tree. Only applied off Windows, because on Windows a drive letter is
+    # exactly how our own paths look.
+    text = raw.strip()
+    if os.name != "nt" and (text.startswith("\\\\") or text[1:2] == ":"):
+        return "[REDACTED:external-path]"
     try:
         candidate = Path(raw).resolve()
     except (OSError, ValueError):
