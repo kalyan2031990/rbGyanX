@@ -86,4 +86,4 @@ _private_maps/
 release_assets/
 PUBLISH_RUNBOOK.md
 PUBLISH_COMPARISON.md
-CLAUDE_CODE_PUBLISH_PROMPT.md
+CLAUDE_CODE_*.md

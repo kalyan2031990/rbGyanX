@@ -57,7 +57,7 @@ PY
 Desktop GUIs: `python -m rbgyanx.qtapp` (Qt6, needs the `qt` extra) or `python rbgyanx_gui.py`
 (Tkinter).
 
-## Verify (834 tests, synthetic data only)
+## Verify (1269 tests, synthetic data only)
 
 ```bash
 pytest -q
@@ -67,12 +67,39 @@ The scientific core is pinned by **22 analytic positive controls**
 (`pytest tests/test_ntcp_positive_controls.py`): NTCP = 0.5 at TD50, monotonicity, QUANTEC
 anchors, and UTCP factorisation. No patient data is required or included.
 
+## AI assistant (experimental)
+
+ADVANCED-only, opt-in, **off by default**, and absent entirely in BASIC. It explains outputs the
+engine has already produced; it never computes or adjusts a TCP/NTCP/UTCP value.
+
+Capability is granted on two axes enforced in code: whether the provider is **local** (loopback)
+or **remote**, and whether this is a **source** checkout or a **frozen** binary. Remote providers
+never receive patient data. Under CI the assistant is disabled outright.
+
+Institutions can remove every remote provider, unrepealably from the interface:
+
+```bash
+RBGYANX_AI_DISABLE_REMOTE=1
+```
+
+or `ai.disable_remote: true` in a site config file.
+
+The assistant cannot modify the numeric core, the tests that verify it, or its own guards - see
+the frozen set. Literature comparisons carry a provenance column; anything from model recall is
+marked unverified and stays marked on export.
+
+Before running against real cohorts on a remote provider, read
+[`docs/RUNNING_WITH_A_REMOTE_PROVIDER.md`](docs/RUNNING_WITH_A_REMOTE_PROVIDER.md) and check what is
+granted with `python scripts/ai_capability_report.py --provider kimi`.
+
+Full design, capability matrix and threat model: [`docs/AI_ASSISTANT_DESIGN.md`](docs/AI_ASSISTANT_DESIGN.md).
+
 ## How to cite
 
 Cite the archived release via its DOI — see [`CITATION.cff`](CITATION.cff), or:
 
 > Mondal, K., Mandal, A., & Vijay, A. *rbGyanX: A radiobiology-guided clinical decision support
-> framework* (v1.1.0). Zenodo. https://doi.org/10.5281/zenodo.21757164
+> framework* (v1.2.0). Zenodo. https://doi.org/10.5281/zenodo.21757164
 
 The accompanying manuscript will be added as the preferred citation on acceptance.
 

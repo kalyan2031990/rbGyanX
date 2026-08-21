@@ -21,7 +21,10 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field, replace
 
-__all__ = ["Provider", "PROVIDERS", "AiConfig"]
+__all__ = ["Provider", "PROVIDERS", "AiConfig", "REASONING_EFFORTS"]
+
+#: Accepted values for ``reasoning_effort`` (Kimi K3 and compatible endpoints).
+REASONING_EFFORTS: tuple[str, ...] = ("low", "high", "max")
 
 
 @dataclass(frozen=True)
@@ -34,6 +37,10 @@ class Provider:
     default_model: str
     api_key_env: tuple[str, ...] = ()  # env vars searched in order; empty => no key needed
     remote: bool = True  # remote endpoints can transmit data off the machine
+    #: Whether this endpoint accepts the ``reasoning_effort`` request field. Declared per
+    #: provider rather than sent always: an endpoint that does not know the field may reject
+    #: the whole request, so an unknown extra is not a harmless extra.
+    supports_reasoning_effort: bool = False
 
     def resolve_key(self, env: dict[str, str] | None = None) -> str | None:
         env = env if env is not None else dict(os.environ)
@@ -66,9 +73,10 @@ PROVIDERS: dict[str, Provider] = {
         key="kimi",
         label="Kimi (Moonshot)",
         base_url="https://api.moonshot.ai/v1",
-        default_model="kimi-k2-0711-preview",
+        default_model="kimi-k3",
         api_key_env=("MOONSHOT_API_KEY", "KIMI_API_KEY"),
         remote=True,
+        supports_reasoning_effort=True,
     ),
 }
 
@@ -89,11 +97,19 @@ class AiConfig:
     temperature: float = 0.2
     max_tokens: int = 1024
     max_retries: int = 2  # self-correction attempts
+    #: K3-style reasoning budget. "max" is the default because this assistant explains
+    #: radiobiology output, where a wrong-but-fluent answer is the expensive failure.
+    reasoning_effort: str = "max"
 
     def __post_init__(self) -> None:
         if self.provider not in PROVIDERS:
             raise ValueError(
                 f"unknown AI provider {self.provider!r}; choose from {sorted(PROVIDERS)}"
+            )
+        if self.reasoning_effort not in REASONING_EFFORTS:
+            raise ValueError(
+                f"unknown reasoning_effort {self.reasoning_effort!r}; "
+                f"choose from {sorted(REASONING_EFFORTS)}"
             )
 
     @property
@@ -109,13 +125,34 @@ class AiConfig:
         return self.model or self.preset.default_model
 
     @property
+    def resolved_reasoning_effort(self) -> str | None:
+        """The effort to send, or None when this provider does not accept the field."""
+        return self.reasoning_effort if self.preset.supports_reasoning_effort else None
+
+    @property
     def is_remote(self) -> bool:
-        """True when using this config would send data off the machine."""
-        return self.preset.remote
+        """True when using this config would send data off the machine.
+
+        Delegates to :func:`rbgyanx.ai.capability.effective_remote` so there is exactly one
+        implementation of the rule. ``preset.remote`` alone is not enough: ``base_url`` is
+        user-overridable, so a preset flagged local can be pointed at a remote endpoint. This
+        property is what the send-confirmation dialog reads, which makes it the one place a
+        human looks for reassurance about where their data is going - it has to be true.
+        """
+        from rbgyanx.ai.capability import effective_remote
+
+        return effective_remote(self.preset, self.base_url)
 
     @property
     def is_ready(self) -> bool:
-        """Enough is configured to make a request (local: always; remote: key present)."""
+        """Enough is configured to make a request (local: always; remote: key present).
+
+        Deliberately still keyed on the declarative ``preset.remote`` rather than on
+        :attr:`is_remote`. This answers a usability question - do we have what we need to send -
+        not a safety one. A self-hosted endpoint on the LAN is *remote* for data-locality
+        purposes but legitimately needs no API key, and treating it as "not ready" would break
+        a valid configuration without protecting anything.
+        """
         return (not self.preset.remote) or bool(self.api_key)
 
     def redacted(self) -> AiConfig:

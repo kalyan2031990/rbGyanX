@@ -97,6 +97,27 @@ values accompany the associated publications.
 release tag. This is deliberate and should not be reconciled: which code produced a number and
 which version was distributed are different questions.
 
+### The AI assistant is explanation-only, and its guards are not a proof
+
+The assistant added in this release is experimental, ADVANCED-only and off by default. Three
+limits are worth stating plainly.
+
+**The PHI scrubber cannot prove a negative.** It redacts what it recognises and then refuses to
+transmit anything it cannot account for, which is the right failure direction, but a deny-list
+can never demonstrate that no identifier remains. An unusual structure label or an unfamiliar
+path shape may be refused when it was harmless, and the reverse cannot be ruled out. Text the
+user types themselves is warned about, not blocked.
+
+**The frozen set constrains the assistant, not a human.** Anyone with write access to the
+installed source can remove any of it. It closes the path where an agent edits the numeric core
+or the tests that verify it and then reports a green build; it is not a defence against a
+determined operator.
+
+**The shipped QUANTEC reference pack is orientation only.** Its entries are single-organ
+constraints under conventional fractionation; they do not compose, they do not apply to SBRT,
+re-irradiation or paediatric cases, and they are not a plan-acceptance standard. Sites should
+ship their own pack rather than treat the shipped one as authoritative.
+
 ---
 
 ## Reporting an issue

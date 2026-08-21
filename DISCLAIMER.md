@@ -9,3 +9,26 @@ and **not** a regulated medical device (FDA/CE) unless separately cleared by you
 - Real patient data remains your responsibility (HIPAA / local privacy law).
 
 This disclaimer applies to the GUI, CLI, generated PDF/Excel reports, and all API outputs.
+
+## AI assistant (experimental, ADVANCED-only, off by default)
+
+The optional AI assistant **explains outputs the deterministic engine has already produced**. It
+never computes, adjusts or influences a TCP, NTCP or UTCP value, and no code path leads from it
+into the numeric core.
+
+- Assistant output is **not a clinical recommendation** and carries no more authority than any
+  other text in the interface. It is subject to every limitation above.
+- The assistant can be wrong. Explanations are not verified, and a fluent explanation of a
+  number is not evidence that the number is right.
+- Literature comparisons marked **unverified** come from model recall, not a checked source.
+  Any comparison intended for publication, QA documentation or clinical use must be performed
+  and verified by a human against primary literature.
+- Remote providers (Claude, Kimi, or any hosted endpoint) **never receive patient data**. A
+  provider is treated as remote unless it is both flagged local and resolves to loopback, so a
+  LAN endpoint counts as remote.
+- Institutions can disable all remote providers with `RBGYANX_AI_DISABLE_REMOTE=1` or
+  `ai.disable_remote: true` in a site config file. This cannot be re-enabled from the interface.
+- Text you type yourself is warned about but not blocked. **Do not paste patient identifiers
+  into the assistant.**
+
+See `docs/AI_ASSISTANT_DESIGN.md` for the capability matrix, threat model and frozen set.
