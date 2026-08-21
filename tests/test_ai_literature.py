@@ -51,6 +51,28 @@ def _recalled(organ="Parotid_L", value=25.0) -> ComparisonRow:
     )
 
 
+def _verified_shipped(value: float = 25.0) -> ComparisonRow:
+    """A shipped row from a pack whose entries HAVE been reviewed.
+
+    Phase D marks the shipped QUANTEC pack pending, so it can no longer serve as the "checked"
+    fixture. These tests are about what a verified row does, so they now use one.
+    """
+    return ComparisonRow(
+        organ="Parotid_L",
+        endpoint="xerostomia",
+        metric="Dmean",
+        observed=26.4,
+        reference=value,
+        units="Gy",
+        verdict="exceeds",
+        provenance=Provenance.SHIPPED_REFERENCE,
+        citation="Departmental protocol v3",
+        pack_id="dept",
+        pack_version="1.0",
+        entry_verified=True,
+    )
+
+
 def _shipped() -> ComparisonRow:
     pack = next(p for p in load_all_packs() if p.pack_id == "quantec-2010")
     rows = compare_against_pack({"Dmean": 26.4}, pack, organ="Parotid")
@@ -234,7 +256,7 @@ def test_the_notice_wording_is_verbatim():
 
 def test_an_all_shipped_export_carries_no_notice():
     """The notice means something only if it is not on everything."""
-    out = export([_shipped()])
+    out = export([_verified_shipped()])
     assert ORIENTATION_NOTICE not in out
     assert "SHIPPED_REFERENCE" in out
 
@@ -260,8 +282,8 @@ def test_dropping_provenance_is_refused_while_unverified_rows_are_present():
     assert "provenance" in str(excinfo.value)
 
 
-def test_dropping_provenance_is_allowed_when_every_row_is_shipped():
-    out = export([_shipped()], fmt="csv", include_provenance=False)
+def test_dropping_provenance_is_allowed_when_every_row_is_verified():
+    out = export([_verified_shipped()], fmt="csv", include_provenance=False)
     assert "provenance" not in out.splitlines()[0]
 
 
@@ -297,6 +319,9 @@ def test_literature_compare_is_refused_in_ci():
 
 
 def test_the_tool_reports_how_many_rows_were_unverified():
+    baseline = invoke(
+        "literature_compare", SOURCE_LOCAL, organ="Parotid", observed={"Dmean": 26.4}
+    ).metadata["unverified_rows"]
     result = invoke(
         "literature_compare",
         SOURCE_LOCAL,
@@ -305,14 +330,21 @@ def test_the_tool_reports_how_many_rows_were_unverified():
         model_rows=[_recalled()],
     )
     assert result.ok is True
-    assert result.metadata["unverified_rows"] == 1
+    # Stated as an invariant rather than a fixed number, so that verifying the shipped pack
+    # later changes the baseline without falsifying what this test is about.
+    assert result.metadata["unverified_rows"] == baseline + 1
     assert ORIENTATION_NOTICE in result.output
 
 
-def test_a_clean_comparison_reports_no_notice():
+def test_a_comparison_against_a_pending_pack_reports_the_notice():
+    """Phase D: the shipped QUANTEC pack is unverified, so even an all-shipped table is gated.
+
+    The converse - a verified pack producing no notice - is covered in
+    tests/test_ai_pack_verification.py, which can construct one.
+    """
     result = invoke("literature_compare", SOURCE_LOCAL, organ="Parotid", observed={"Dmean": 26.4})
-    assert result.reason == ""
-    assert ORIENTATION_NOTICE not in result.output
+    assert result.metadata["unverified_rows"] > 0
+    assert ORIENTATION_NOTICE in result.output
 
 
 def test_the_tool_names_the_packs_it_used():

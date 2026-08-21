@@ -98,6 +98,11 @@ class ReferenceEntry:
     citation: str
     risk_pct: float | None = None
     site: str | None = None
+    #: Has a human checked this value against the cited source? A shipped pack whose entries
+    #: have not been checked is transcription, not verification, and is gated accordingly.
+    verified: bool = True
+    #: Free text for the reviewer: what to look at first, and why.
+    review_note: str | None = None
 
 
 @dataclass(frozen=True)
@@ -108,6 +113,12 @@ class ReferencePack:
     entries: tuple[ReferenceEntry, ...]
     description: str = ""
     applicability: str = ""
+    #: "pending: ..." means no entry is trusted unless it says otherwise.
+    maintainer_review: str = ""
+
+    @property
+    def review_pending(self) -> bool:
+        return self.maintainer_review.strip().lower().startswith("pending")
 
     def find(self, organ: str, metric: str | None = None) -> list[ReferenceEntry]:
         """Entries for an organ, matched loosely enough to survive naming differences.
@@ -142,16 +153,33 @@ class ComparisonRow:
     citation: str
     pack_id: str = ""
     pack_version: str = ""
+    #: False when the pack entry behind this row has not been checked against its source.
+    entry_verified: bool = True
+    review_note: str | None = None
 
     @property
     def unverified(self) -> bool:
-        return not self.provenance.verified
+        """Unverified if the tier says so, OR if the pack entry has not been checked.
+
+        A shipped pack whose values nobody has read against the papers is transcription, not
+        verification. Treating it as checked because it arrived in a JSON file would be exactly
+        the mistake this module exists to prevent.
+        """
+        return not self.provenance.verified or not self.entry_verified
 
     def display_citation(self) -> str:
-        """A recalled citation is never rendered as a resolvable reference."""
-        if self.unverified:
+        """How the source renders, which differs by *why* a row is unverified.
+
+        A recalled citation may not exist at all, so it is replaced outright. An unverified
+        shipped entry has a real citation that a human transcribed - the doubt is whether the
+        value matches it, and hiding the reference would remove the very pointer a reviewer
+        needs. Different failure, different rendering; both are marked and both are gated.
+        """
+        if not self.provenance.verified:
             return UNVERIFIED_CITATION
         suffix = f" [{self.pack_id} v{self.pack_version}]" if self.pack_id else ""
+        if not self.entry_verified:
+            return f"{self.citation}{suffix} [UNVERIFIED against primary source]"
         return f"{self.citation}{suffix}"
 
 
@@ -166,7 +194,7 @@ def packs_dir() -> Path:
     return Path(__file__).resolve().parents[1] / "reference_packs"
 
 
-def _entry_from(raw: dict) -> ReferenceEntry:
+def _entry_from(raw: dict, *, default_verified: bool = True) -> ReferenceEntry:
     return ReferenceEntry(
         organ=str(raw.get("organ", "")),
         endpoint=str(raw.get("endpoint", "")),
@@ -177,6 +205,8 @@ def _entry_from(raw: dict) -> ReferenceEntry:
         citation=str(raw.get("citation", "")),
         risk_pct=None if raw.get("risk_pct") is None else float(raw["risk_pct"]),
         site=raw.get("site"),
+        verified=bool(raw.get("verified", default_verified)),
+        review_note=raw.get("review_note"),
     )
 
 
@@ -186,13 +216,18 @@ def load_pack(path: Path) -> ReferencePack:
     for field in ("pack_id", "pack_version", "entries"):
         if field not in raw:
             raise ValueError(f"{path.name} is not a reference pack: missing {field!r}")
+    review = str(raw.get("maintainer_review", ""))
+    # A pack awaiting review vouches for nothing by default. A pack that says nothing is taken
+    # at its word: a site shipping its own tolerances is asserting them, which is its right.
+    default_verified = not review.strip().lower().startswith("pending")
     return ReferencePack(
         pack_id=str(raw["pack_id"]),
         pack_version=str(raw["pack_version"]),
         title=str(raw.get("title", raw["pack_id"])),
         description=str(raw.get("description", "")),
         applicability=str(raw.get("applicability", "")),
-        entries=tuple(_entry_from(e) for e in raw["entries"]),
+        maintainer_review=review,
+        entries=tuple(_entry_from(e, default_verified=default_verified) for e in raw["entries"]),
     )
 
 
@@ -259,6 +294,8 @@ def compare_against_pack(
                     citation=entry.citation,
                     pack_id=pack.pack_id,
                     pack_version=pack.pack_version,
+                    entry_verified=entry.verified,
+                    review_note=entry.review_note,
                 )
             )
     return rows
@@ -284,7 +321,12 @@ def _cells(row: ComparisonRow) -> list[str]:
     def _num(value):
         return "-" if value is None else f"{value:g}"
 
-    provenance = row.provenance.value + (" (unverified)" if row.unverified else "")
+    if not row.provenance.verified:
+        provenance = row.provenance.value + " (unverified)"
+    elif not row.entry_verified:
+        provenance = row.provenance.value + " (unverified: awaiting maintainer review)"
+    else:
+        provenance = row.provenance.value
     return [
         row.organ,
         row.endpoint,
