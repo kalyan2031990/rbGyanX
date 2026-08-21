@@ -28,15 +28,33 @@ class HttpTransport:
         self.timeout = timeout
 
     def complete(self, request: LLMRequest, *, base_url: str, api_key: str | None) -> str:
+        """The assistant text. Kept for the :class:`Transport` protocol and simple callers."""
+        message = self.complete_message(request, base_url=base_url, api_key=api_key)
+        content = message.get("content")
+        if isinstance(content, list):
+            content = "".join(p.get("text", "") for p in content if isinstance(p, dict))
+        if not content:
+            raise LLMError("AI endpoint returned an empty message")
+        return str(content)
+
+    def complete_message(self, request: LLMRequest, *, base_url: str, api_key: str | None) -> dict:
+        """The COMPLETE assistant message, for replay into the next turn.
+
+        Reasoning models need their own previous message back in full - reasoning_content and
+        tool_calls included - so this returns the provider's dict rather than a parsed subset.
+        A client that returns only the text degrades multi-turn silently.
+        """
         url = base_url.rstrip("/") + "/chat/completions"
-        body = json.dumps(
-            {
-                "model": request.model,
-                "messages": [{"role": m.role, "content": m.content} for m in request.messages],
-                "temperature": request.temperature,
-                "max_tokens": request.max_tokens,
-            }
-        ).encode("utf-8")
+        payload: dict = {
+            "model": request.model,
+            # Assistant turns are replayed verbatim; see LLMMessage.to_wire.
+            "messages": request.wire_messages(),
+            "temperature": request.temperature,
+            "max_tokens": request.max_tokens,
+        }
+        if request.reasoning_effort:
+            payload["reasoning_effort"] = request.reasoning_effort
+        body = json.dumps(payload).encode("utf-8")
 
         headers = {"Content-Type": "application/json"}
         if api_key:  # local endpoints need no key
@@ -54,7 +72,7 @@ class HttpTransport:
         except (ValueError, json.JSONDecodeError) as exc:
             raise LLMError(f"AI endpoint returned an unreadable response: {exc}") from exc
 
-        return _extract_text(payload)
+        return _extract_message(payload)
 
 
 def _safe_error_body(exc: urllib.error.HTTPError) -> str:
@@ -73,18 +91,22 @@ def _safe_error_body(exc: urllib.error.HTTPError) -> str:
         return raw[:200]
 
 
-def _extract_text(payload: dict) -> str:
-    """Pull the assistant message out of an OpenAI-compatible response."""
+def _extract_message(payload: dict) -> dict:
+    """Pull the assistant message out of an OpenAI-compatible response, unmodified.
+
+    Deliberately does not require ``content``: a turn that only requests a tool call carries
+    ``content: null`` and a populated ``tool_calls``, and rejecting it here would break tool
+    use on exactly the models this matters most for.
+    """
     try:
         choices = payload["choices"]
         if not choices:
             raise LLMError("AI endpoint returned no choices")
-        message = choices[0].get("message") or {}
-        content = message.get("content")
-        if isinstance(content, list):  # some servers return content parts
-            content = "".join(part.get("text", "") for part in content if isinstance(part, dict))
-        if not content:
+        message = choices[0].get("message")
+        if not isinstance(message, dict):
+            raise LLMError("AI endpoint returned no assistant message")
+        if not message.get("content") and not message.get("tool_calls"):
             raise LLMError("AI endpoint returned an empty message")
-        return str(content)
+        return message
     except (KeyError, IndexError, TypeError) as exc:
         raise LLMError(f"unexpected AI response shape: {exc}") from exc

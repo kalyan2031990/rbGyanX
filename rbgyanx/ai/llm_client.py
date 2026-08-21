@@ -41,8 +41,54 @@ class LLMNotConfigured(LLMError):
 
 @dataclass(frozen=True)
 class LLMMessage:
+    """One turn.
+
+    ``raw`` holds the provider's assistant message exactly as it arrived. Reasoning models
+    require the COMPLETE assistant message to be replayed into ``messages`` on the next turn -
+    ``reasoning_content`` and ``tool_calls`` included - or multi-turn and tool-calling degrade
+    silently: the model loses the chain it was mid-way through and answers as if starting over.
+    Rebuilding the message from parsed fields would drop anything this client does not know
+    about, so the original dict is kept and replayed verbatim.
+    """
+
     role: str  # "system" | "user" | "assistant"
     content: str
+    #: The model's thinking, when the provider returns it separately from ``content``.
+    reasoning_content: str | None = None
+    #: Tool calls requested by the assistant, preserved in provider form.
+    tool_calls: tuple[dict, ...] | None = None
+    #: The provider's message dict, verbatim. Replayed as-is when present.
+    raw: dict | None = field(default=None, repr=False)
+
+    def to_wire(self) -> dict:
+        """The dict to put on the wire for this turn.
+
+        When the provider gave us a message, send that message back unchanged. Anything this
+        client failed to model is preserved by construction rather than by enumeration.
+        """
+        if self.raw is not None:
+            return dict(self.raw)
+        wire: dict = {"role": self.role, "content": self.content}
+        if self.reasoning_content is not None:
+            wire["reasoning_content"] = self.reasoning_content
+        if self.tool_calls is not None:
+            wire["tool_calls"] = [dict(tc) for tc in self.tool_calls]
+        return wire
+
+    @classmethod
+    def from_provider(cls, message: dict) -> LLMMessage:
+        """Build from a provider assistant message, keeping the original for replay."""
+        content = message.get("content")
+        if isinstance(content, list):  # some servers return content parts
+            content = "".join(p.get("text", "") for p in content if isinstance(p, dict))
+        calls = message.get("tool_calls")
+        return cls(
+            role=str(message.get("role", "assistant")),
+            content="" if content is None else str(content),
+            reasoning_content=message.get("reasoning_content"),
+            tool_calls=tuple(calls) if isinstance(calls, list) and calls else None,
+            raw=dict(message),
+        )
 
 
 @dataclass
@@ -51,6 +97,12 @@ class LLMRequest:
     model: str
     temperature: float = 0.2
     max_tokens: int = 1024
+    #: Sent only when the selected provider declares support for it.
+    reasoning_effort: str | None = None
+
+    def wire_messages(self) -> list[dict]:
+        """Every turn in provider form, with assistant messages replayed verbatim."""
+        return [m.to_wire() for m in self.messages]
 
     def outgoing_text(self) -> str:
         """The user/assistant text that would leave the machine (system prompt excluded)."""
@@ -64,6 +116,16 @@ class LLMResponse:
     finish_reason: str = "stop"
     phi_findings: list[PhiFinding] = field(default_factory=list)
     attempts: int = 1
+    #: The assistant turn, complete, ready to append to history for the next call.
+    message: LLMMessage | None = None
+
+    @property
+    def reasoning_content(self) -> str | None:
+        return self.message.reasoning_content if self.message else None
+
+    @property
+    def tool_calls(self) -> tuple[dict, ...] | None:
+        return self.message.tool_calls if self.message else None
 
     @property
     def had_phi_warning(self) -> bool:
@@ -102,6 +164,7 @@ class LLMClient:
             model=self.config.resolved_model,
             temperature=self.config.temperature,
             max_tokens=self.config.max_tokens,
+            reasoning_effort=self.config.resolved_reasoning_effort,
         )
 
     def scan(self, messages: list[LLMMessage]) -> list[PhiFinding]:
@@ -123,15 +186,29 @@ class LLMClient:
         last_exc: Exception | None = None
         for attempt in range(1, self.config.max_retries + 2):  # 1 try + N retries
             try:
-                text = self.transport.complete(
-                    request, base_url=self.config.resolved_base_url, api_key=self.config.api_key
-                )
+                # Prefer the full-message path when the transport offers one, so reasoning and
+                # tool calls survive into the next turn. Transports that predate it still work.
+                if hasattr(self.transport, "complete_message"):
+                    raw = self.transport.complete_message(
+                        request,
+                        base_url=self.config.resolved_base_url,
+                        api_key=self.config.api_key,
+                    )
+                    message = LLMMessage.from_provider(raw)
+                    text = message.content
+                else:
+                    text = self.transport.complete(
+                        request,
+                        base_url=self.config.resolved_base_url,
+                        api_key=self.config.api_key,
+                    )
+                    message = LLMMessage("assistant", text)
             except LLMNotConfigured:
                 raise  # not retryable; nothing is configured
             except Exception as exc:  # transport/protocol hiccup -> self-correct and retry
                 last_exc = exc
                 continue
-            if not text or not text.strip():
+            if (not text or not text.strip()) and not message.tool_calls:
                 last_exc = LLMError("model returned an empty response")
                 continue
             return LLMResponse(
@@ -139,6 +216,7 @@ class LLMClient:
                 model=request.model,
                 phi_findings=findings,
                 attempts=attempt,
+                message=message,
             )
         raise LLMError(
             f"AI request failed after {self.config.max_retries + 1} attempts: {last_exc}"

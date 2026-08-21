@@ -273,6 +273,39 @@ An all-shipped export carries no notice — a notice on everything means nothing
 
 ---
 
+## 4a. Providers and reasoning models
+
+| Preset | Model | Remote | `reasoning_effort` |
+|---|---|---|---|
+| `local` | `llama3.1` | no (loopback only) | not sent |
+| `claude` | `claude-sonnet-4-20250514` | yes | not sent |
+| `kimi` | `kimi-k3` | yes | sent, default `max` |
+
+`reasoning_effort` accepts `low`, `high`, `max` and is validated at construction. It is sent
+**only** to providers that declare `supports_reasoning_effort`: an unknown request field is not
+a harmless extra, and an endpoint that does not recognise it can reject the whole request.
+`max` is the default because this assistant explains radiobiology output, where a fluent wrong
+answer is the expensive failure.
+
+### Preserved thinking history
+
+A reasoning model needs its own previous assistant message replayed **in full** — including
+`reasoning_content` and `tool_calls` — or it loses the chain it was part-way through and answers
+as if starting over. Nothing errors; the answers just get quietly worse, which is the hardest
+kind of defect to notice.
+
+So `LLMMessage` keeps the provider's message dict verbatim in `raw`, and `to_wire()` replays it
+unchanged. Preservation is by construction rather than by enumeration: a field this client does
+not model still survives the round trip, which matters because provider message shapes change
+faster than clients do.
+
+`HttpTransport.complete_message()` returns the whole message; `complete()` still returns just the
+text for the `Transport` protocol and simple callers. A transport without `complete_message` keeps
+working. A turn with `content: null` and populated `tool_calls` is **not** treated as empty —
+rejecting it would break tool use on exactly the models this matters most for.
+
+---
+
 ## 5. Audit log
 
 Append-only JSONL in the user's config directory (`%APPDATA%\rbGyanX`,
