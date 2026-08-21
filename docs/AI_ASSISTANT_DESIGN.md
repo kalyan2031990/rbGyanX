@@ -320,6 +320,34 @@ patient content, and a test pins the key set.
 
 Rotation at 2 MB keeping 5 generations, by renaming rather than truncating.
 
+### Exporting the log
+
+`scripts/export_ai_audit.py` turns a run into analysable evidence:
+
+```bash
+python scripts/export_ai_audit.py                      # summary to stdout
+python scripts/export_ai_audit.py -o run_audit.csv     # ...and a CSV
+python scripts/export_ai_audit.py --include-rotated    # include ai_audit.jsonl.1 ... .N
+```
+
+The summary reports transmissions by provider, by capability and by install type, remote versus
+local, guard refusals broken down by capability, bytes transmitted, identifiers redacted, and how
+many payloads were repeats (equal digests).
+
+It **aggregates and does not enrich**. Every column it emits is a field the log already has, the
+column list is declared explicitly so a new log field has to be added deliberately, and a test
+asserts the script references nothing that could reach content — no `summarise_run`, no scrubber,
+no client, no `urllib`. The log's PHI-free-by-construction property is only worth something if
+the tooling around it preserves it.
+
+### Refusals are recorded too
+
+A guard refusal is evidence: it records that the scrubber fired and nothing left the machine.
+Refusal records carry `outcome: "refused"`, no payload and no hash of the refused content —
+fingerprinting it would keep a trace of exactly what the guard declined to let out. The outcome
+is a two-value scalar rather than a reason string, because a reason is free text and free text is
+how a PHI-free log stops being one.
+
 **Honest limitation:** the digest is a plain SHA-256. A hash of a very short, low-entropy payload
 is brute-forceable in principle. Real payloads carry a system prompt and a question and are far
 past that threshold, but the digest is an integrity aid, not a confidentiality guarantee.

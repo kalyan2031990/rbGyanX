@@ -42,6 +42,21 @@ MAX_READ_BYTES = 256 * 1024
 TEST_TIMEOUT_SECONDS = 900
 
 
+def _audit_refusal(ctx: ToolContext, capability: Capability) -> None:
+    """Record that a scrub refusal stopped a transmission. Never raises."""
+    try:
+        from rbgyanx.ai.audit import record_refusal
+
+        record_refusal(
+            provider=ctx.provider_key,
+            remote=ctx.remote,
+            install_type=str(getattr(ctx.install_type, "value", ctx.install_type)),
+            capability=capability.value,
+        )
+    except Exception:  # pragma: no cover - bookkeeping must not mask the refusal
+        pass
+
+
 # --------------------------------------------------------------------------- read_code
 
 
@@ -73,6 +88,7 @@ def read_code(ctx: ToolContext, *, path: str) -> ToolResult:
         try:
             text = scrub_for_transmission(text, remote=True)
         except ScrubRefused as exc:
+            _audit_refusal(ctx, Capability.READ_CODE)
             return ToolResult.refused("read_code", Capability.READ_CODE.value, str(exc))
 
     return ToolResult(
@@ -101,6 +117,7 @@ def read_error(ctx: ToolContext, *, traceback: str) -> ToolResult:
     try:
         cleaned = scrub_for_transmission(traceback, remote=True, traceback=True)
     except ScrubRefused as exc:
+        _audit_refusal(ctx, Capability.READ_ERROR)
         return ToolResult.refused("read_error", Capability.READ_ERROR.value, str(exc))
 
     result = scrub_traceback(traceback)
@@ -189,6 +206,7 @@ def run_tests(ctx: ToolContext, *, selector: str = "tests") -> ToolResult:
         try:
             output = scrub_for_transmission(output, remote=True, traceback=True)
         except ScrubRefused as exc:
+            _audit_refusal(ctx, Capability.RUN_TESTS)
             return ToolResult.refused("run_tests", Capability.RUN_TESTS.value, str(exc))
         findings = len(scrub(output).findings)
 
@@ -287,6 +305,7 @@ def explain_run(ctx: ToolContext, *, result, include_patient_level: bool = False
         try:
             text = scrub_for_transmission(text, remote=True)
         except ScrubRefused as exc:
+            _audit_refusal(ctx, Capability.EXPLAIN_AGGREGATE)
             return ToolResult.refused("explain_run", Capability.EXPLAIN_AGGREGATE.value, str(exc))
 
     return ToolResult(

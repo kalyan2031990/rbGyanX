@@ -72,6 +72,7 @@ def test_every_required_field_is_present(tmp_path):
         "remote",
         "install_type",
         "capability",
+        "outcome",
         "payload_bytes",
         "findings_redacted",
         "payload_sha256",
@@ -132,7 +133,12 @@ def test_the_payload_is_never_persisted(tmp_path):
 
 
 def test_no_audit_field_can_carry_free_text(tmp_path):
-    """PHI-free by construction: every value is a scalar we generated, not user content."""
+    """PHI-free by construction: every value is a scalar we generated, not user content.
+
+    The set is pinned by hand so a new field has to be added here deliberately. Phase F added
+    "outcome", a two-value scalar ("sent"/"refused"); the guard's point - that no field can
+    hold free text - is unchanged, which is why a reason string was not added alongside it.
+    """
     path = _log(tmp_path)
     record_transmission(
         provider="local",
@@ -149,6 +155,7 @@ def test_no_audit_field_can_carry_free_text(tmp_path):
         "remote",
         "install_type",
         "capability",
+        "outcome",
         "payload_bytes",
         "findings_redacted",
         "payload_sha256",

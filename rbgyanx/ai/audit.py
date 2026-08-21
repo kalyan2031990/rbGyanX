@@ -40,6 +40,7 @@ __all__ = [
     "audit_dir",
     "audit_path",
     "record_transmission",
+    "record_refusal",
     "read_records",
     "MAX_BYTES",
     "KEEP_ROTATIONS",
@@ -51,7 +52,7 @@ MAX_BYTES = 2 * 1024 * 1024  # 2 MB - tens of thousands of records
 #: How many rotated files to keep (audit.jsonl.1 ... .N).
 KEEP_ROTATIONS = 5
 
-_SCHEMA = 1
+_SCHEMA = 2  # 2 adds "outcome"
 
 
 @dataclass(frozen=True)
@@ -66,6 +67,10 @@ class AuditRecord:
     payload_bytes: int
     findings_redacted: int
     payload_sha256: str
+    #: "sent" or "refused". A refusal is evidence too: it records that the guard fired and
+    #: nothing left the machine. Deliberately a two-value scalar and not a reason string -
+    #: a reason is free text, and free text is how a PHI-free log stops being one.
+    outcome: str = "sent"
     schema: int = _SCHEMA
 
     def to_json(self) -> str:
@@ -143,6 +148,7 @@ def record_transmission(
     capability: str,
     payload: str | bytes,
     findings_redacted: int = 0,
+    outcome: str = "sent",
     path: Path | None = None,
     env: dict[str, str] | None = None,
 ) -> AuditRecord:
@@ -162,6 +168,7 @@ def record_transmission(
         payload_bytes=len(raw),
         findings_redacted=int(findings_redacted),
         payload_sha256=hashlib.sha256(raw).hexdigest(),
+        outcome=str(outcome),
     )
 
     target = audit_path(env) if path is None else Path(path)
@@ -173,6 +180,35 @@ def record_transmission(
         handle.write(record.to_json() + "\n")
     _restrict(target)
     return record
+
+
+def record_refusal(
+    *,
+    provider: str,
+    remote: bool,
+    install_type: str,
+    capability: str,
+    findings_redacted: int = 0,
+    path: Path | None = None,
+    env: dict[str, str] | None = None,
+) -> AuditRecord:
+    """Record that a guard refused to transmit, and that nothing left the machine.
+
+    No payload is passed and none is hashed: the point of a refusal is that the content was not
+    sent, so fingerprinting it here would keep a trace of exactly what the guard declined to
+    let out.
+    """
+    return record_transmission(
+        provider=provider,
+        remote=remote,
+        install_type=install_type,
+        capability=capability,
+        payload=b"",
+        findings_redacted=findings_redacted,
+        outcome="refused",
+        path=path,
+        env=env,
+    )
 
 
 def read_records(path: Path | None = None, env: dict[str, str] | None = None) -> list[dict]:
