@@ -13,6 +13,7 @@ prompts or responses to disk or logs.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
 
@@ -174,7 +175,32 @@ class LLMClient:
 
     # -------------------------------------------------------------------- send
 
-    def complete(self, messages: list[LLMMessage]) -> LLMResponse:
+    def _audit(self, request: LLMRequest, findings: list[PhiFinding], capability: str) -> None:
+        """Record that a transmission happened. Never records what was in it.
+
+        Wired here rather than at each call site because this is the only place a request
+        actually leaves: an audit trail with a bypass is not an audit trail. Failure to write is
+        swallowed - a full disk must not lose the user's answer - but it is the one thing here
+        allowed to fail quietly, so it is kept to a single call.
+        """
+        try:
+            from rbgyanx.ai.audit import record_transmission
+            from rbgyanx.ai.capability import detect_install_type
+
+            record_transmission(
+                provider=self.config.provider,
+                remote=self.config.is_remote,
+                install_type=detect_install_type().value,
+                capability=capability,
+                payload=json.dumps(request.wire_messages(), sort_keys=True),
+                findings_redacted=len(findings),
+            )
+        except Exception:  # pragma: no cover - never break a send over bookkeeping
+            pass
+
+    def complete(
+        self, messages: list[LLMMessage], *, capability: str = "chat (panel send)"
+    ) -> LLMResponse:
         """Run one exchange. Warns on PHI (never blocks); retries with self-correction.
 
         Raises :class:`LLMNotConfigured` when only the NullTransport is available, and
@@ -211,6 +237,7 @@ class LLMClient:
             if (not text or not text.strip()) and not message.tool_calls:
                 last_exc = LLMError("model returned an empty response")
                 continue
+            self._audit(request, findings, capability)
             return LLMResponse(
                 text=text,
                 model=request.model,

@@ -11,6 +11,19 @@ import sys
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+
+@pytest.fixture(autouse=True, scope="session")
+def _isolate_ai_audit_log(tmp_path_factory):
+    """Keep the test suite out of the user's real config directory.
+
+    The AI client writes an audit record on every successful send. Without this the suite would
+    append to the operator's actual ai_audit.jsonl, polluting the very evidence trail the log
+    exists to provide.
+    """
+    os.environ["RBGYANX_AUDIT_DIR"] = str(tmp_path_factory.mktemp("ai_audit"))
+    yield
+    os.environ.pop("RBGYANX_AUDIT_DIR", None)
+
 dicom_available = os.path.isdir("test_data/dicom_input") and any(
     f.endswith(".dcm")
     for _root, _, files in os.walk("test_data/dicom_input")

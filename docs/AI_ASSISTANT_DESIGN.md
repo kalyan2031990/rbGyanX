@@ -324,6 +324,28 @@ Rotation at 2 MB keeping 5 generations, by renaming rather than truncating.
 is brute-forceable in principle. Real payloads carry a system prompt and a question and are far
 past that threshold, but the digest is an integrity aid, not a confidentiality guarantee.
 
+### Verifying against a real endpoint
+
+Everything else in the suite is unit-level with mocked transports. That proves the gate logic and
+proves nothing about the wiring — whether the key is read from the right variable, whether the
+endpoint accepts the request shape, whether the response parses, whether an audit record lands.
+Those fail only against a real endpoint, and otherwise they fail on the day someone first uses it.
+
+`tests/test_ai_live_provider.py` covers exactly that, and is **opt-in** because a test suite must
+not transmit anything the person running it did not ask for:
+
+```bash
+RBGYANX_LIVE_LLM_TEST=1 python -m pytest tests/test_ai_live_provider.py -v
+
+# one provider only
+RBGYANX_LIVE_LLM_TEST=1 RBGYANX_LIVE_LLM_PROVIDERS=kimi python -m pytest tests/test_ai_live_provider.py -v
+```
+
+It sends one fixed, patient-free sentence per configured provider and checks four things: the
+response parses, the complete assistant turn is available for replay, the audit record landed
+with no payload in it, and a second turn replaying the first is accepted rather than rejected.
+A provider with no key is **skipped, not failed** — a missing key is a configuration fact.
+
 ---
 
 ## 6. Threat model
