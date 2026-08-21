@@ -38,7 +38,7 @@ def test_version_single_source_of_truth():
     # only thing that checks the engine version at all - pre_publish_check.py looks at
     # pyproject, CITATION.cff and VERSION.txt, but not at rbgyanx_engine.__version__, which
     # is what the other three are supposed to agree WITH.
-    assert engine_ver == "1.2.0"
+    assert engine_ver == "1.2.1"
     assert _read_version_txt() == engine_ver
     assert _read_citation_cff() == engine_ver
     assert _read_pyproject() == engine_ver

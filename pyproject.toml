@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rbgyanx"
-version = "1.2.0"
+version = "1.2.1"
 description = "Radiobiology clinical decision support system (TCP/NTCP/UTCP/QUANTEC)"
 readme = "README.md"
 license = { text = "MIT" }
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.13"  # the range CI actually tests; see the badge in README
 authors = [{ name = "Kalyan Mondal" }]
 keywords = ["radiotherapy", "TCP", "NTCP", "DVH", "DICOM", "radiobiology"]
 classifiers = [

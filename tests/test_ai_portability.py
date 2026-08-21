@@ -27,7 +27,7 @@ MIN_SUPPORTED = (3, 10)
 
 def test_the_supported_floor_is_what_we_think_it_is():
     text = (install_root() / "pyproject.toml").read_text(encoding="utf-8")
-    assert 'requires-python = ">=3.10"' in text, "update MIN_SUPPORTED if this changed"
+    assert 'requires-python = ">=3.10,<3.13"' in text, "update MIN_SUPPORTED if this changed"
 
 
 @pytest.mark.parametrize("source", AI_SOURCES, ids=lambda p: p.name)

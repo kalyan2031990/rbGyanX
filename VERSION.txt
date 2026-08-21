@@ -1,19 +1,21 @@
-rbGyanX Version 1.2.0
+rbGyanX Version 1.2.1
 Release Identifier: FINAL_V3.2
 Release Date: 2026-08-22
 Type: Production Release
 
 Two identifiers are in use and they mean different things:
 
-  Software version   1.2.0        semantic version of the codebase (engine + GUI + analysis)
+  Software version   1.2.1        semantic version of the codebase (engine + GUI + analysis)
   Release identifier FINAL_V3.2   generation of the validation/analysis programme that this
                                   release freezes (V1 -> V2 -> V3 -> V3.1 -> V3.2)
 
-The release identifier is deliberately UNCHANGED at FINAL_V3.2. 1.2.0 adds the governed AI
+The release identifier is deliberately UNCHANGED at FINAL_V3.2. The 1.2.x line adds the AI
 assistant and closes a data-locality defect; it introduces no new scientific result, reruns no
 analysis and alters no reported number. The analysis programme this release freezes is therefore
 the same generation 1.1.0 froze, and saying otherwise would imply a revalidation that did not
-happen. What changed in 1.2.0 is software, and it is described in CHANGELOG.md.
+happen. What changed in the 1.2.x line is software, and it is described in CHANGELOG.md.
+1.2.1 is a patch over 1.2.0: it repairs a write-tool defect that made 1.2.0 unusable on
+every supported Python, and caps requires-python to the range CI actually tests.
 
 FINAL_V3.2 supersedes FINAL_V3.1. It adds no new scientific result: every headline value is
 unchanged and was independently verified before this release was built. It exists to close four

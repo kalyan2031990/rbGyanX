@@ -5,6 +5,57 @@ All notable changes to this project are documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-08-22 — patch: the write tool did not run on any supported Python
+
+A patch over 1.2.0. **Anyone on 1.2.0 who enables the assistant's tools should update.** No
+scientific result changed, no analysis was rerun, and the release identifier stays FINAL_V3.2.
+
+### Fixed
+
+- **`edit_code` raised `TypeError` on first use (affects 1.2.0 only).** The write tool called
+  `Path.read_text(newline=...)` and `Path.write_text(newline=...)`. That keyword was added in
+  **Python 3.13**, and this project supports **3.10, 3.11 and 3.12** — so the tool failed on
+  every supported interpreter, with:
+
+  ```
+  TypeError: Path.read_text() got an unexpected keyword argument 'newline'
+  ```
+
+  It surfaced the moment a user enabled assistant tools and accepted an edit. It went unnoticed
+  locally because the development machine ran Python 3.14, where the keyword exists; the CI
+  matrix caught it. Now uses the builtin `open(..., newline=...)`, which has always accepted it,
+  verified under 3.10 to preserve bytes with no newline translation.
+
+- **A Windows-style path evaluated on Linux could be classified as inside the install tree.** On
+  POSIX a backslash is an ordinary character, so `C:\Data\...` resolves to a *relative* name
+  under the working directory, which can fall inside the tree — where a data path would be
+  reported as though it were rbGyanX's own source. No identifier was leaked, because the
+  deny-list redacted it as a Windows path immediately afterwards, but the frame reconstruction
+  was wrong. Foreign-convention paths are now treated as external, scoped to non-Windows
+  platforms so that a drive letter on Windows still describes our own tree correctly.
+
+### Changed
+
+- **`requires-python` narrowed from `>=3.10` to `>=3.10,<3.13`.** The open-ended bound promised
+  support for 3.13 and 3.14, which CI does not test and which the README badge never claimed.
+  The `edit_code` defect above is exactly what that gap hides: code that works on a newer
+  interpreter and fails on every version actually supported. The declared range now matches the
+  CI matrix and the badge.
+
+  **Consequence:** installing on Python 3.13+ is now refused rather than silently untested. If
+  you need a newer interpreter, add it to the CI matrix first.
+
+### Tests
+
+1289 → 1326 collected. `tests/test_ai_portability.py` is new: it scans the AI modules for
+pathlib keywords newer than the supported floor, pins that floor against `pyproject.toml`, and
+asserts foreign-convention paths are external on every platform — so this class of defect fails
+on a developer's machine rather than waiting for CI.
+
+### Note on 1.2.0
+
+The `v1.2.0` tag is left in place and unmodified. It is superseded, not withdrawn.
+
 ## [1.2.0] - 2026-08-22 — governed AI assistant
 
 Adds an optional, governed AI assistant and fixes a data-locality defect present in earlier

@@ -57,7 +57,7 @@ PY
 Desktop GUIs: `python -m rbgyanx.qtapp` (Qt6, needs the `qt` extra) or `python rbgyanx_gui.py`
 (Tkinter).
 
-## Verify (1269 tests, synthetic data only)
+## Verify (1326 tests, synthetic data only)
 
 ```bash
 pytest -q
@@ -99,7 +99,7 @@ Full design, capability matrix and threat model: [`docs/AI_ASSISTANT_DESIGN.md`]
 Cite the archived release via its DOI — see [`CITATION.cff`](CITATION.cff), or:
 
 > Mondal, K., Mandal, A., & Vijay, A. *rbGyanX: A radiobiology-guided clinical decision support
-> framework* (v1.2.0). Zenodo. https://doi.org/10.5281/zenodo.21757164
+> framework* (v1.2.1). Zenodo. https://doi.org/10.5281/zenodo.21757164
 
 The accompanying manuscript will be added as the preferred citation on acceptance.
 

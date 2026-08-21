@@ -11,7 +11,7 @@ authors:
     given-names: Anuj
     orcid: "https://orcid.org/0000-0001-6610-3844"
 title: "rbGyanX: A radiobiology-guided clinical decision support framework"
-version: "1.2.0"
+version: "1.2.1"
 date-released: 2026-08-15
 doi: "10.5281/zenodo.21757164"
 url: "https://github.com/kalyan2031990/rbGyanX"
