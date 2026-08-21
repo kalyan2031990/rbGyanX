@@ -52,6 +52,8 @@ __all__ = [
     "scrub_traceback",
     "scrub_for_transmission",
     "structure_label_is_recognised",
+    "reset_label_cache",
+    "LABELS_ENV_VAR",
     "install_root",
 ]
 
@@ -255,6 +257,114 @@ def _structure_vocabulary() -> frozenset[str]:
     return frozenset(tokens)
 
 
+# ------------------------------------------------- site-registered label vocabulary
+#
+# The residual checks above are calibrated on English structure names, and the non-ASCII check
+# treats any non-ASCII letter as possibly a name with diacritics. That is right for "Mueller"
+# and wrong for a department whose structures are named "Ohrspeicheldruese_L", "Parotida_izq"
+# or a set written in a non-Latin script: those would refuse constantly, and a safety control
+# that fires constantly gets switched off. That is the real failure mode, worse than the leak
+# the control was protecting against.
+#
+# The escape hatch is declaration, not guesswork. A site registers its own label vocabulary
+# once, exactly as it can ship its own reference pack, and thereafter its labels pass. A
+# refusal that tells you how to fix it permanently gets fixed; a refusal with no remedy gets
+# the feature turned off.
+#
+# Deliberately NOT a shipped multilingual alias set: a partial one works for the languages that
+# happen to be included and fails for the next, which is the same constant-refusal problem made
+# unpredictable, and medical terminology across languages is not something this file can verify.
+
+#: Where a site declares its structure labels.
+LABELS_ENV_VAR = "RBGYANX_STRUCTURE_LABELS"
+
+
+def _key(text: str) -> str:
+    """Whole-label key: lowercased, punctuation dropped.
+
+    ``str.isalnum`` is Unicode-aware, so a label written in a non-Latin script keeps its
+    characters here even though :func:`_label_segments` (which splits on ASCII letters) sees
+    nothing in it. That is the point: a declared non-Latin label can still be matched verbatim.
+    """
+    return "".join(ch for ch in str(text).lower() if ch.isalnum())
+
+
+def _labels_dir() -> Path:
+    return Path(__file__).resolve().parent / "reference_packs"
+
+
+def _label_files(env: dict | None = None) -> list[Path]:
+    """Files that may declare site structure labels, most specific first."""
+    import os as _os
+
+    env = dict(_os.environ) if env is None else env
+    found: list[Path] = []
+    declared = env.get(LABELS_ENV_VAR)
+    if declared:
+        path = Path(declared)
+        if path.is_dir():
+            found.extend(sorted(path.glob("*.json")))
+        elif path.is_file():
+            found.append(path)
+    found.extend(sorted(_labels_dir().glob("*.json")))
+    return found
+
+
+def _read_labels(path: Path) -> list[str]:
+    """Labels from one file: a bare JSON list, or a "structure_labels" key in a pack."""
+    import json as _json
+
+    try:
+        raw = _json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    if isinstance(raw, list):
+        return [str(x) for x in raw if isinstance(x, (str, int, float))]
+    if isinstance(raw, dict):
+        declared = raw.get("structure_labels")
+        if isinstance(declared, list):
+            return [str(x) for x in declared if isinstance(x, (str, int, float))]
+    return []
+
+
+@functools.lru_cache(maxsize=1)
+def _site_labels() -> tuple[tuple[str, ...], frozenset[str], frozenset[str]]:
+    """(raw labels, normalised whole labels, normalised segments) declared by this site."""
+    raw: list[str] = []
+    for path in _label_files():
+        raw.extend(_read_labels(path))
+    whole = {_key(label) for label in raw if _key(label)}
+    segments: set[str] = set()
+    for label in raw:
+        segments.update(seg for seg in _label_segments(label) if len(seg) >= 2)
+    return tuple(dict.fromkeys(raw)), frozenset(whole), frozenset(segments)
+
+
+def reset_label_cache() -> None:
+    """Forget cached vocabularies. For tests, and after a site edits its label file."""
+    _site_labels.cache_clear()
+    _structure_vocabulary.cache_clear()
+
+
+def _registered_label_pattern() -> re.Pattern[str] | None:
+    """A pattern matching any registered label verbatim, longest first."""
+    raw, _whole, _segments = _site_labels()
+    usable = sorted((r for r in raw if r and r.strip()), key=len, reverse=True)
+    if not usable:
+        return None
+    return re.compile("|".join(re.escape(label) for label in usable), re.IGNORECASE)
+
+
+def _strip_registered_labels(text: str) -> str:
+    """Remove labels the site has declared before the residual checks run.
+
+    A declared label is known vocabulary, so it must not be read as evidence of risk - which is
+    what would otherwise happen to any label written in a non-Latin script.
+    """
+    pattern = _registered_label_pattern()
+    return pattern.sub(" ", text) if pattern is not None else text
+
+
 #: A compound token: alphanumeric segments joined by underscores or hyphens.
 _COMPOUND_TOKEN = re.compile(r"\b[A-Za-z][A-Za-z0-9]*(?:[_-][A-Za-z0-9]+)+\b")
 
@@ -268,16 +378,28 @@ def structure_label_is_recognised(label: str) -> bool:
 
     Used by the tool layer before a structure label is forwarded to a remote provider.
     """
+    _raw, site_whole, site_segments = _site_labels()
+    if _key(label) in site_whole:
+        return True  # declared verbatim by this site
+    if _has_non_ascii_letter(label):
+        # A non-Latin or accented label carries characters this vocabulary cannot speak to, and
+        # the declaration check above has already had its chance. Returning True here would put
+        # this function out of step with the scrub path, which refuses the same label - and two
+        # guards that disagree are worse than one.
+        return False
     segments = _label_segments(label)
     if not segments:
         return False
     vocabulary = _structure_vocabulary()
-    return all(seg in vocabulary or seg in _MODIFIER_SEGMENTS for seg in segments)
+    return all(
+        seg in vocabulary or seg in _MODIFIER_SEGMENTS or seg in site_segments for seg in segments
+    )
 
 
 def _has_unrecognised_structure_segment(text: str) -> bool:
     """True when a structure-like compound token carries a segment we cannot account for."""
     vocabulary = _structure_vocabulary()
+    _raw, _whole, site_segments = _site_labels()
     for match in _COMPOUND_TOKEN.finditer(text):
         segments = _label_segments(match.group(0))
         anatomical = [s for s in segments if s in vocabulary]
@@ -286,7 +408,10 @@ def _has_unrecognised_structure_segment(text: str) -> bool:
         unknown = [
             s
             for s in segments
-            if len(s) >= 3 and s not in vocabulary and s not in _MODIFIER_SEGMENTS
+            if len(s) >= 3
+            and s not in vocabulary
+            and s not in _MODIFIER_SEGMENTS
+            and s not in site_segments
         ]
         if unknown:
             return True
@@ -369,6 +494,7 @@ _MARKER = re.compile(r"\[REDACTED:[^\]]*\]")
 
 def _residual_reasons(text: str) -> list[str]:
     text = _MARKER.sub(" ", text)
+    text = _strip_registered_labels(text)
     reasons = [reason for reason, pattern in _RESIDUAL if pattern.search(text)]
     reasons += [reason for reason, check in _RESIDUAL_CHECKS if check(text)]
     return reasons
@@ -489,6 +615,9 @@ def scrub_for_transmission(text: str, *, remote: bool, traceback: bool = False) 
         raise ScrubRefused(
             "refusing to transmit to a remote provider: the text could not be confidently "
             "cleaned (" + "; ".join(result.reasons) + "). Switch to a local provider to "
-            "share this content, or send a summary you have checked yourself."
+            "share this content, or send a summary you have checked yourself. If this is "
+            "your department's own structure naming, declare it once via "
+            + LABELS_ENV_VAR
+            + " and it will stop being flagged."
         )
     return result.text

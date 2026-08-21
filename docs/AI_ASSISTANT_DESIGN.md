@@ -127,6 +127,44 @@ a laterality/qualifier set. A compound token containing a recognised anatomical 
 unaccounted-for segment withholds confidence. `Parotid_L` passes; `Parotid_L_Smith` refuses.
 Code identifiers such as `run_controller` are not flagged.
 
+### Non-English and site-specific labels
+
+The checks above are calibrated on English structure names, and the non-ASCII check treats any
+non-ASCII letter as possibly a name with diacritics. That is right for `Müller` and wrong for a
+department whose structures are named `Ohrspeicheldrüse_L`, `耳下腺_L` or `Околоушная_L`. Those
+would refuse constantly — and **a safety control that fires constantly gets switched off**, which
+is a worse outcome than the leak it was guarding against.
+
+Two things follow.
+
+*Latin-script labels already pass.* `Ohrspeicheldruese_L`, `Parotida_izq` and
+`Glande_parotide_G` contain no recognised anatomical segment, so there is no appended-name
+pattern to suspect, and they are treated as neutral rather than risky.
+
+*Anything else is declared, not guessed.* A site registers its own label vocabulary once:
+
+```bash
+export RBGYANX_STRUCTURE_LABELS=/etc/rbgyanx/labels.json    # a file, or a directory of them
+```
+
+```json
+{ "structure_labels": ["Ohrspeicheldrüse_L", "Ohrspeicheldrüse_R", "Rückenmark", "耳下腺_L"] }
+```
+
+A bare JSON list works too, and a reference pack may carry `structure_labels` alongside its
+entries, so a site declares everything in one place. Declared labels are removed from the text
+before the residual checks run, so they cannot be read as evidence of risk.
+
+The refusal message names the environment variable, because a refusal that tells you how to fix
+it permanently gets fixed, whereas one with no remedy gets the feature turned off.
+
+**What is deliberately not done:** shipping a multilingual alias set. A partial one works for the
+languages that happen to be included and fails for the next, which is the same constant-refusal
+problem made unpredictable — and medical terminology across languages is not something this
+module can verify. Declaring a name-bearing label such as `Parotid_L_Smith` remains possible but
+is a site's explicit act, never an accident: `Parotid_L_Smith` still refuses by default, before
+and after any declaration.
+
 ---
 
 ## 3. The frozen set
