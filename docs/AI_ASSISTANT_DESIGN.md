@@ -116,7 +116,7 @@ closed means **refuse**, never "send a smaller payload".
 
 Frame paths are re-derived against known-safe roots (the install tree, stdlib, site-packages,
 `sys.prefix`). Anything outside those is dropped **whole**, not trimmed to its leaf: every
-component of a data path can be an identifier, and `C:\Users\jsmith\...` leaks a person before
+component of a data path can be an identifier, and `C:\Users\<name>\...` leaks a person before
 you reach the patient folder. Frames inside the software tree stay fully readable, so debugging
 value is retained.
 

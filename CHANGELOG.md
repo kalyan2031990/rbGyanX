@@ -5,6 +5,84 @@ All notable changes to this project are documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-08-22 — governed AI assistant
+
+Adds an optional, governed AI assistant and fixes a data-locality defect present in earlier
+versions. **No scientific result changed**: no analysis was rerun, no reported number altered,
+and the release identifier stays FINAL_V3.2 because the analysis programme is the same generation
+1.1.0 froze. The assistant explains outputs the deterministic engine has already produced — it
+never computes, adjusts or influences a TCP, NTCP or UTCP value, and no code path leads from it
+into the numeric core.
+
+### Security
+
+- **`AiConfig.is_remote` ignored `base_url` (affects 1.0.0 and 1.1.0).** A provider preset
+  flagged local — the "Local (Ollama / llama.cpp)" preset — could be pointed at any URL, and
+  `is_remote` still reported it as local because it read only the preset's declarative flag. The
+  send-confirmation dialog reads that property, so the dialog told the user their data was
+  staying on the machine while it left over the network. It is the one place a person looks for
+  that reassurance, so it is the one place it must not be wrong.
+
+  `is_remote` now requires both the local flag **and** a resolved loopback URL
+  (`localhost`, `127.0.0.0/8`, `::1`); anything else is treated as remote. A LAN endpoint counts
+  as remote, which is correct — the data does leave the machine.
+
+  **Who is affected:** anyone on 1.0.0 or 1.1.0 who changed the Local preset's base URL. The
+  default configuration was never affected, because it points at localhost. There is no evidence
+  of exposure in the shipped defaults; the defect was in what the interface *claimed*, and in
+  what would have happened had the URL been changed.
+
+### Added
+
+- **Capability matrix** (`rbgyanx/ai/capability.py`): a 9x5 table enforced in code, granting
+  capability on two axes — data locality (local vs remote provider) and install type (source,
+  frozen binary, CI). Remote providers never receive patient data, under any capability, in any
+  install type. All 45 cells are asserted individually.
+- **Institutional kill switch**: `RBGYANX_AI_DISABLE_REMOTE=1`, or `ai.disable_remote: true` in a
+  site config file, removes every remote provider from the registry before anything else sees it.
+  It cannot be re-enabled from the interface.
+- **Fail-closed PHI scrubber** (`rbgyanx/ai/scrubber.py`) for machine-generated text the assistant
+  forwards on the user's behalf. An unconfident scrub is a refusal, never a smaller payload.
+  Tracebacks are reconstructed against known-safe roots rather than redacted. `phi_guard` keeps
+  its existing warn-never-block contract for text the user typed themselves.
+- **Site-declared structure labels** (`RBGYANX_STRUCTURE_LABELS`) so departments naming structures
+  in German, Spanish, Japanese or Russian are not refused constantly — a safety control that fires
+  constantly gets switched off.
+- **Frozen set**: the assistant can never modify the numeric core, its inputs, the tests that
+  verify it, the test configuration, or its own guards. Creation of auto-loaded files that would
+  re-open the boundary (`sitecustomize.py`, `.pth`, `conftest.py`, shadowing packages) is refused.
+- **Verify/auto-revert loop** around every accepted edit: snapshot file bytes, apply, run the
+  analytic positive controls, run the full suite, and restore automatically on any failure.
+- **Literature quick-compare** with provenance tiers and an **export gate**. Any export containing
+  an unverified row carries an orientation notice, keeps the rows marked, and refuses to drop the
+  provenance column.
+- **Reference packs** (`rbgyanx/ai/reference_packs/`), versioned and site-extensible. The shipped
+  QUANTEC pack is marked `pending: not verified against primary sources` and its entries are
+  export-gated until a reviewer clears them.
+- **Append-only audit log** in the user's config directory, recording one PHI-free record per
+  transmission and per guard refusal, plus `scripts/export_ai_audit.py` to export it as CSV with
+  a summary.
+- **Kimi K3 support**: `kimi-k3`, the `reasoning_effort` field (`low`/`high`/`max`, default
+  `max`), and preserved thinking history — the complete assistant message, including
+  `reasoning_content` and `tool_calls`, is replayed verbatim into the next turn.
+- **`docs/AI_ASSISTANT_DESIGN.md`** (capability matrix, threat model, frozen set) and
+  **`docs/RUNNING_WITH_A_REMOTE_PROVIDER.md`** (what is granted and denied on a remote provider).
+- **Opt-in live-provider smoke test** (`RBGYANX_LIVE_LLM_TEST=1`) covering the wiring that mocked
+  transports cannot.
+
+### Changed
+
+- The AI panel shows the active provider, install type and granted capabilities at all times, and
+  builds its provider list from the kill-switch-filtered registry so a disabled provider is not
+  selectable rather than refused after selection.
+- The assistant tool layer is **opt-in and off by default**, ADVANCED-only, absent in BASIC.
+- `pyproject.toml` declares `package-data` so the reference packs ship in a wheel.
+
+### Tests
+
+834 -> 1269 collected. The suite remains green with no test weakened, skipped or rewritten to
+accommodate the new work.
+
 ## [1.1.0] - 2026-08-15 — release identifier FINAL_V3.2
 
 Release-repair and freeze. **No scientific result changed**: every headline value was independently
