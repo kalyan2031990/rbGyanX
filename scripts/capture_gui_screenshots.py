@@ -30,7 +30,6 @@ TMP = Path(os.environ.get("TEMP", "/tmp")) / "_rbgyanx_shot_plot.png"
 from PySide6.QtCore import QEventLoop, Qt, QTimer  # noqa: E402
 from PySide6.QtGui import QFont, QFontDatabase, QPixmap  # noqa: E402
 from PySide6.QtWidgets import QApplication, QLabel  # noqa: E402
-
 from rbgyanx.qtapp.main_window import AppMode, MainWindow  # noqa: E402
 from rbgyanx.services.run_controller import RunController  # noqa: E402
 from rbgyanx.services.run_request import RunRequest  # noqa: E402

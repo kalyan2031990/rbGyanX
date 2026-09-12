@@ -25,10 +25,10 @@ Model Implementations:
 - EUD-based TCP (Niemierko, 1997)
 """
 
-from rbgyanx.core.tcp.poisson import calculate_tcp_poisson
+from rbgyanx.core.tcp.eud import calculate_tcp_eud
 from rbgyanx.core.tcp.lkb import calculate_tcp_lkb
 from rbgyanx.core.tcp.logistic import calculate_tcp_logistic
-from rbgyanx.core.tcp.eud import calculate_tcp_eud
+from rbgyanx.core.tcp.poisson import calculate_tcp_poisson
 
 __all__ = [
     'calculate_tcp_poisson',

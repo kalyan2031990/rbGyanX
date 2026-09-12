@@ -11,12 +11,10 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Any, Callable
-import pandas as pd
-import numpy as np
-from pathlib import Path
 from enum import Enum
+from typing import Any
 
 
 class BoundaryType(Enum):
@@ -37,14 +35,14 @@ class ApplicabilityBoundary:
     boundary_type: BoundaryType
     parameter_name: str
     boundary_value: float
-    validated_range: Tuple[float, float]
-    current_value: Optional[float] = None
-    distance_to_boundary: Optional[float] = None
-    extrapolation_degree: Optional[float] = None
-    fragility_indicators: List[str] = field(default_factory=list)
-    attribution_details: Dict[str, Any] = field(default_factory=dict)
+    validated_range: tuple[float, float]
+    current_value: float | None = None
+    distance_to_boundary: float | None = None
+    extrapolation_degree: float | None = None
+    fragility_indicators: list[str] = field(default_factory=list)
+    attribution_details: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'boundary_type': self.boundary_type.value,
@@ -67,13 +65,13 @@ class ExtrapolationZone:
     Phase 6.5: Descriptive only. No blocking, no recommendations.
     """
     zone_name: str
-    parameter_space: Dict[str, Tuple[float, float]]
-    extrapolation_indicators: List[str] = field(default_factory=list)
-    stability_metrics: Dict[str, float] = field(default_factory=dict)
-    breakdown_probability: Optional[float] = None
-    attribution_details: Dict[str, Any] = field(default_factory=dict)
+    parameter_space: dict[str, tuple[float, float]]
+    extrapolation_indicators: list[str] = field(default_factory=list)
+    stability_metrics: dict[str, float] = field(default_factory=dict)
+    breakdown_probability: float | None = None
+    attribution_details: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'zone_name': self.zone_name,
@@ -92,14 +90,14 @@ class ApplicabilityBoundaryResult:
     
     Phase 6.5: Detection and visualization only. No blocking, no recommendations.
     """
-    boundaries: List[ApplicabilityBoundary] = field(default_factory=list)
-    extrapolation_zones: List[ExtrapolationZone] = field(default_factory=list)
-    current_position: Dict[str, float] = field(default_factory=dict)
-    boundary_distances: Dict[str, float] = field(default_factory=dict)
-    extrapolation_map: Dict[str, Any] = field(default_factory=dict)
-    detection_summary: List[str] = field(default_factory=list)
+    boundaries: list[ApplicabilityBoundary] = field(default_factory=list)
+    extrapolation_zones: list[ExtrapolationZone] = field(default_factory=list)
+    current_position: dict[str, float] = field(default_factory=dict)
+    boundary_distances: dict[str, float] = field(default_factory=dict)
+    extrapolation_map: dict[str, Any] = field(default_factory=dict)
+    detection_summary: list[str] = field(default_factory=list)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'boundaries': [b.to_dict() for b in self.boundaries],
@@ -126,7 +124,7 @@ class ApplicabilityBoundaryDetector:
     """
     
     # Validated parameter ranges (from literature)
-    VALIDATED_RANGES: Dict[str, Tuple[float, float]] = {
+    VALIDATED_RANGES: dict[str, tuple[float, float]] = {
         'dose_per_fraction': (1.8, 2.2),  # Conventional fractionation
         'n_fractions': (25, 40),  # Typical range
         'alpha_beta': (1.5, 20.0),  # Typical α/β ratios
@@ -143,8 +141,8 @@ class ApplicabilityBoundaryDetector:
     
     def detect_boundaries(
         self,
-        current_parameters: Dict[str, float],
-        validated_ranges: Optional[Dict[str, Tuple[float, float]]] = None
+        current_parameters: dict[str, float],
+        validated_ranges: dict[str, tuple[float, float]] | None = None
     ) -> ApplicabilityBoundaryResult:
         """
         Detect applicability boundaries for current parameters.
@@ -213,9 +211,9 @@ class ApplicabilityBoundaryDetector:
             # Collect fragility indicators
             fragility_indicators = []
             if extrapolation_degree > self.EXTRAPOLATION_THRESHOLD:
-                fragility_indicators.append(f"Significant extrapolation beyond validated range")
+                fragility_indicators.append("Significant extrapolation beyond validated range")
             if normalized_distance < self.FRAGILE_THRESHOLD:
-                fragility_indicators.append(f"Close to applicability boundary")
+                fragility_indicators.append("Close to applicability boundary")
             
             # Create boundary object
             boundary = ApplicabilityBoundary(
@@ -251,10 +249,10 @@ class ApplicabilityBoundaryDetector:
     
     def detect_extrapolation_zones(
         self,
-        parameter_space: Dict[str, List[float]],
-        model_response_function: Optional[Callable] = None,
-        validated_ranges: Optional[Dict[str, Tuple[float, float]]] = None
-    ) -> List[ExtrapolationZone]:
+        parameter_space: dict[str, list[float]],
+        model_response_function: Callable | None = None,
+        validated_ranges: dict[str, tuple[float, float]] | None = None
+    ) -> list[ExtrapolationZone]:
         """
         Detect extrapolation zones in parameter space.
         
@@ -336,9 +334,9 @@ class ApplicabilityBoundaryDetector:
     
     def _identify_extrapolation_zones(
         self,
-        current_parameters: Dict[str, float],
-        validated_ranges: Dict[str, Tuple[float, float]]
-    ) -> List[ExtrapolationZone]:
+        current_parameters: dict[str, float],
+        validated_ranges: dict[str, tuple[float, float]]
+    ) -> list[ExtrapolationZone]:
         """
         Identify extrapolation zones based on current parameters.
         
@@ -376,7 +374,7 @@ class ApplicabilityBoundaryDetector:
     def _build_extrapolation_map(
         self,
         result: ApplicabilityBoundaryResult
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Build extrapolation map for visualization.
         
@@ -403,7 +401,7 @@ class ApplicabilityBoundaryDetector:
     def _generate_detection_summary(
         self,
         result: ApplicabilityBoundaryResult
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Generate detection summary (descriptive, not recommendations).
         

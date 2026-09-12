@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from rbgyanx_engine.run_config import EngineResult, RunConfig
+from outputs.ntcp_reporter import save_ntcp_excel
 from rbgyanx_engine.pipeline import (
     _attach_outcomes,
     _dominant_params_site,
@@ -24,7 +24,7 @@ from rbgyanx_engine.pipeline import (
     results_to_feature_df,
     run_ml_xai_validation,
 )
-from outputs.ntcp_reporter import save_ntcp_excel
+from rbgyanx_engine.run_config import EngineResult, RunConfig
 
 logger = logging.getLogger(__name__)
 
@@ -222,8 +222,8 @@ def run_analysis(cfg: RunConfig) -> EngineResult:
     plan_quality_flags_csv: Path | None = None
     patient_pdf: Path | None = None
     if cfg.input_kind == "dicom":
-        from rbgyanx_engine.physical_dose import collect_cohort_physical_metrics
         from outputs.physical_reporter import save_physical_outputs
+        from rbgyanx_engine.physical_dose import collect_cohort_physical_metrics
 
         physical_rows = collect_cohort_physical_metrics(
             Path(cfg.input_dir).resolve(),

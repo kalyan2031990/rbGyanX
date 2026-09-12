@@ -10,7 +10,7 @@ Note: This may eventually be moved to rbgyanx.core.biological if needed
 for use by other modules, but for now it's kept local to TCP models.
 """
 
-from typing import Optional
+
 import numpy as np
 
 
@@ -18,7 +18,7 @@ def convert_to_eqd2(
     dose: float,
     alpha_beta_ratio: float,
     dose_per_fraction: float,
-    n_fractions: Optional[int] = None
+    n_fractions: int | None = None
 ) -> float:
     """
     Convert physical dose to EQD2 (Equivalent Dose in 2 Gy fractions).
@@ -52,10 +52,7 @@ def convert_to_eqd2(
         return np.nan
         
     if dose_per_fraction is None:
-        if n_fractions is not None:
-            dose_per_fraction = dose / n_fractions
-        else:
-            dose_per_fraction = 2.0
+        dose_per_fraction = dose / n_fractions if n_fractions is not None else 2.0
     
     eqd2 = dose * (alpha_beta_ratio + dose_per_fraction) / (alpha_beta_ratio + 2.0)
     return eqd2

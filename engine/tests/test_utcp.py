@@ -1,6 +1,4 @@
-import math
 
-import pytest
 
 
 def _make_tcp(pid="PT001", tcp_poisson=0.85):

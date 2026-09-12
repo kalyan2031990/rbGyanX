@@ -11,13 +11,13 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Callable
-from pathlib import Path
-from datetime import datetime
 import hashlib
 import json
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 
 @dataclass
@@ -28,14 +28,14 @@ class ScientificIntentMetadata:
     Phase 7: Every developer change must declare scientific intent.
     """
     hypothesis: str  # Hypothesis being tested
-    expected_failure_modes: List[str]  # Expected failure modes
+    expected_failure_modes: list[str]  # Expected failure modes
     risk_level: str  # "low", "medium", "high"
     intended_scope: str  # "research_only" or "future_basic_migration"
     validation_approach: str  # How validation will be performed
-    developer_id: Optional[str] = None  # Developer identifier
-    timestamp: Optional[str] = None  # Timestamp of change
+    developer_id: str | None = None  # Developer identifier
+    timestamp: str | None = None  # Timestamp of change
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'hypothesis': self.hypothesis,
@@ -58,15 +58,15 @@ class DeveloperModification:
     modification_id: str
     modification_type: str  # "experimental_model", "parameter_override", "method_change", etc.
     scientific_intent: ScientificIntentMetadata
-    code_hash: Optional[str] = None  # Hash of modified code
-    before_state: Optional[Dict[str, Any]] = None
-    after_state: Optional[Dict[str, Any]] = None
-    execution_log: List[str] = field(default_factory=list)
-    provenance_record_id: Optional[str] = None
-    structured_log_ids: List[str] = field(default_factory=list)
-    timestamp: Optional[str] = None
+    code_hash: str | None = None  # Hash of modified code
+    before_state: dict[str, Any] | None = None
+    after_state: dict[str, Any] | None = None
+    execution_log: list[str] = field(default_factory=list)
+    provenance_record_id: str | None = None
+    structured_log_ids: list[str] = field(default_factory=list)
+    timestamp: str | None = None
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'modification_id': self.modification_id,
@@ -91,14 +91,14 @@ class DeveloperModeSession:
     """
     session_id: str
     start_time: str
-    end_time: Optional[str] = None
-    modifications: List[DeveloperModification] = field(default_factory=list)
-    experimental_models_used: List[str] = field(default_factory=list)
-    provenance_records: List[str] = field(default_factory=list)
-    structured_logs: List[str] = field(default_factory=list)
-    session_summary: List[str] = field(default_factory=list)
+    end_time: str | None = None
+    modifications: list[DeveloperModification] = field(default_factory=list)
+    experimental_models_used: list[str] = field(default_factory=list)
+    provenance_records: list[str] = field(default_factory=list)
+    structured_logs: list[str] = field(default_factory=list)
+    session_summary: list[str] = field(default_factory=list)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'session_id': self.session_id,
@@ -127,7 +127,7 @@ class DeveloperModeSandbox:
     - Complete auditability
     """
     
-    def __init__(self, session_id: Optional[str] = None):
+    def __init__(self, session_id: str | None = None):
         """
         Initialize Developer Mode sandbox.
         
@@ -137,9 +137,9 @@ class DeveloperModeSandbox:
             Session ID (generated if not provided)
         """
         self.session_id = session_id or self._generate_session_id()
-        self.current_session: Optional[DeveloperModeSession] = None
-        self.modifications: List[DeveloperModification] = []
-        self._audit_log: List[str] = []
+        self.current_session: DeveloperModeSession | None = None
+        self.modifications: list[DeveloperModification] = []
+        self._audit_log: list[str] = []
         
         # Start session
         self._start_session()
@@ -160,11 +160,11 @@ class DeveloperModeSandbox:
         self,
         modification_type: str,
         scientific_intent: ScientificIntentMetadata,
-        code_snippet: Optional[str] = None,
-        before_state: Optional[Dict[str, Any]] = None,
-        after_state: Optional[Dict[str, Any]] = None,
-        provenance_record_id: Optional[str] = None,
-        structured_log_ids: Optional[List[str]] = None
+        code_snippet: str | None = None,
+        before_state: dict[str, Any] | None = None,
+        after_state: dict[str, Any] | None = None,
+        provenance_record_id: str | None = None,
+        structured_log_ids: list[str] | None = None
     ) -> DeveloperModification:
         """
         Register an experimental modification in Developer Mode.
@@ -278,7 +278,7 @@ class DeveloperModeSandbox:
         
         return None
     
-    def get_audit_trail(self) -> List[str]:
+    def get_audit_trail(self) -> list[str]:
         """
         Get complete audit trail for Developer Mode session.
         
@@ -334,7 +334,7 @@ class DeveloperModeSandbox:
         
         return output_path
     
-    def _generate_session_summary(self) -> List[str]:
+    def _generate_session_summary(self) -> list[str]:
         """Generate session summary."""
         if not self.current_session:
             return []
@@ -367,7 +367,7 @@ class DeveloperModeSandbox:
         
         return summary
     
-    def _calculate_session_duration(self) -> Optional[str]:
+    def _calculate_session_duration(self) -> str | None:
         """Calculate session duration."""
         if not self.current_session or not self.current_session.end_time:
             return None
@@ -381,7 +381,7 @@ class DeveloperModeSandbox:
     def validate_scientific_intent(
         self,
         scientific_intent: ScientificIntentMetadata
-    ) -> tuple[bool, List[str]]:
+    ) -> tuple[bool, list[str]]:
         """
         Validate scientific intent metadata.
         

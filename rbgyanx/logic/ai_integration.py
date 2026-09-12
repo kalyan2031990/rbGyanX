@@ -12,9 +12,9 @@ Version: 1.0.0
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 
 class AIPersonality(Enum):
@@ -47,10 +47,10 @@ class AIResponse:
     contains_recommendations: bool = False
     contains_actions: bool = False
     contains_rankings: bool = False
-    timestamp: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    timestamp: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'query': self.query,
@@ -75,12 +75,12 @@ class AIPersonalityProfile:
     """
     personality: AIPersonality
     tone: str
-    allowed_interactions: List[AIInteractionType]
-    forbidden_interactions: List[str]
+    allowed_interactions: list[AIInteractionType]
+    forbidden_interactions: list[str]
     system_prompt: str
-    constraints: List[str] = field(default_factory=list)
+    constraints: list[str] = field(default_factory=list)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'personality': self.personality.value,
@@ -206,7 +206,7 @@ class AskRbGyanXIntegration:
         """
         return self.profile
     
-    def validate_query(self, query: str, interaction_type: AIInteractionType) -> tuple[bool, List[str]]:
+    def validate_query(self, query: str, interaction_type: AIInteractionType) -> tuple[bool, list[str]]:
         """
         Validate query against personality profile constraints.
         
@@ -245,7 +245,7 @@ class AskRbGyanXIntegration:
         query: str,
         interaction_type: AIInteractionType,
         response_text: str,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: dict[str, Any] | None = None
     ) -> AIResponse:
         """
         Create AI response with validation.
@@ -311,7 +311,7 @@ class AskRbGyanXIntegration:
         """
         return self.profile.system_prompt
     
-    def get_constraints(self) -> List[str]:
+    def get_constraints(self) -> list[str]:
         """
         Get constraints for current personality.
         

@@ -12,10 +12,9 @@ Version: 1.0.0
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Any, Callable
-import pandas as pd
+from typing import Any
+
 import numpy as np
-from pathlib import Path
 
 
 @dataclass
@@ -30,9 +29,9 @@ class RobustnessIndex:
     interpretation: str
     perturbation_type: str
     stability_level: str  # "high", "medium", "low", "brittle"
-    attribution_details: Dict[str, Any] = field(default_factory=dict)
+    attribution_details: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'index_name': self.index_name,
@@ -51,14 +50,14 @@ class RobustnessAnalysisResult:
     
     Phase 6.4: Stability characterization only. No ranking, no recommendations.
     """
-    robustness_indices: List[RobustnessIndex] = field(default_factory=list)
-    stability_metrics: Dict[str, float] = field(default_factory=dict)
-    brittleness_indicators: List[Dict[str, Any]] = field(default_factory=list)
-    resilience_profiles: Dict[str, Any] = field(default_factory=dict)
-    perturbation_responses: Dict[str, List[float]] = field(default_factory=dict)
-    stability_summary: List[str] = field(default_factory=list)
+    robustness_indices: list[RobustnessIndex] = field(default_factory=list)
+    stability_metrics: dict[str, float] = field(default_factory=dict)
+    brittleness_indicators: list[dict[str, Any]] = field(default_factory=list)
+    resilience_profiles: dict[str, Any] = field(default_factory=dict)
+    perturbation_responses: dict[str, list[float]] = field(default_factory=dict)
+    stability_summary: list[str] = field(default_factory=list)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'robustness_indices': [idx.to_dict() for idx in self.robustness_indices],
@@ -91,7 +90,7 @@ class RobustnessAnalyzer:
     def calculate_bri(
         self,
         baseline_result: float,
-        perturbed_results: List[float],
+        perturbed_results: list[float],
         perturbation_magnitude: float
     ) -> RobustnessIndex:
         """
@@ -163,7 +162,7 @@ class RobustnessAnalyzer:
     def calculate_tws(
         self,
         baseline_result: float,
-        perturbed_results: List[float],
+        perturbed_results: list[float],
         perturbation_magnitude: float
     ) -> RobustnessIndex:
         """
@@ -233,8 +232,8 @@ class RobustnessAnalyzer:
     def analyze_robustness(
         self,
         baseline_result: float,
-        perturbed_results: Dict[str, List[float]],
-        perturbation_magnitudes: Dict[str, float]
+        perturbed_results: dict[str, list[float]],
+        perturbation_magnitudes: dict[str, float]
     ) -> RobustnessAnalysisResult:
         """
         Analyze robustness and stability across multiple perturbations.
@@ -293,8 +292,8 @@ class RobustnessAnalyzer:
     def _calculate_stability_metrics(
         self,
         baseline_result: float,
-        perturbed_results: Dict[str, List[float]]
-    ) -> Dict[str, float]:
+        perturbed_results: dict[str, list[float]]
+    ) -> dict[str, float]:
         """
         Calculate overall stability metrics.
         
@@ -331,8 +330,8 @@ class RobustnessAnalyzer:
     
     def _identify_brittleness(
         self,
-        robustness_indices: List[RobustnessIndex]
-    ) -> List[Dict[str, Any]]:
+        robustness_indices: list[RobustnessIndex]
+    ) -> list[dict[str, Any]]:
         """
         Identify brittleness indicators.
         
@@ -354,8 +353,8 @@ class RobustnessAnalyzer:
     
     def _build_resilience_profiles(
         self,
-        robustness_indices: List[RobustnessIndex]
-    ) -> Dict[str, Any]:
+        robustness_indices: list[RobustnessIndex]
+    ) -> dict[str, Any]:
         """
         Build resilience profiles by perturbation type.
         
@@ -380,7 +379,7 @@ class RobustnessAnalyzer:
             profiles[pert_type]['stability_levels'].append(idx.stability_level)
         
         # Calculate mean robustness per perturbation type
-        for pert_type, profile in profiles.items():
+        for _pert_type, profile in profiles.items():
             if profile['indices']:
                 mean_rob = np.mean([idx['value'] for idx in profile['indices']])
                 profile['mean_robustness'] = float(mean_rob)
@@ -390,7 +389,7 @@ class RobustnessAnalyzer:
     def _generate_stability_summary(
         self,
         result: RobustnessAnalysisResult
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Generate stability summary (descriptive, not recommendations).
         

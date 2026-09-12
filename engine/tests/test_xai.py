@@ -165,16 +165,15 @@ def test_lime_raises_without_lime_package(monkeypatch):
     monkeypatch.setattr(builtins, "__import__", mock_import)
 
     clf, X, _ = make_fake_model()
-    with tempfile.TemporaryDirectory() as tmp:
-        with pytest.raises(ImportError, match="lime"):
-            explain_patient_lime(
-                clf,
-                X[0],
-                X,
-                [f"f{i}" for i in range(4)],
-                "PT001",
-                pathlib.Path(tmp) / "out.png",
-            )
+    with tempfile.TemporaryDirectory() as tmp, pytest.raises(ImportError, match="lime"):
+        explain_patient_lime(
+            clf,
+            X[0],
+            X,
+            [f"f{i}" for i in range(4)],
+            "PT001",
+            pathlib.Path(tmp) / "out.png",
+        )
 
 
 def test_lime_returns_correct_number_of_features():

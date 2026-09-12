@@ -1,14 +1,13 @@
 """Test utility modules"""
-import pytest
 import pandas as pd
-import numpy as np
+import pytest
 
 
 def test_plot_config_application():
     """Test plot configuration applies correctly"""
     try:
-        from utils.plot_config import apply_rbgyanx_style, get_model_color
         import matplotlib.pyplot as plt
+        from utils.plot_config import apply_rbgyanx_style, get_model_color
         
         apply_rbgyanx_style()
         
@@ -38,11 +37,11 @@ def test_validation_utils():
         })
         
         # Test column validation
-        assert validate_dataframe_columns(df, ['PatientID', 'Age']) == True
-        assert validate_dataframe_columns(df, ['Missing']) == False
+        assert validate_dataframe_columns(df, ['PatientID', 'Age'])
+        assert not validate_dataframe_columns(df, ['Missing'])
         
         # Test numeric validation
-        assert validate_numeric_columns(df, ['Age', 'Score']) == True
+        assert validate_numeric_columns(df, ['Age', 'Score'])
     except ImportError:
         pytest.skip("validation_utils module not available")
 

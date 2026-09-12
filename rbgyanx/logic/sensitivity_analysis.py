@@ -10,11 +10,11 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Any, Callable
-import pandas as pd
+from typing import Any
+
 import numpy as np
-from pathlib import Path
 
 
 @dataclass
@@ -25,14 +25,14 @@ class SensitivityResult:
     Phase 6.2: Descriptive only. No optimization, no rankings, no recommendations.
     """
     parameter_name: str
-    parameter_range: Tuple[float, float]
-    sensitivity_metrics: Dict[str, float] = field(default_factory=dict)
-    response_curve: Dict[str, List[float]] = field(default_factory=dict)
-    stability_zones: List[Dict[str, Any]] = field(default_factory=list)
-    unstable_regimes: List[Dict[str, Any]] = field(default_factory=list)
-    sensitivity_gradients: Dict[str, float] = field(default_factory=dict)
+    parameter_range: tuple[float, float]
+    sensitivity_metrics: dict[str, float] = field(default_factory=dict)
+    response_curve: dict[str, list[float]] = field(default_factory=dict)
+    stability_zones: list[dict[str, Any]] = field(default_factory=list)
+    unstable_regimes: list[dict[str, Any]] = field(default_factory=list)
+    sensitivity_gradients: dict[str, float] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'parameter_name': self.parameter_name,
@@ -52,13 +52,13 @@ class StabilityAnalysisResult:
     
     Phase 6.2: Descriptive only. No optimization, no rankings.
     """
-    stability_metrics: Dict[str, float] = field(default_factory=dict)
-    stable_parameter_ranges: Dict[str, Tuple[float, float]] = field(default_factory=dict)
-    unstable_parameter_ranges: Dict[str, Tuple[float, float]] = field(default_factory=dict)
-    stability_heatmap_data: Optional[Dict[str, Any]] = None
-    breakdown_indicators: List[Dict[str, Any]] = field(default_factory=list)
+    stability_metrics: dict[str, float] = field(default_factory=dict)
+    stable_parameter_ranges: dict[str, tuple[float, float]] = field(default_factory=dict)
+    unstable_parameter_ranges: dict[str, tuple[float, float]] = field(default_factory=dict)
+    stability_heatmap_data: dict[str, Any] | None = None
+    breakdown_indicators: list[dict[str, Any]] = field(default_factory=list)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'stability_metrics': self.stability_metrics,
@@ -91,10 +91,10 @@ class SensitivityAnalyzer:
     def analyze_parameter_sensitivity(
         self,
         parameter_name: str,
-        parameter_values: List[float],
+        parameter_values: list[float],
         model_function: Callable[[float], float],
-        baseline_value: Optional[float] = None,
-        baseline_result: Optional[float] = None
+        baseline_value: float | None = None,
+        baseline_result: float | None = None
     ) -> SensitivityResult:
         """
         Analyze sensitivity of a model to a parameter.
@@ -128,7 +128,7 @@ class SensitivityAnalyzer:
             try:
                 model_result = model_function(param_val)
                 model_results.append(model_result)
-            except Exception as e:
+            except Exception:
                 # Handle errors gracefully
                 model_results.append(np.nan)
         
@@ -162,7 +162,7 @@ class SensitivityAnalyzer:
     
     def analyze_stability(
         self,
-        parameter_sensitivity_results: List[SensitivityResult],
+        parameter_sensitivity_results: list[SensitivityResult],
         stability_threshold: float = 0.1
     ) -> StabilityAnalysisResult:
         """
@@ -209,11 +209,11 @@ class SensitivityAnalyzer:
     
     def _calculate_sensitivity_metrics(
         self,
-        parameter_values: List[float],
-        model_results: List[float],
-        baseline_value: Optional[float] = None,
-        baseline_result: Optional[float] = None
-    ) -> Dict[str, float]:
+        parameter_values: list[float],
+        model_results: list[float],
+        baseline_value: float | None = None,
+        baseline_result: float | None = None
+    ) -> dict[str, float]:
         """
         Calculate descriptive sensitivity metrics.
         
@@ -263,9 +263,9 @@ class SensitivityAnalyzer:
     
     def _calculate_sensitivity_gradients(
         self,
-        parameter_values: List[float],
-        model_results: List[float]
-    ) -> Dict[str, float]:
+        parameter_values: list[float],
+        model_results: list[float]
+    ) -> dict[str, float]:
         """
         Calculate sensitivity gradients.
         
@@ -298,10 +298,10 @@ class SensitivityAnalyzer:
     
     def _identify_stability_zones(
         self,
-        parameter_values: List[float],
-        model_results: List[float],
+        parameter_values: list[float],
+        model_results: list[float],
         stability_threshold: float = 0.05
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Identify zones where model is stable.
         
@@ -340,10 +340,10 @@ class SensitivityAnalyzer:
     
     def _identify_unstable_regimes(
         self,
-        parameter_values: List[float],
-        model_results: List[float],
+        parameter_values: list[float],
+        model_results: list[float],
         instability_threshold: float = 0.2
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Identify regimes where model is unstable.
         
@@ -383,8 +383,8 @@ class SensitivityAnalyzer:
     
     def _calculate_stability_metrics(
         self,
-        parameter_sensitivity_results: List[SensitivityResult]
-    ) -> Dict[str, float]:
+        parameter_sensitivity_results: list[SensitivityResult]
+    ) -> dict[str, float]:
         """
         Calculate overall stability metrics across parameters.
         
@@ -422,8 +422,8 @@ class SensitivityAnalyzer:
     
     def _identify_breakdown_indicators(
         self,
-        parameter_sensitivity_results: List[SensitivityResult]
-    ) -> List[Dict[str, Any]]:
+        parameter_sensitivity_results: list[SensitivityResult]
+    ) -> list[dict[str, Any]]:
         """
         Identify model breakdown indicators.
         

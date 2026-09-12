@@ -236,7 +236,7 @@ def _structure_vocabulary() -> frozenset[str]:
             _add(canonical)
             for alias in aliases:
                 _add(alias)
-    except Exception:  # engine not importable: fall back to the built-in list below
+    except Exception:  # engine not importable: fall back to the built-in list below  # nosec B110
         pass
     try:
         from engine.config.tg263_aliases import TG263_ALIASES
@@ -245,7 +245,8 @@ def _structure_vocabulary() -> frozenset[str]:
             _add(canonical)
             for alias in aliases:
                 _add(alias)
-    except Exception:
+    # Accepted: engine not importable: falls back to the built-in label list.
+    except Exception:  # nosec B110
         pass
 
     # Minimal fallback so the scrubber still works if engine.config is unavailable.

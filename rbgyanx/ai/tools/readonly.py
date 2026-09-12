@@ -53,7 +53,7 @@ def _audit_refusal(ctx: ToolContext, capability: Capability) -> None:
             install_type=str(getattr(ctx.install_type, "value", ctx.install_type)),
             capability=capability.value,
         )
-    except Exception:  # pragma: no cover - bookkeeping must not mask the refusal
+    except Exception:  # pragma: no cover - bookkeeping must not mask the refusal  # nosec B110
         pass
 
 

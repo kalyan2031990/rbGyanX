@@ -8,15 +8,10 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
-import re
-import sys
-import subprocess
-import traceback
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional
-from datetime import datetime
 import json
-import shutil
+import re
+from datetime import datetime
+from pathlib import Path
 
 # Load protected modules from registry
 PROTECTED_MODULES = []
@@ -24,10 +19,10 @@ PROTECTED_MODULES_REGISTRY = Path(__file__).parent / "protected_modules.json"
 
 try:
     if PROTECTED_MODULES_REGISTRY.exists():
-        with open(PROTECTED_MODULES_REGISTRY, 'r', encoding='utf-8') as f:
+        with open(PROTECTED_MODULES_REGISTRY, encoding='utf-8') as f:
             registry = json.load(f)
             # Extract all protected files
-            for category, data in registry.get('protected_modules', {}).items():
+            for _category, data in registry.get('protected_modules', {}).items():
                 PROTECTED_MODULES.extend(data.get('files', []))
 except Exception:
     # Fallback to hardcoded list if registry not available
@@ -66,7 +61,7 @@ class AutoCorrectionEngine:
     - Workflow logic
     """
     
-    def __init__(self, repo_root: Path, log_file: Optional[Path] = None):
+    def __init__(self, repo_root: Path, log_file: Path | None = None):
         """
         Initialize Auto-Correction Engine.
         
@@ -86,22 +81,22 @@ class AutoCorrectionEngine:
         self.escalated_issues = []  # Issues that require developer intervention
         self.protected_modules = self._load_protected_modules()
     
-    def _load_protected_modules(self) -> List[str]:
+    def _load_protected_modules(self) -> list[str]:
         """Load protected modules from registry"""
         try:
             registry_path = self.repo_root / "qa" / "protected_modules.json"
             if registry_path.exists():
-                with open(registry_path, 'r', encoding='utf-8') as f:
+                with open(registry_path, encoding='utf-8') as f:
                     registry = json.load(f)
                     protected = []
-                    for category, data in registry.get('protected_modules', {}).items():
+                    for _category, data in registry.get('protected_modules', {}).items():
                         protected.extend(data.get('files', []))
                     return protected
         except Exception:
             pass
         return PROTECTED_MODULES
         
-    def analyze_log(self) -> List[Dict]:
+    def analyze_log(self) -> list[dict]:
         """
         Analyze execution log and detect fixable issues.
         
@@ -116,7 +111,7 @@ class AutoCorrectionEngine:
             return []
         
         try:
-            with open(self.log_file, 'r', encoding='utf-8', errors='ignore') as f:
+            with open(self.log_file, encoding='utf-8', errors='ignore') as f:
                 log_content = f.read()
             
             # Detect missing imports
@@ -259,7 +254,7 @@ class AutoCorrectionEngine:
                 })
                 break  # Only report once
     
-    def propose_fixes(self) -> List[Dict]:
+    def propose_fixes(self) -> list[dict]:
         """
         Propose fixes for detected issues.
         
@@ -311,7 +306,7 @@ class AutoCorrectionEngine:
         
         return self.proposed_fixes
     
-    def apply_fix(self, fix: Dict, ask_permission: bool = True) -> Tuple[bool, str]:
+    def apply_fix(self, fix: dict, ask_permission: bool = True) -> tuple[bool, str]:
         """
         Apply a proposed fix (with user permission if requested).
         
@@ -365,7 +360,6 @@ class AutoCorrectionEngine:
                 # Only modify non-scientific files
                 module = issue.get('module', '')
                 # Find where this import should be added (in GUI or utility files only)
-                target_files = ['rbgyanx_gui.py', 'utils/error_handler.py']
                 # This is complex - skip for now, just suggest manual fix
                 return False, f"Manual fix required: Add import guard for {module}"
             
@@ -378,7 +372,7 @@ class AutoCorrectionEngine:
         except Exception as e:
             return False, f"Error applying fix: {str(e)}"
     
-    def apply_all_fixes(self, fixes: List[Dict], ask_permission: bool = True) -> Dict:
+    def apply_all_fixes(self, fixes: list[dict], ask_permission: bool = True) -> dict:
         """
         Apply multiple fixes (with user permission).
         
@@ -414,15 +408,15 @@ class AutoCorrectionEngine:
             'message': f"Applied {applied_count}, failed {failed_count}"
         }
     
-    def _load_protected_modules(self) -> List[str]:
+    def _load_protected_modules(self) -> list[str]:
         """Load protected modules from registry"""
         try:
             registry_path = self.repo_root / "qa" / "protected_modules.json"
             if registry_path.exists():
-                with open(registry_path, 'r', encoding='utf-8') as f:
+                with open(registry_path, encoding='utf-8') as f:
                     registry = json.load(f)
                     protected = []
-                    for category, data in registry.get('protected_modules', {}).items():
+                    for _category, data in registry.get('protected_modules', {}).items():
                         protected.extend(data.get('files', []))
                     return protected
         except Exception:
@@ -438,12 +432,9 @@ class AutoCorrectionEngine:
     
     def _is_protected_file(self, file_path: str) -> bool:
         """Check if file path is protected"""
-        for protected in self.protected_modules:
-            if protected in file_path:
-                return True
-        return False
+        return any(protected in file_path for protected in self.protected_modules)
     
-    def _classify_issue(self, issue: Dict) -> str:
+    def _classify_issue(self, issue: dict) -> str:
         """
         Classify issue type for escalation.
         
@@ -457,7 +448,7 @@ class AutoCorrectionEngine:
         str
             Issue classification: 'infrastructure', 'workflow', 'clinical_schema', 'scientific_logic'
         """
-        issue_type = issue.get('type', '')
+        issue.get('type', '')
         issue_msg = issue.get('message', '').lower()
         
         # Scientific logic errors
@@ -477,7 +468,7 @@ class AutoCorrectionEngine:
         # Default to infrastructure
         return 'infrastructure'
     
-    def check_escalation_needed(self) -> Tuple[bool, List[Dict]]:
+    def check_escalation_needed(self) -> tuple[bool, list[dict]]:
         """
         Check if any issues require escalation.
         
@@ -691,7 +682,7 @@ class AutoCorrectionEngine:
         return output_path
 
 
-def run_auto_correction(repo_root: Optional[Path] = None, log_file: Optional[Path] = None) -> Dict:
+def run_auto_correction(repo_root: Path | None = None, log_file: Path | None = None) -> dict:
     """
     Convenience function to run auto-correction analysis.
     
@@ -724,7 +715,7 @@ def run_auto_correction(repo_root: Optional[Path] = None, log_file: Optional[Pat
 if __name__ == "__main__":
     # Allow running as standalone script
     results = run_auto_correction()
-    print(f"\nAuto-Correction Analysis:")
+    print("\nAuto-Correction Analysis:")
     print(f"Issues detected: {len(results['issues'])}")
     print(f"Fixes proposed: {len(results['fixes'])}")
 

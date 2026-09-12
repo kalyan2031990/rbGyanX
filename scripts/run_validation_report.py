@@ -2,13 +2,13 @@
 """Full validation: synthetic pytest + ML/XAI + real data from input_folders."""
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re
 import shutil
 import subprocess
 import sys
-import tempfile
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
@@ -448,10 +448,8 @@ def write_technical_note(report: dict) -> None:
         text = "# rbGyanX — Technical Development Note\n\n" + wrapped + "\n"
 
     NOTE_REPO.write_text(text, encoding="utf-8")
-    try:
+    with contextlib.suppress(OSError):
         NOTE_DESKTOP.write_text(text, encoding="utf-8")
-    except OSError:
-        pass
     print(f"Wrote {NOTE_REPO} and {NOTE_DESKTOP}")
 
 

@@ -1,7 +1,4 @@
-import math
 
-import numpy as np
-import pandas as pd
 
 from radiobiology.model_registry import clear_registries, register_tcp_model
 
@@ -14,8 +11,8 @@ class _DummyTCP:
 def test_register_tcp_model_in_compute_all(uniform_dvh_result):
     clear_registries()
     register_tcp_model("DUMMY", _DummyTCP())
-    from radiobiology.tcp_calculator import TCPCalculator
     from config.site_params import load_site_params
+    from radiobiology.tcp_calculator import TCPCalculator
 
     calc = TCPCalculator()
     params = load_site_params("HN")

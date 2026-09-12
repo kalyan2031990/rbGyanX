@@ -7,9 +7,9 @@ cumulative and differential DVH formats.
 Layer 1 (Core): Pure computational functions.
 """
 
+
 import numpy as np
 import pandas as pd
-from typing import Union
 
 
 def convert_to_cumulative(ddvh: pd.DataFrame) -> pd.DataFrame:

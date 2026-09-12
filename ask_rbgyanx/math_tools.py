@@ -8,8 +8,7 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
-import re
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Any
 
 
 class MathEquationHelper:
@@ -23,7 +22,7 @@ class MathEquationHelper:
         """Initialize equation helper"""
         self.equation_templates = self._load_equation_templates()
     
-    def _load_equation_templates(self) -> Dict[str, Dict]:
+    def _load_equation_templates(self) -> dict[str, dict]:
         """Load equation templates for common radiobiology equations"""
         return {
             'tcp_poisson': {
@@ -120,7 +119,7 @@ class MathEquationHelper:
             }
         }
     
-    def get_equation(self, equation_name: str) -> Optional[Dict[str, Any]]:
+    def get_equation(self, equation_name: str) -> dict[str, Any] | None:
         """
         Get equation template by name.
         
@@ -136,7 +135,7 @@ class MathEquationHelper:
         """
         return self.equation_templates.get(equation_name.lower())
     
-    def list_equations(self) -> List[str]:
+    def list_equations(self) -> list[str]:
         """
         List all available equations.
         
@@ -147,7 +146,7 @@ class MathEquationHelper:
         """
         return list(self.equation_templates.keys())
     
-    def search_equations(self, query: str) -> List[Dict[str, Any]]:
+    def search_equations(self, query: str) -> list[dict[str, Any]]:
         """
         Search for equations matching query.
         
@@ -209,7 +208,7 @@ class MathEquationHelper:
         
         return result
     
-    def parse_equation_request(self, query: str) -> Optional[Dict[str, Any]]:
+    def parse_equation_request(self, query: str) -> dict[str, Any] | None:
         """
         Parse equation request from natural language.
         

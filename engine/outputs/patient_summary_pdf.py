@@ -10,8 +10,8 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 import pandas as pd
+from matplotlib.backends.backend_pdf import PdfPages
 
 
 def _fmt(val: Any, digits: int = 2) -> str:

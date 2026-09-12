@@ -1,14 +1,14 @@
 """
 DVH manipulation utilities
 """
-import pandas as pd
+
 import numpy as np
-from typing import Dict, Optional, Tuple
+import pandas as pd
 
 
 def calculate_dose_metrics(dvh_df: pd.DataFrame, 
                            dose_column: str = 'Dose_Gy', 
-                           volume_column: str = 'Relative_Volume') -> Dict[str, float]:
+                           volume_column: str = 'Relative_Volume') -> dict[str, float]:
     """
     Calculate standard dose metrics from DVH
     

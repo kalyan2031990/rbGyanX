@@ -8,7 +8,6 @@ for TPS text, FDVH, NTCP ML/SHAP, and code7 integration metrics when required.
 from __future__ import annotations
 
 import logging
-import os
 import shutil
 import sys
 from pathlib import Path
@@ -111,9 +110,7 @@ def needs_subprocess_fallback(
         return True
     if tcp_config.get("ccs_file"):
         return True
-    if ntcp_config.get("enable_ml") or ntcp_config.get("enable_shap"):
-        return True
-    return False
+    return bool(ntcp_config.get("enable_ml") or ntcp_config.get("enable_shap"))
 
 
 def map_site_override(cancer_site_key: str | None) -> str | None:

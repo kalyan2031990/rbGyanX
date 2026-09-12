@@ -9,13 +9,14 @@ from __future__ import annotations
 import argparse
 import logging
 from collections import defaultdict
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
 import numpy as np
 import pandas as pd
 import pydicom
 
+from config.site_ntcp_params import allowed_oar_names, load_site_ntcp_params
 from config.site_params import load_site_params
 from dicom_io.dicom_reader import DicomPlanReader
 from dicom_io.dvh_extractor import DVHExtractor
@@ -24,14 +25,13 @@ from dicom_io.site_detector import (
     detect_site_from_text,
     resolve_pipeline_site,
 )
-from config.site_ntcp_params import allowed_oar_names, load_site_ntcp_params
 from dicom_io.structure_mapper import canon_target, get_oar_structures, get_target_structures
-from radiobiology.ntcp_calculator import NTCPCalculator
 from dicom_io.txt_dvh_reader import (
     iter_dvh_text_files,
     parse_dvh_text_file,
     parse_multi_structure_dvh_text,
 )
+from radiobiology.ntcp_calculator import NTCPCalculator
 from radiobiology.tcp_calculator import TCPCalculator
 from statistical_models.epv_guard import EPV_MINIMUM
 from uncertainty import ParamUncertaintyConfig, run_parameter_mc
@@ -98,7 +98,7 @@ def iter_dicom_patient_jobs(dicom_root: Path) -> Iterator[tuple[str, Path, str |
     dicom_root = Path(dicom_root)
     subdirs = sorted(p for p in dicom_root.iterdir() if p.is_dir())
     if subdirs:
-        for idx, sub in enumerate(subdirs):
+        for _idx, sub in enumerate(subdirs):
             yield sub.name, sub, None
         return
 
@@ -108,7 +108,8 @@ def iter_dicom_patient_jobs(dicom_root: Path) -> Iterator[tuple[str, Path, str |
             continue
         try:
             ds = pydicom.dcmread(path, stop_before_pixels=True, force=True)
-        except Exception:
+        # Accepted: a file that will not parse is skipped; the cohort continues.
+        except Exception:  # nosec B112
             continue
         pid = str(getattr(ds, "PatientID", "") or path.stem).strip()
         if pid:
@@ -470,7 +471,8 @@ def _annotate_ml_safety(
     cal_slope = None
     try:
         cal_slope, _ = compute_calibration_slope_intercept(y_true, y_prob)
-    except Exception:
+    # Accepted: calibration slope is optional; absence leaves it None and the safety report still runs.
+    except Exception:  # nosec B110
         pass
     report = run_safety_checks(
         model_name,

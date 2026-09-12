@@ -2,12 +2,10 @@
 LLM-Powered QA and Error Correction Engine for rbGyanX
 """
 import json
-import pandas as pd
-import numpy as np
-from pathlib import Path
 import re
-from typing import Dict, List, Tuple, Optional
-import warnings
+from pathlib import Path
+
+import pandas as pd
 
 
 class RadiobiologyLLMQA:
@@ -18,7 +16,7 @@ class RadiobiologyLLMQA:
         self.error_patterns = self._load_error_patterns()
         self.fix_templates = self._load_fix_templates()
         
-    def _load_config(self, config_path: str) -> Dict:
+    def _load_config(self, config_path: str) -> dict:
         """Load QA configuration"""
         default_config = {
             "validation_checks": {
@@ -44,7 +42,7 @@ class RadiobiologyLLMQA:
         try:
             config_file = Path(config_path)
             if config_file.exists():
-                with open(config_path, 'r') as f:
+                with open(config_path) as f:
                     user_config = json.load(f)
                     # Merge with defaults
                     default_config.update(user_config)
@@ -53,7 +51,7 @@ class RadiobiologyLLMQA:
         
         return default_config
     
-    def _load_error_patterns(self) -> List[Dict]:
+    def _load_error_patterns(self) -> list[dict]:
         """Patterns for common radiobiology pipeline errors"""
         return [
             {
@@ -88,7 +86,7 @@ class RadiobiologyLLMQA:
             }
         ]
     
-    def _load_fix_templates(self) -> Dict:
+    def _load_fix_templates(self) -> dict:
         """Templates for automated fixes"""
         return {
             "enable_bed_conversion": {
@@ -117,14 +115,14 @@ class RadiobiologyLLMQA:
             }
         }
     
-    def analyze_pipeline_log(self, log_file: str) -> Dict:
+    def analyze_pipeline_log(self, log_file: str) -> dict:
         """Analyze pipeline log and suggest fixes"""
         print(f"\n{'='*60}")
         print("🤖 LLM QA ENGINE: Pipeline Analysis")
         print(f"{'='*60}")
         
         try:
-            with open(log_file, 'r', encoding='utf-8') as f:
+            with open(log_file, encoding='utf-8') as f:
                 log_content = f.read()
         except Exception as e:
             print(f"Error reading log file: {e}")
@@ -161,7 +159,7 @@ class RadiobiologyLLMQA:
         
         return findings
     
-    def validate_step_consistency(self, step1_path: str, step2_path: str, step3_path: str) -> Dict:
+    def validate_step_consistency(self, step1_path: str, step2_path: str, step3_path: str) -> dict:
         """Validate data consistency between pipeline steps"""
         validation_results = {
             "step1": {"count": 0, "patients": 0, "organs": []},
@@ -217,7 +215,7 @@ class RadiobiologyLLMQA:
         except Exception as e:
             return {"error": f"Validation failed: {str(e)}"}
     
-    def generate_fix_report(self, findings: Dict, output_path: str = "qa_fix_report.md"):
+    def generate_fix_report(self, findings: dict, output_path: str = "qa_fix_report.md"):
         """Generate comprehensive fix report"""
         try:
             with open(output_path, 'w', encoding='utf-8') as f:
@@ -232,7 +230,7 @@ class RadiobiologyLLMQA:
                         f.write(f"- **Severity**: {error['severity']}\n")
                         f.write(f"- **Suggested Fix**: {error['fix']}\n")
                         if error['autofix']:
-                            f.write(f"- **🚀 Auto-fix Available**: Yes\n")
+                            f.write("- **🚀 Auto-fix Available**: Yes\n")
                             fix_template = self.fix_templates[error['fix']]
                             f.write(f"  ```python\n{json.dumps(fix_template, indent=2)}\n  ```\n")
                         f.write("\n")
@@ -253,7 +251,7 @@ class RadiobiologyLLMQA:
             print(f"Error generating report: {e}")
             return False
     
-    def auto_apply_fixes(self, findings: Dict, dry_run: bool = True) -> List[str]:
+    def auto_apply_fixes(self, findings: dict, dry_run: bool = True) -> list[str]:
         """Automatically apply available fixes"""
         applied_fixes = []
         
@@ -272,13 +270,13 @@ class RadiobiologyLLMQA:
                     success = self._apply_code_fix(fix['code_change'])
                     if success:
                         applied_fixes.append(fix_name)
-                        print(f"   ✅ Fix applied successfully")
+                        print("   ✅ Fix applied successfully")
                     else:
-                        print(f"   ❌ Failed to apply fix")
+                        print("   ❌ Failed to apply fix")
         
         return applied_fixes
     
-    def _apply_code_fix(self, fix: Dict) -> bool:
+    def _apply_code_fix(self, fix: dict) -> bool:
         """Apply a code fix to a file"""
         try:
             file_path = fix['file']
@@ -286,7 +284,7 @@ class RadiobiologyLLMQA:
                 print(f"File not found: {file_path}")
                 return False
             
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 content = f.read()
             
             if fix.get('insert_after'):
@@ -340,7 +338,7 @@ if __name__ == "__main__":
     qa_engine.generate_fix_report(findings)
     
     # Show summary
-    print(f"\n📊 QA Summary:")
+    print("\n📊 QA Summary:")
     print(f"  Errors: {len(findings.get('errors', []))}")
     print(f"  Warnings: {len(findings.get('warnings', []))}")
     print(f"  Auto-fixes available: {len(findings.get('autofix_available', []))}")

@@ -17,11 +17,10 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
-from enum import Enum
-from typing import Dict, Optional
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
-import uuid
+from enum import Enum
 
 
 class RunMode(Enum):
@@ -53,7 +52,7 @@ class Capability:
 
 
 # Define all capabilities upfront (Phase 4: All disabled)
-CAPABILITIES: Dict[str, Capability] = {
+CAPABILITIES: dict[str, Capability] = {
     "applicability_override": Capability(
         name="Applicability Override",
         description="Allow biological calculation outside validated domains",
@@ -135,7 +134,7 @@ CAPABILITIES: Dict[str, Capability] = {
 }
 
 # Capability exposure map (Phase 4: All False - scaffolding only)
-CAPABILITY_EXPOSURE: Dict[RunMode, Dict[str, bool]] = {
+CAPABILITY_EXPOSURE: dict[RunMode, dict[str, bool]] = {
     RunMode.BASIC: {
         "applicability_override": False,
         "parameter_sweep": False,
@@ -288,7 +287,7 @@ class ModeController:
                 f"Current mode: {self._mode.value.upper()}"
             )
     
-    def get_capabilities(self) -> Dict[str, bool]:
+    def get_capabilities(self) -> dict[str, bool]:
         """
         Get current capability exposure map.
         
@@ -348,7 +347,7 @@ class ModeController:
                 "(Phase 4: Placeholder - no features enabled yet)"
             )
     
-    def get_session_metadata(self) -> Dict:
+    def get_session_metadata(self) -> dict:
         """
         Get session metadata for provenance.
         
@@ -364,7 +363,7 @@ class ModeController:
             "capabilities": self.get_capabilities()
         }
     
-    def get_conservative_defaults(self) -> Dict[str, any]:
+    def get_conservative_defaults(self) -> dict[str, any]:
         """
         Get conservative defaults for BASIC mode.
         
@@ -406,7 +405,7 @@ class ModeController:
         """
         return self.is_basic()
     
-    def check_decision_support_violation(self, operation: str) -> Optional[str]:
+    def check_decision_support_violation(self, operation: str) -> str | None:
         """
         Check if an operation violates decision-support-only behavior.
         
@@ -436,7 +435,7 @@ class ModeController:
         
         return violations.get(operation.lower())
     
-    def get_explicit_intent(self) -> Dict[str, any]:
+    def get_explicit_intent(self) -> dict[str, any]:
         """
         Get explicit intent declaration for current mode.
         

@@ -43,7 +43,7 @@ def save_physical_outputs(
                     pd.DataFrame().to_excel(writer, sheet_name=sheet, index=False)
                     continue
                 rows_out = []
-                for (patient, site, profile), grp in subset.groupby(
+                for (_patient, site, profile), grp in subset.groupby(
                     ["AnonPatientID", site_col, "technique_profile"]
                 ):
                     filtered = filter_report_columns(grp, str(site), str(profile), user_config)

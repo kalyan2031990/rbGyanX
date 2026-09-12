@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import math
 from dataclasses import dataclass
@@ -72,26 +73,18 @@ def run_dosimetric_mc(
 
     for i, sf in enumerate(scale_factors):
         dvh_scaled = _scale_dvh(dvh_df, float(sf))
-        try:
+        with contextlib.suppress(Exception):
             tcp_poisson[i] = poisson_calc.compute_tcp_dvh(
                 dvh_scaled, n_fractions, site_params, target_type
             )["tcp"]
-        except Exception:
-            pass
-        try:
+        with contextlib.suppress(Exception):
             tcp_zm[i] = zm_calc.compute_tcp_dvh(
                 dvh_scaled, n_fractions, site_params, target_type
             )["tcp"]
-        except Exception:
-            pass
-        try:
+        with contextlib.suppress(Exception):
             tcp_geud[i] = geud_calc.compute_tcp(dvh_scaled, site_params)["tcp"]
-        except Exception:
-            pass
-        try:
+        with contextlib.suppress(Exception):
             tcp_logistic[i] = logistic_calc.compute_tcp(dvh_scaled, site_params)["tcp"]
-        except Exception:
-            pass
 
     return {
         "TCP_Poisson_dose_mc": _aggregate_mc(tcp_poisson),

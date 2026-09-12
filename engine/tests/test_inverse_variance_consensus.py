@@ -2,10 +2,6 @@
 
 from __future__ import annotations
 
-import math
-
-import pytest
-
 from uncertainty.inverse_variance_consensus import inverse_variance_consensus
 
 

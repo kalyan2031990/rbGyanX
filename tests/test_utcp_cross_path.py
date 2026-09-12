@@ -2,8 +2,6 @@
 
 import math
 
-import pytest
-
 TCP_RESULT = {
     "AnonPatientID": "TEST001",
     "TCP_Poisson": 0.72,

@@ -7,12 +7,10 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
-import shutil
 import json
-from pathlib import Path
+import shutil
 from datetime import datetime
-from typing import List, Dict, Optional
-import pandas as pd
+from pathlib import Path
 
 
 class BackupManager:
@@ -37,11 +35,11 @@ class BackupManager:
         # Load metadata
         self.metadata = self._load_metadata()
     
-    def _load_metadata(self) -> Dict:
+    def _load_metadata(self) -> dict:
         """Load backup metadata."""
         if self.metadata_file.exists():
             try:
-                with open(self.metadata_file, 'r', encoding='utf-8') as f:
+                with open(self.metadata_file, encoding='utf-8') as f:
                     return json.load(f)
             except Exception:
                 pass
@@ -55,7 +53,7 @@ class BackupManager:
         except Exception as e:
             print(f"Warning: Could not save backup metadata: {e}")
     
-    def create_backup(self, reason: str = "manual") -> Optional[Path]:
+    def create_backup(self, reason: str = "manual") -> Path | None:
         """
         Create a timestamped backup of critical files.
         
@@ -135,7 +133,7 @@ class BackupManager:
         
         return backup_path if backed_up else None
     
-    def list_backups(self) -> List[Dict]:
+    def list_backups(self) -> list[dict]:
         """
         List all available backups.
         
@@ -151,7 +149,7 @@ class BackupManager:
                 backups.append(backup_info)
         return sorted(backups, key=lambda x: x['timestamp'], reverse=True)
     
-    def restore_backup(self, backup_path: Path, dry_run: bool = False) -> Dict:
+    def restore_backup(self, backup_path: Path, dry_run: bool = False) -> dict:
         """
         Restore files from a backup.
         
@@ -207,7 +205,7 @@ class BackupManager:
         }
 
 
-def create_backup_before_operation(repo_root: Path, reason: str) -> Optional[Path]:
+def create_backup_before_operation(repo_root: Path, reason: str) -> Path | None:
     """
     Convenience function to create backup before operations.
     

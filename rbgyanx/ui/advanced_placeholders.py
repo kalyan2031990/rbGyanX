@@ -12,10 +12,9 @@ Version: 1.0.0
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Optional
 
 
-def create_advanced_placeholder_frame(parent, mode_controller, validation_controller=None) -> Optional[ttk.Frame]:
+def create_advanced_placeholder_frame(parent, mode_controller, validation_controller=None) -> ttk.Frame | None:
     """
     Create ADVANCED mode placeholder frame with disabled features.
     

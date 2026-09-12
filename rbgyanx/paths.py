@@ -89,10 +89,7 @@ def get_engine_root() -> Path | None:
 def get_user_data_dir() -> Path:
     """Writable per-user folder (configs, logs) — not inside Program Files."""
     base = os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA")
-    if base:
-        path = Path(base) / "rbGyanX"
-    else:
-        path = Path.home() / ".rbgyanx"
+    path = Path(base) / "rbGyanX" if base else Path.home() / ".rbgyanx"
     path.mkdir(parents=True, exist_ok=True)
     return path
 

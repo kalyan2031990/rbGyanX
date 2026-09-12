@@ -10,7 +10,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import GridSearchCV, StratifiedGroupKFold, StratifiedKFold, StratifiedKFold
+from sklearn.model_selection import GridSearchCV, StratifiedGroupKFold, StratifiedKFold
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -152,7 +152,7 @@ def fit_lgbm_tcp(
         outer_auc = float(roc_auc_score(y_te, prob_te))
         outer_aucs.append(outer_auc)
 
-    for i, (inn, out) in enumerate(zip(inner_aucs, outer_aucs)):
+    for i, (inn, out) in enumerate(zip(inner_aucs, outer_aucs, strict=True)):
         if out > inn + 0.15:
             warns.append(
                 f"Outer fold {i}: outer AUC {out:.3f} > inner AUC {inn:.3f} + 0.15 "
@@ -172,7 +172,7 @@ def fit_lgbm_tcp(
 
     final_model = gs_final.best_estimator_
     lgbm_step = final_model.named_steps["lgbm"]
-    importances = dict(zip(fname, lgbm_step.feature_importances_.tolist()))
+    importances = dict(zip(fname, lgbm_step.feature_importances_.tolist(), strict=True))
 
     shap_values, shap_ev = None, None
     if compute_shap:

@@ -27,14 +27,15 @@ Lyman JT (1985). Complication probability as assessed from dose-volume
 histograms. Radiat Res. 104(2S):S13-S19.
 """
 
-from typing import Dict, Optional
+
 import numpy as np
 from scipy.stats import norm
+
 from rbgyanx.core.tcp._eqd2 import convert_to_eqd2
 
 
 def calculate_tcp_lkb(
-    dose_metrics: Dict[str, float],
+    dose_metrics: dict[str, float],
     TD50: float,
     m: float,
     n: float,
@@ -99,10 +100,7 @@ def calculate_tcp_lkb(
         # TD50_eff = TD50 * (V_ref / V_eff)^n
         # For tumors, use reference volume of 1 cm³
         v_ref = 1.0
-        if n != 0:
-            td_veff_50 = TD50 * np.power(v_ref / v_eff, n)
-        else:
-            td_veff_50 = TD50
+        td_veff_50 = TD50 * np.power(v_ref / v_eff, n) if n != 0 else TD50
         
         # Calculate t parameter
         # At TD50 with reference volume, t should be 0 (giving TCP = 0.5)

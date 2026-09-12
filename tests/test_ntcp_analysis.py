@@ -1,10 +1,10 @@
 """Test NTCP analysis workflow"""
-import pytest
 import subprocess
 import sys
 from pathlib import Path
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 
 
 def test_ntcp_with_synthetic_data(synthetic_data_dir, ntcp_template, temp_output_dir):

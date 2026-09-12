@@ -1,9 +1,7 @@
 """Tests for rbgyanx-engine bridge (Phase R2 / rbGyanX 1.0)."""
 
-from pathlib import Path
 
 import pytest
-
 from rbgyanx.logic.engine_bridge import (
     detect_input_kind,
     is_engine_available,

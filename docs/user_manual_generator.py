@@ -9,10 +9,8 @@ Version: 1.0.0
 """
 
 import json
-import os
-from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from pathlib import Path
 
 
 class UserManualGenerator:
@@ -42,10 +40,10 @@ class UserManualGenerator:
         self.feature_registry = self._load_feature_registry()
         self.version, self.edition = self._load_version()
         
-    def _load_feature_registry(self) -> Dict:
+    def _load_feature_registry(self) -> dict:
         """Load feature registry JSON."""
         try:
-            with open(self.feature_registry_path, 'r', encoding='utf-8') as f:
+            with open(self.feature_registry_path, encoding='utf-8') as f:
                 return json.load(f)
         except Exception:
             return {}
@@ -68,7 +66,7 @@ class UserManualGenerator:
             pass
         return version, edition
     
-    def _scan_templates(self) -> List[str]:
+    def _scan_templates(self) -> list[str]:
         """Scan for template files in clinical/templates directory."""
         templates = []
         if self.clinical_templates_dir.exists():
@@ -77,17 +75,17 @@ class UserManualGenerator:
                     templates.append(template_file.name)
         return sorted(templates)
     
-    def _scan_schema(self) -> Optional[Dict]:
+    def _scan_schema(self) -> dict | None:
         """Load clinical schema if it exists."""
         if self.clinical_schema_path.exists():
             try:
-                with open(self.clinical_schema_path, 'r', encoding='utf-8') as f:
+                with open(self.clinical_schema_path, encoding='utf-8') as f:
                     return json.load(f)
             except Exception:
                 pass
         return None
     
-    def _get_output_structure(self) -> Dict[str, List[str]]:
+    def _get_output_structure(self) -> dict[str, list[str]]:
         """Generate output folder structure based on analysis modes."""
         structure = {
             "common": [
@@ -130,7 +128,7 @@ class UserManualGenerator:
         }
         return structure
     
-    def _get_gui_tabs(self) -> List[Dict[str, str]]:
+    def _get_gui_tabs(self) -> list[dict[str, str]]:
         """Get GUI tabs information from codebase analysis."""
         tabs = [
             {
@@ -185,7 +183,7 @@ class UserManualGenerator:
         ]
         return tabs
     
-    def _get_workflow_steps(self) -> List[Dict[str, str]]:
+    def _get_workflow_steps(self) -> list[dict[str, str]]:
         """Get workflow steps information."""
         steps = []
         if self.feature_registry and "workflow_stages" in self.feature_registry:
@@ -221,7 +219,7 @@ class UserManualGenerator:
             ]
         return steps
     
-    def _get_analysis_modes(self) -> List[Dict[str, str]]:
+    def _get_analysis_modes(self) -> list[dict[str, str]]:
         """Get supported analysis modes."""
         modes = [
             {
@@ -248,7 +246,7 @@ class UserManualGenerator:
         ]
         return modes
     
-    def _get_traditional_models(self) -> Dict[str, List[Dict]]:
+    def _get_traditional_models(self) -> dict[str, list[dict]]:
         """Get traditional radiobiological models."""
         models = {"ntcp": [], "tcp": []}
         
@@ -275,7 +273,7 @@ class UserManualGenerator:
         
         return models
     
-    def _get_ml_features(self) -> Dict:
+    def _get_ml_features(self) -> dict:
         """Get ML model features."""
         ml_info = {
             "enabled": False,
@@ -871,7 +869,7 @@ class UserManualGenerator:
                     </li>
 """
         
-        html += f"""
+        html += """
                 </ul>
                 
                 <h3>5.2 Machine Learning Models</h3>
@@ -1158,7 +1156,7 @@ class UserManualGenerator:
         
         return html
     
-    def generate(self) -> Tuple[bool, str]:
+    def generate(self) -> tuple[bool, str]:
         """
         Generate the user manual HTML file.
         
@@ -1178,7 +1176,7 @@ class UserManualGenerator:
             return False, f"Error generating user manual: {str(e)}"
 
 
-def generate_user_manual(repo_root: Optional[Path] = None) -> Tuple[bool, str]:
+def generate_user_manual(repo_root: Path | None = None) -> tuple[bool, str]:
     """
     Convenience function to generate user manual.
     

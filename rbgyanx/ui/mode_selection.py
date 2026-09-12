@@ -13,11 +13,10 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
-import tkinter as tk
-from tkinter import ttk, messagebox
-from typing import Optional
-from pathlib import Path
 import sys
+import tkinter as tk
+from pathlib import Path
+from tkinter import messagebox, ttk
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -33,7 +32,7 @@ class ModeSelectionDialog:
     All ADVANCED capabilities remain disabled (scaffolding only).
     """
     
-    def __init__(self, parent: Optional[tk.Tk] = None):
+    def __init__(self, parent: tk.Tk | None = None):
         """
         Initialize mode selection dialog.
         
@@ -43,10 +42,10 @@ class ModeSelectionDialog:
             Parent window (if any)
         """
         self.parent = parent
-        self.selected_mode_controller: Optional[ModeController] = None
-        self.dialog: Optional[tk.Toplevel] = None
+        self.selected_mode_controller: ModeController | None = None
+        self.dialog: tk.Toplevel | None = None
     
-    def show(self) -> Optional[ModeController]:
+    def show(self) -> ModeController | None:
         """
         Display dialog and return selected mode controller.
         

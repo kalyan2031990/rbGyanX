@@ -20,13 +20,14 @@ Brahme A (1984). Dosimetric precision requirements in radiation therapy.
 Acta Radiol Oncol. 23(5):379-391.
 """
 
-from typing import Dict, Optional
+
 import numpy as np
+
 from rbgyanx.core.tcp._eqd2 import convert_to_eqd2
 
 
 def calculate_tcp_logistic(
-    dose_metrics: Dict[str, float],
+    dose_metrics: dict[str, float],
     D50: float,
     k: float,
     alpha_beta: float = 10.0,

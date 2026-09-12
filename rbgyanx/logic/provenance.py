@@ -16,11 +16,10 @@ Version: 1.0.0
 import hashlib
 import json
 import time
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Union
-import numpy as np
+from typing import Any
 
 
 @dataclass
@@ -38,14 +37,14 @@ class ProvenanceRecord:
     input_hash: str
     config_hash: str
     execution_mode: str
-    steps_executed: List[str]
+    steps_executed: list[str]
     execution_time: float
-    input_paths: Dict[str, str] = field(default_factory=dict)
-    output_paths: Dict[str, str] = field(default_factory=dict)
-    configuration: Dict[str, Any] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    input_paths: dict[str, str] = field(default_factory=dict)
+    output_paths: dict[str, str] = field(default_factory=dict)
+    configuration: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return asdict(self)
     
@@ -53,7 +52,7 @@ class ProvenanceRecord:
         """Convert to JSON string."""
         return json.dumps(self.to_dict(), indent=indent, default=str)
     
-    def save(self, filepath: Union[str, Path]):
+    def save(self, filepath: str | Path):
         """Save provenance record to JSON file."""
         filepath = Path(filepath)
         filepath.parent.mkdir(parents=True, exist_ok=True)
@@ -69,7 +68,7 @@ class ProvenanceTracker:
     mechanisms without changing scientific behavior.
     """
     
-    def __init__(self, session_id: Optional[str] = None):
+    def __init__(self, session_id: str | None = None):
         """
         Initialize provenance tracker.
         
@@ -82,11 +81,11 @@ class ProvenanceTracker:
         self.execution_id = self._generate_execution_id()
         self.start_time = time.time()
         self.timestamp = datetime.now().isoformat()
-        self.steps_executed: List[str] = []
-        self.input_paths: Dict[str, str] = {}
-        self.output_paths: Dict[str, str] = {}
-        self.configuration: Dict[str, Any] = {}
-        self.metadata: Dict[str, Any] = {}
+        self.steps_executed: list[str] = []
+        self.input_paths: dict[str, str] = {}
+        self.output_paths: dict[str, str] = {}
+        self.configuration: dict[str, Any] = {}
+        self.metadata: dict[str, Any] = {}
         
     @staticmethod
     def _generate_session_id() -> str:
@@ -133,7 +132,7 @@ class ProvenanceTracker:
         
         return hashlib.sha256(data.encode('utf-8')).hexdigest()
     
-    def hash_configuration(self, config: Dict[str, Any]) -> str:
+    def hash_configuration(self, config: dict[str, Any]) -> str:
         """
         Generate deterministic hash of configuration.
         
@@ -151,11 +150,11 @@ class ProvenanceTracker:
         sorted_config = json.dumps(config, sort_keys=True, default=str)
         return hashlib.sha256(sorted_config.encode('utf-8')).hexdigest()
     
-    def track_input(self, name: str, path: Union[str, Path]):
+    def track_input(self, name: str, path: str | Path):
         """Track input file path."""
         self.input_paths[name] = str(Path(path).resolve())
     
-    def track_output(self, name: str, path: Union[str, Path]):
+    def track_output(self, name: str, path: str | Path):
         """Track output file path."""
         self.output_paths[name] = str(Path(path).resolve())
     
@@ -223,13 +222,13 @@ class ProvenanceTracker:
 def create_provenance_record(
     pipeline_input: Any,
     execution_mode: str,
-    steps_executed: List[str],
+    steps_executed: list[str],
     execution_time: float,
-    input_paths: Optional[Dict[str, str]] = None,
-    output_paths: Optional[Dict[str, str]] = None,
-    configuration: Optional[Dict[str, Any]] = None,
-    metadata: Optional[Dict[str, Any]] = None,
-    session_id: Optional[str] = None,
+    input_paths: dict[str, str] | None = None,
+    output_paths: dict[str, str] | None = None,
+    configuration: dict[str, Any] | None = None,
+    metadata: dict[str, Any] | None = None,
+    session_id: str | None = None,
     pipeline_version: str = "1.0.0"
 ) -> ProvenanceRecord:
     """

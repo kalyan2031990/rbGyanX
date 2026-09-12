@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 rbGyanX v1.0 - Smart Clinical Data Handler
 ===========================================
@@ -16,13 +15,12 @@ Author: rbGyanX Team
 License: MIT
 """
 
-import pandas as pd
-import numpy as np
-from pathlib import Path
-import re
 import logging
 import sys
-from typing import Optional, List, Dict
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
 
 # Configure logging to handle Unicode properly
 logging.basicConfig(
@@ -35,9 +33,8 @@ logging.basicConfig(
 
 # Set stdout encoding to UTF-8 if possible
 try:
-    if sys.stdout.encoding != 'utf-8':
-        if hasattr(sys.stdout, 'reconfigure'):
-            sys.stdout.reconfigure(encoding='utf-8')
+    if sys.stdout.encoding != 'utf-8' and hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
 except (AttributeError, ValueError):
     # Fallback: use ASCII-safe logging
     pass
@@ -128,7 +125,7 @@ class ClinicalDataHandler:
                     choice = input("Select Patient ID column number: ")
                     self.patient_id_col = self.df.columns[int(choice)-1]
                 except (ValueError, IndexError):
-                    raise ValueError("Invalid column selection")
+                    raise ValueError("Invalid column selection") from None
             else:
                 # Try first column as fallback
                 self.patient_id_col = self.df.columns[0]
@@ -142,7 +139,7 @@ class ClinicalDataHandler:
             if any(kw.upper() in col_upper for kw in toxicity_keywords):
                 # Check if binary (0/1) or numeric
                 unique_vals = self.df[col].dropna().unique()
-                if len(unique_vals) <= 2 and set(unique_vals).issubset({0, 1, 0.0, 1.0, np.nan}):
+                if len(unique_vals) <= 2 and set(unique_vals).issubset({0, 1, np.nan}):
                     self.toxicity_cols.append(col)
                 elif self.df[col].dtype in [np.int64, np.float64] and len(unique_vals) <= 10:
                     # Could be grade-based (0-4), check if mostly 0/1
@@ -161,12 +158,12 @@ class ClinicalDataHandler:
                     choice = input("Select toxicity column number: ")
                     self.toxicity_cols = [self.df.columns[int(choice)-1]]
                 except (ValueError, IndexError):
-                    raise ValueError("Invalid column selection")
+                    raise ValueError("Invalid column selection") from None
             else:
                 # Try to find any binary column
                 for col in self.df.columns:
                     unique_vals = self.df[col].dropna().unique()
-                    if len(unique_vals) == 2 and set(unique_vals).issubset({0, 1, 0.0, 1.0}):
+                    if len(unique_vals) == 2 and set(unique_vals).issubset({0, 1}):
                         self.toxicity_cols.append(col)
                         break
         
@@ -191,7 +188,7 @@ class ClinicalDataHandler:
             'organ_col': self.organ_col
         }
         
-        logging.info(f"\n[OK] Detected columns:")
+        logging.info("\n[OK] Detected columns:")
         logging.info(f"  Patient ID: {self.patient_id_col}")
         logging.info(f"  Toxicity: {', '.join(self.toxicity_cols) if self.toxicity_cols else 'None detected'}")
         logging.info(f"  Organ: {self.organ_col if self.organ_col else 'None (single organ)'}")
@@ -218,7 +215,7 @@ class ClinicalDataHandler:
         # Remove leading/trailing whitespace
         self.df[self.patient_id_col] = self.df[self.patient_id_col].str.strip()
         
-    def validate_data(self) -> List[str]:
+    def validate_data(self) -> list[str]:
         """
         Validate clinical data quality.
         
@@ -265,7 +262,7 @@ class ClinicalDataHandler:
         
         return issues
     
-    def prepare_for_analysis(self, primary_toxicity: Optional[str] = None, 
+    def prepare_for_analysis(self, primary_toxicity: str | None = None, 
                             interactive: bool = False) -> pd.DataFrame:
         """
         Prepare clinical data for NTCP/TCP analysis.
@@ -320,7 +317,7 @@ class ClinicalDataHandler:
                     choice = input("Selection: ")
                     target_col = self.toxicity_cols[int(choice)-1]
                 except (ValueError, IndexError):
-                    raise ValueError("Invalid selection")
+                    raise ValueError("Invalid selection") from None
             else:
                 # Use first toxicity column
                 target_col = self.toxicity_cols[0]
@@ -338,7 +335,7 @@ class ClinicalDataHandler:
         
         return analysis_df
     
-    def get_summary(self) -> Dict:
+    def get_summary(self) -> dict:
         """
         Get summary statistics of clinical data.
         

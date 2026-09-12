@@ -1,7 +1,9 @@
 import os
-from pathlib import Path
-import pydicom
 from collections import Counter
+from pathlib import Path
+
+import pydicom
+
 
 def _default_workspace() -> Path:
     """First rbGyanX_Manuscript_Workspace found walking up from this file."""

@@ -23,7 +23,6 @@ from rbgyanx_advanced.dose3d.dose_grid_extractor import (
 from rbgyanx_advanced.dose3d.dosiomics import extract_dosiomics_features
 from rbgyanx_advanced.integration import attach_dosiomics_to_ntcp_results
 
-
 # ------------------------------------------------------------------ 1. no real dose -> no features
 
 def test_missing_real_dose_returns_not_available_not_synthetic():

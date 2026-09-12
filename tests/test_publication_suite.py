@@ -75,6 +75,7 @@ def make_dicompyler_dvh_result(dvh_df: pd.DataFrame, name: str = "Parotid_L",
                                 category: str = "OAR"):
     """Build a DVHResult with dicompyler-core DVH so NTCPCalculator.compute_all works."""
     from dicompylercore.dvh import DVH
+
     from dicom_io.dvh_extractor import DVHResult
 
     doses = dvh_df["dose_gy"].values
@@ -120,9 +121,13 @@ def make_dicompyler_dvh_result(dvh_df: pd.DataFrame, name: str = "Parotid_L",
 class TestLQModel:
 
     def setup_method(self):
-        from radiobiology.lq_model import (bed, eqd2, eqd2_usc,
-                                            survival_fraction_lq,
-                                            treatment_time_days)
+        from radiobiology.lq_model import (
+            bed,
+            eqd2,
+            eqd2_usc,
+            survival_fraction_lq,
+            treatment_time_days,
+        )
         self.bed   = bed
         self.eqd2  = eqd2
         self.eusc  = eqd2_usc
@@ -185,8 +190,8 @@ class TestLQModel:
 class TestPoissonTCP:
 
     def setup_method(self):
-        from radiobiology.poisson_tcp import PoissonTCPCalculator
         from config.site_params import load_site_params
+        from radiobiology.poisson_tcp import PoissonTCPCalculator
         self.calc = PoissonTCPCalculator()
         self.hn   = load_site_params("HN")
         self.pro  = load_site_params("PROSTATE")
@@ -237,8 +242,8 @@ class TestPoissonTCP:
 class TestZaiderMinerboTCP:
 
     def setup_method(self):
-        from radiobiology.zaider_minerbo import ZMTCPCalculator
         from config.site_params import load_site_params
+        from radiobiology.zaider_minerbo import ZMTCPCalculator
         self.calc = ZMTCPCalculator(dead_fraction=0.85, t_obs_days=730.0)
         self.hn   = load_site_params("HN")
 
@@ -283,8 +288,8 @@ class TestGEUDTCP:
 class TestTCPEnsemble:
 
     def setup_method(self):
-        from radiobiology.tcp_calculator import TCPCalculator
         from config.site_params import load_site_params
+        from radiobiology.tcp_calculator import TCPCalculator
         self.calc = TCPCalculator()
         self.hn   = load_site_params("HN")
         self.plan = {"prescription_dose_gy": 70.0,
@@ -328,8 +333,8 @@ class TestLKBFormulas:
 
     def setup_method(self):
         from radiobiology.ntcp.lkb_loglogit import calculate_ntcp_lkb_loglogit
-        from radiobiology.ntcp.lkb_probit   import calculate_ntcp_lkb_probit
-        from radiobiology.ntcp.rs_poisson    import calculate_ntcp_rs_poisson
+        from radiobiology.ntcp.lkb_probit import calculate_ntcp_lkb_probit
+        from radiobiology.ntcp.rs_poisson import calculate_ntcp_rs_poisson
         self.loglogit = calculate_ntcp_lkb_loglogit
         self.probit   = calculate_ntcp_lkb_probit
         self.rs       = calculate_ntcp_rs_poisson
@@ -387,8 +392,8 @@ class TestNTCPCalculatorFull:
     """NTCPCalculator with proper dicompyler DVHResult fixtures."""
 
     def setup_method(self):
-        from radiobiology.ntcp_calculator import NTCPCalculator
         from config.site_ntcp_params import load_site_ntcp_params
+        from radiobiology.ntcp_calculator import NTCPCalculator
         self.calc   = NTCPCalculator()
         self.hn     = load_site_ntcp_params("HN")
 
@@ -441,7 +446,7 @@ class TestNTCPCalculatorFull:
 class TestUTCP:
 
     def setup_method(self):
-        from radiobiology.utcp import compute_utcp, attach_utcp_to_tcp_results
+        from radiobiology.utcp import attach_utcp_to_tcp_results, compute_utcp
         self.compute = compute_utcp
         self.attach  = attach_utcp_to_tcp_results
         self.tcp = {
@@ -465,7 +470,7 @@ class TestUTCP:
 
     def test_utcp_leq_tcp(self):
         r = self.compute(self.tcp, self.ntcp, "HN")
-        assert r.UTCP <= r.TCP_used + 1e-6
+        assert r.TCP_used + 1e-6 >= r.UTCP
 
     def test_utcp_zero_ntcps_equals_tcp(self):
         ntcp_zero = [{"AnonPatientID": "HN001", "structure": s,
@@ -624,8 +629,12 @@ class TestValidationMetrics:
 
     def setup_method(self):
         from validation.validation_metrics import (
-            validate_ntcp_model, compute_auc, compute_brier,
-            hosmer_lemeshow, expected_calibration_error, bootstrap_ci,
+            bootstrap_ci,
+            compute_auc,
+            compute_brier,
+            expected_calibration_error,
+            hosmer_lemeshow,
+            validate_ntcp_model,
         )
         self.validate  = validate_ntcp_model
         self.auc       = compute_auc
@@ -712,8 +721,12 @@ class TestNTCPCalibration:
 
     def setup_method(self):
         from validation.ntcp_calibration import (
-            fit_lkb_parameters, _lkb_probit_ntcp, _compute_geud,
-            FittedNTCPParams, fitted_params_to_yaml, _neg_log_likelihood_lkb,
+            FittedNTCPParams,
+            _compute_geud,
+            _lkb_probit_ntcp,
+            _neg_log_likelihood_lkb,
+            fit_lkb_parameters,
+            fitted_params_to_yaml,
         )
         self.fit    = fit_lkb_parameters
         self.ntcp   = _lkb_probit_ntcp
@@ -900,7 +913,7 @@ class TestClinicalCovariates:
 class TestModelRegistry:
 
     def test_register_in_registry(self):
-        from radiobiology.model_registry import register_tcp_model, _TCP_MODEL_REGISTRY
+        from radiobiology.model_registry import _TCP_MODEL_REGISTRY, register_tcp_model
 
         class M:
             def compute_tcp_dvh(self, *a, **k):
@@ -910,9 +923,9 @@ class TestModelRegistry:
         assert "REG_TEST" in _TCP_MODEL_REGISTRY
 
     def test_registered_model_in_ensemble(self):
+        from config.site_params import load_site_params
         from radiobiology.model_registry import register_tcp_model
         from radiobiology.tcp_calculator import TCPCalculator
-        from config.site_params import load_site_params
 
         class Fixed:
             def compute_tcp_dvh(self, *a, **k):
@@ -928,9 +941,9 @@ class TestModelRegistry:
 
     def test_minimal_protocol_compliant_model(self):
         """Any object with compute_tcp_dvh returning {'tcp': float} is valid."""
+        from config.site_params import load_site_params
         from radiobiology.model_registry import register_tcp_model
         from radiobiology.tcp_calculator import TCPCalculator
-        from config.site_params import load_site_params
 
         class Minimal:
             def compute_tcp_dvh(self, dvh_df, n_fx, sp, target_type="GTV"):
@@ -945,7 +958,7 @@ class TestModelRegistry:
         )
         assert "TCP_MINIMAL_PUB2" in r, f"keys: {list(r.keys())}"
         tcp_val = r.get("TCP_MINIMAL_PUB2", math.nan)
-        assert not math.isnan(tcp_val), f"TCP_MINIMAL_PUB2 is NaN"
+        assert not math.isnan(tcp_val), "TCP_MINIMAL_PUB2 is NaN"
         assert 0.0 <= tcp_val <= 1.0
 
 
@@ -992,8 +1005,8 @@ class TestPelvisLiverSites:
 class TestEdgeCases:
 
     def test_single_bin_dvh_no_crash(self):
-        from radiobiology.tcp_calculator import TCPCalculator
         from config.site_params import load_site_params
+        from radiobiology.tcp_calculator import TCPCalculator
         r = TCPCalculator().compute_all(
             pd.DataFrame({"dose_gy": [70.0], "volume_frac": [1.0]}),
             {"prescription_dose_gy": 70.0, "n_fractions": 35, "dose_per_fraction_gy": 2.0},
@@ -1002,8 +1015,8 @@ class TestEdgeCases:
         assert isinstance(r, dict) and "TCP_mean" in r
 
     def test_very_high_dose_tcp_high(self):
-        from radiobiology.poisson_tcp import PoissonTCPCalculator
         from config.site_params import load_site_params
+        from radiobiology.poisson_tcp import PoissonTCPCalculator
         r = PoissonTCPCalculator().compute_tcp_dvh(
             make_uniform_dvh(200.0, n_bins=10), 100, load_site_params("HN"))
         if not math.isnan(r["tcp"]):
@@ -1040,8 +1053,8 @@ class TestEdgeCases:
 class TestReproducibility:
 
     def test_tcp_poisson_deterministic(self):
-        from radiobiology.poisson_tcp import PoissonTCPCalculator
         from config.site_params import load_site_params
+        from radiobiology.poisson_tcp import PoissonTCPCalculator
         calc = PoissonTCPCalculator()
         dvh  = make_hn_ptv_dvh()
         p    = load_site_params("HN")
@@ -1084,8 +1097,8 @@ class TestReproducibility:
 class TestEngineIntegration:
 
     def test_tcp_run_synthetic(self, tmp_path):
+        from rbgyanx_engine.engine import run_analysis
         from rbgyanx_engine.run_config import RunConfig
-        from rbgyanx_engine.engine   import run_analysis
         (tmp_path / "hn_ptv.txt").write_text(
             "Dose(Gy)\tVolume(frac)\n"
             + "\n".join(f"{d:.1f}\t{max(0,1-d/75):.4f}" for d in range(0, 76, 2))
@@ -1099,8 +1112,8 @@ class TestEngineIntegration:
         assert len(result.tcp_results) >= 1
 
     def test_provenance_json_created(self, tmp_path):
+        from rbgyanx_engine.engine import run_analysis
         from rbgyanx_engine.run_config import RunConfig
-        from rbgyanx_engine.engine   import run_analysis
         (tmp_path / "ptv.txt").write_text(
             "Dose(Gy)\tVolume(frac)\n"
             + "\n".join(f"{d:.1f}\t{max(0,1-d/75):.4f}" for d in range(0, 76, 2))
@@ -1114,8 +1127,9 @@ class TestEngineIntegration:
 
     def test_provenance_fields(self, tmp_path):
         import json
+
+        from rbgyanx_engine.engine import run_analysis
         from rbgyanx_engine.run_config import RunConfig
-        from rbgyanx_engine.engine   import run_analysis
         (tmp_path / "ptv2.txt").write_text(
             "Dose(Gy)\tVolume(frac)\n"
             + "\n".join(f"{d:.1f}\t{max(0,1-d/75):.4f}" for d in range(0, 76, 2))
@@ -1129,8 +1143,8 @@ class TestEngineIntegration:
             assert field in prov
 
     def test_required_tcp_columns(self, tmp_path):
+        from rbgyanx_engine.engine import run_analysis
         from rbgyanx_engine.run_config import RunConfig
-        from rbgyanx_engine.engine   import run_analysis
         (tmp_path / "col.txt").write_text(
             "Dose(Gy)\tVolume(frac)\n"
             + "\n".join(f"{d:.1f}\t{max(0,1-d/75):.4f}" for d in range(0, 76, 2))

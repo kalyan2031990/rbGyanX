@@ -16,13 +16,9 @@ NOTE: Phase 1B.2 Refactoring - Core computation moved to rbgyanx.core.tcp
 This module maintains backward compatibility by delegating to core functions.
 """
 
-import numpy as np
-import pandas as pd
-from scipy.stats import norm
-from scipy.special import gamma
-from typing import Dict, Optional, Union
-from pathlib import Path
 import warnings
+from pathlib import Path
+
 warnings.filterwarnings('ignore')
 
 # Try to import yaml for config loading
@@ -35,11 +31,11 @@ except ImportError:
 
 # Backward compatibility: Import from new location
 # Phase 1B.2 refactoring: Core computation moved to rbgyanx.core.tcp
-from rbgyanx.core.tcp.poisson import calculate_tcp_poisson
+from rbgyanx.core.tcp._eqd2 import convert_to_eqd2
+from rbgyanx.core.tcp.eud import calculate_tcp_eud
 from rbgyanx.core.tcp.lkb import calculate_tcp_lkb
 from rbgyanx.core.tcp.logistic import calculate_tcp_logistic
-from rbgyanx.core.tcp.eud import calculate_tcp_eud
-from rbgyanx.core.tcp._eqd2 import convert_to_eqd2
+from rbgyanx.core.tcp.poisson import calculate_tcp_poisson
 
 
 class TCPCalculator:
@@ -104,7 +100,7 @@ class TCPCalculator:
         config_path = Path(config_file)
         if YAML_AVAILABLE and config_path.exists():
             try:
-                with open(config_path, 'r') as f:
+                with open(config_path) as f:
                     yaml_params = yaml.safe_load(f)
                     if yaml_params:
                         # Remove 'reference' keys if present (they're just documentation)

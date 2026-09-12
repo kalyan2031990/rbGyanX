@@ -286,7 +286,8 @@ def harvest_source_identifiers(root: Path, patterns: tuple[str, ...] = ("*.txt",
         for f in root.rglob(pat):
             try:
                 head = f.read_text(encoding="utf-8", errors="ignore")[:1200]
-            except Exception:
+            # Accepted: an unreadable header line is skipped, not fatal to the scan.
+            except Exception:  # nosec B112
                 continue
             for _field, value in _ID_HEADER_RE.findall(head):
                 v = value.strip()
@@ -312,7 +313,8 @@ def verify_outputs_phi_free(out_dir: Path, identifiers: set[str]) -> dict:
         scanned += 1
         try:
             text = f.read_text(encoding="utf-8", errors="ignore").lower()
-        except Exception:
+        # Accepted: an unmatched identifier is skipped, not fatal to the scan.
+        except Exception:  # nosec B112
             continue
         for ident in lowered:
             if ident in text:

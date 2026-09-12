@@ -6,9 +6,9 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
-import matplotlib.pyplot as plt
 from pathlib import Path
-from typing import Optional, Dict
+
+import matplotlib.pyplot as plt
 
 # Publication-quality plot settings
 PUBLICATION_CONFIG = {

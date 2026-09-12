@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -18,14 +18,14 @@ LogFn = Callable[[str], None]
 DVH_SUFFIXES = {".txt", ".csv", ".dcm"}
 
 
-def discover_dvh_files(input_path: Path, *, recursive: bool = True) -> List[Path]:
+def discover_dvh_files(input_path: Path, *, recursive: bool = True) -> list[Path]:
     """Find DVH candidate files under a path (flat or recursive)."""
     input_path = Path(input_path)
     if input_path.is_file():
         return [input_path] if input_path.suffix.lower() in DVH_SUFFIXES else []
 
     patterns = ("*.txt", "*.csv", "*.dcm", "*.TXT")
-    files: List[Path] = []
+    files: list[Path] = []
     if recursive:
         for pattern in patterns:
             files.extend(input_path.rglob(pattern))
@@ -35,7 +35,7 @@ def discover_dvh_files(input_path: Path, *, recursive: bool = True) -> List[Path
 
     # De-duplicate; prefer shallower paths when same name
     seen: set[str] = set()
-    unique: List[Path] = []
+    unique: list[Path] = []
     for p in sorted(files, key=lambda x: (len(x.parts), str(x).lower())):
         key = str(p.resolve()).lower()
         if key not in seen:
@@ -120,8 +120,8 @@ def sync_source_pref_from_path(path: Path, current: str = "auto") -> str:
 def run_dicom_step1_placeholder(
     input_path: Path,
     output_dir: Path,
-    log: Optional[LogFn] = None,
-) -> Dict:
+    log: LogFn | None = None,
+) -> dict:
     """
     Step 1 for DICOM: no TPS DVH conversion; engine runs at Step 3.
 
@@ -132,7 +132,7 @@ def run_dicom_step1_placeholder(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    dcm_files: List[str] = []
+    dcm_files: list[str] = []
     if input_path.is_dir():
         for p in discover_dvh_files(input_path, recursive=True):
             if p.suffix.lower() == ".dcm":
@@ -174,8 +174,8 @@ def run_step1_ingest(
     output_dir: Path,
     *,
     source_pref: str = "auto",
-    log: Optional[LogFn] = None,
-) -> Dict:
+    log: LogFn | None = None,
+) -> dict:
     """Route Step 1 to DICOM placeholder or TPS intelligent preprocessing."""
     input_path = Path(input_path)
     output_dir = Path(output_dir)
@@ -203,10 +203,10 @@ def validate_input_for_mode(
     *,
     basic_mode: bool,
     source_pref: str = "auto",
-) -> Tuple[bool, List[str]]:
+) -> tuple[bool, list[str]]:
     """Validation messages for GUI (empty list = OK)."""
     path = Path(path)
-    errors: List[str] = []
+    errors: list[str] = []
     if not path.exists():
         errors.append(f"Input path does not exist: {path}")
         return False, errors

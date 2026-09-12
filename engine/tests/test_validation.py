@@ -3,7 +3,6 @@ import pathlib
 import tempfile
 
 import numpy as np
-import pytest
 
 
 def perfect_predictions(n: int = 100, seed: int = 0):
@@ -161,8 +160,9 @@ def test_covariate_shift_not_detected_when_same():
 
 
 def test_validate_on_external_returns_auc():
-    from validation.external_val import validate_on_external
     from sklearn.dummy import DummyClassifier
+
+    from validation.external_val import validate_on_external
 
     rng = np.random.default_rng(0)
     X = rng.normal(size=(60, 3))
@@ -175,8 +175,9 @@ def test_validate_on_external_returns_auc():
 
 
 def test_validate_on_external_with_covariate_shift():
-    from validation.external_val import validate_on_external
     from sklearn.dummy import DummyClassifier
+
+    from validation.external_val import validate_on_external
 
     rng = np.random.default_rng(1)
     X_tr = rng.normal(0, 1, size=(60, 2))

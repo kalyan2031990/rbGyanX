@@ -154,9 +154,8 @@ def test_save_and_load_model():
 def test_load_model_missing_file_raises():
     from ml_models.model_manager import load_model
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        with pytest.raises(FileNotFoundError):
-            load_model(tmpdir, "nonexistent_model")
+    with tempfile.TemporaryDirectory() as tmpdir, pytest.raises(FileNotFoundError):
+        load_model(tmpdir, "nonexistent_model")
 
 
 @xgb_skip

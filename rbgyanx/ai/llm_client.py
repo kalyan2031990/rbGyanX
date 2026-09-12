@@ -228,7 +228,7 @@ class LLMClient:
                 payload=json.dumps(request.wire_messages(), sort_keys=True),
                 findings_redacted=len(findings),
             )
-        except Exception:  # pragma: no cover - never break a send over bookkeeping
+        except Exception:  # pragma: no cover - never break a send over bookkeeping  # nosec B110
             pass
 
     def _audit_refusal(self, findings: list[PhiFinding], capability: str) -> None:
@@ -248,7 +248,7 @@ class LLMClient:
                 capability=capability,
                 findings_redacted=len(findings),
             )
-        except Exception:  # pragma: no cover - never turn a block into a different error
+        except Exception:  # pragma: no cover - never turn a block into a different error  # nosec B110
             pass
 
     def complete(

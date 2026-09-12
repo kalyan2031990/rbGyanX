@@ -23,8 +23,6 @@ License: MIT
 
 import numpy as np
 import pandas as pd
-from scipy import stats
-from sklearn.preprocessing import StandardScaler
 
 
 class CohortConsistencyScore:
@@ -261,11 +259,11 @@ class CohortConsistencyScore:
         lines.append("=" * 70)
         lines.append(f"\nCCS Score: {report['ccs_score']:.3f}")
         lines.append(f"Recommendation: {report['recommendation']}")
-        lines.append(f"\nCohort Statistics:")
+        lines.append("\nCohort Statistics:")
         lines.append(f"  - Samples: {report['n_samples']}")
         lines.append(f"  - Features: {report['n_features']}")
         
-        lines.append(f"\nDetailed Metrics:")
+        lines.append("\nDetailed Metrics:")
         for metric_name, metric_data in report['metrics'].items():
             lines.append(f"\n  {metric_name.replace('_', ' ').title()}:")
             for key, value in metric_data.items():

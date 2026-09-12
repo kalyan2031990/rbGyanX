@@ -7,16 +7,18 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
-import pandas as pd
-import numpy as np
-from pathlib import Path
-from datetime import datetime
 import warnings
+from datetime import datetime
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
 warnings.filterwarnings('ignore')
 
 # Try to import openpyxl for Excel formatting
 try:
-    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
     from openpyxl.utils import get_column_letter
     OPENPYXL_AVAILABLE = True
 except ImportError:
@@ -254,7 +256,7 @@ class ClinicalTemplateGenerator:
         print(f"[OK] Template created successfully: {output_path}")
         print(f"     - {len(df)} sample patients")
         print(f"     - {len(df.columns)} columns")
-        print(f"     - 3 sheets (Data, Descriptions, Instructions)")
+        print("     - 3 sheets (Data, Descriptions, Instructions)")
         
         return output_path
     
@@ -514,7 +516,6 @@ class ClinicalTemplateGenerator:
         if not OPENPYXL_AVAILABLE:
             return
         
-        workbook = writer.book
         
         # Format ClinicalData sheet
         data_sheet = writer.sheets['ClinicalData']

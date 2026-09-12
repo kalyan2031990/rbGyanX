@@ -1,12 +1,12 @@
 """
 Statistical analysis utilities
 """
-from scipy import stats
+
 import numpy as np
-from typing import Tuple, List
+from scipy import stats
 
 
-def calculate_confidence_interval(data: np.ndarray, confidence: float = 0.95) -> Tuple[float, float, float]:
+def calculate_confidence_interval(data: np.ndarray, confidence: float = 0.95) -> tuple[float, float, float]:
     """
     Calculate confidence interval for data
     
@@ -35,7 +35,7 @@ def calculate_confidence_interval(data: np.ndarray, confidence: float = 0.95) ->
 
 def bootstrap_ci(data: np.ndarray, 
                  n_bootstrap: int = 1000, 
-                 confidence: float = 0.95) -> Tuple[float, float, float]:
+                 confidence: float = 0.95) -> tuple[float, float, float]:
     """
     Bootstrap confidence interval
     
@@ -67,7 +67,7 @@ def bootstrap_ci(data: np.ndarray,
     return float(np.mean(data)), float(lower), float(upper)
 
 
-def calculate_correlation(x: np.ndarray, y: np.ndarray) -> Tuple[float, float]:
+def calculate_correlation(x: np.ndarray, y: np.ndarray) -> tuple[float, float]:
     """
     Calculate Pearson correlation coefficient and p-value
     
@@ -90,7 +90,7 @@ def calculate_correlation(x: np.ndarray, y: np.ndarray) -> Tuple[float, float]:
     return float(corr), float(p_value)
 
 
-def calculate_mann_whitney_u(x: np.ndarray, y: np.ndarray) -> Tuple[float, float]:
+def calculate_mann_whitney_u(x: np.ndarray, y: np.ndarray) -> tuple[float, float]:
     """
     Calculate Mann-Whitney U test statistic and p-value
     

@@ -1,10 +1,9 @@
 """
 Plotting utilities for rbGyanX
 """
-import matplotlib.pyplot as plt
-import numpy as np
 from pathlib import Path
-from typing import Optional, Dict, List
+
+import matplotlib.pyplot as plt
 
 # This module provides plotting utilities
 # Most plotting is done in plot-specific classes in:
@@ -16,8 +15,8 @@ from typing import Optional, Dict, List
 __all__ = ['apply_rbgyanx_style', 'save_publication_plot']
 
 
-def apply_rbgyanx_style(fig: Optional[plt.Figure] = None, 
-                      ax: Optional[plt.Axes] = None) -> None:
+def apply_rbgyanx_style(fig: plt.Figure | None = None, 
+                      ax: plt.Axes | None = None) -> None:
     """
     Apply rbGyanX publication-quality style to plot
     

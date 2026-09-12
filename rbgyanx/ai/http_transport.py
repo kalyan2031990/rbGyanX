@@ -14,11 +14,34 @@ from __future__ import annotations
 
 import json
 import urllib.error
+import urllib.parse
 import urllib.request
 
 from rbgyanx.ai.llm_client import LLMError, LLMRequest
 
 __all__ = ["HttpTransport"]
+
+#: The only URL schemes this transport will open. ``base_url`` is user-configurable, and
+#: ``urllib.request.urlopen`` also honours ``file:``, ``ftp:`` and ``data:``. A preset pointed at
+#: ``file:///etc/passwd`` would otherwise turn the AI panel into a local-file reader, so the
+#: scheme is checked before any request is built rather than trusted.
+_ALLOWED_URL_SCHEMES = frozenset({"http", "https"})
+
+
+def _require_http_url(url: str) -> None:
+    """Reject anything that is not plain HTTP(S) before it reaches urlopen."""
+    try:
+        parsed = urllib.parse.urlsplit(url)
+    except ValueError as exc:
+        raise LLMError(f"AI endpoint URL could not be parsed: {url!r}") from exc
+    if parsed.scheme.lower() not in _ALLOWED_URL_SCHEMES:
+        raise LLMError(
+            f"AI endpoint URL scheme {parsed.scheme!r} is not allowed; "
+            f"only {', '.join(sorted(_ALLOWED_URL_SCHEMES))} are permitted. "
+            f"Check the base URL configured for this provider."
+        )
+    if not parsed.netloc:
+        raise LLMError(f"AI endpoint URL has no host: {url!r}")
 
 
 class HttpTransport:
@@ -45,6 +68,7 @@ class HttpTransport:
         A client that returns only the text degrades multi-turn silently.
         """
         url = base_url.rstrip("/") + "/chat/completions"
+        _require_http_url(url)
         payload: dict = {
             "model": request.model,
             # Assistant turns are replayed verbatim; see LLMMessage.to_wire.
@@ -62,7 +86,9 @@ class HttpTransport:
 
         req = urllib.request.Request(url, data=body, headers=headers, method="POST")
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            # The scheme is restricted to http/https by _require_http_url above, which is
+            # exactly what B310 asks for, so urlopen cannot be reached with file:/ftp:/data:.
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:  # nosec B310
                 payload = json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:  # 4xx/5xx from the provider
             detail = _safe_error_body(exc)

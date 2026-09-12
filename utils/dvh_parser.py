@@ -29,18 +29,20 @@ This module maintains backward compatibility by delegating to core functions.
     the GUI reads through the engine and rbGyanX has exactly one DVH reader.
 """
 
-import pandas as pd
-import numpy as np
-from pathlib import Path
 import re
 from collections import Counter
 from datetime import datetime
-from typing import Tuple, Dict, Optional
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
 
 # Backward compatibility: Import from new location
 # Phase 1B.4 refactoring: Core computation moved to rbgyanx.core.dvh
 from rbgyanx.core.dvh.conversions import (
     convert_to_cumulative as _convert_to_cumulative,
+)
+from rbgyanx.core.dvh.conversions import (
     convert_to_differential as _convert_to_differential,
 )
 from rbgyanx.utils.numeric_compat import trapz as _trapz
@@ -179,7 +181,7 @@ class UniversalDVHParser:
         },
     }
     
-    def normalize_structure_name(self, structure_name: str, for_file_naming: bool = False) -> Optional[str]:
+    def normalize_structure_name(self, structure_name: str, for_file_naming: bool = False) -> str | None:
         """
         Intelligently normalize structure names to standard format.
         
@@ -216,7 +218,7 @@ class UniversalDVHParser:
         structure_lower = structure_name.lower().strip()
         
         # Check each normalization rule
-        for organ_key, rules in self.STRUCTURE_NORMALIZATION.items():
+        for _organ_key, rules in self.STRUCTURE_NORMALIZATION.items():
             # Check exclusion patterns first
             if 'exclude_patterns' in rules:
                 for exclude_pattern in rules['exclude_patterns']:
@@ -278,7 +280,7 @@ class UniversalDVHParser:
         elif ext in ['.txt', '.text']:
             # Check if Eclipse format
             try:
-                with open(self.file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                with open(self.file_path, encoding='utf-8', errors='ignore') as f:
                     first_lines = [f.readline() for _ in range(5)]
                 
                 if any('Patient Name' in line or 'Patient ID' in line for line in first_lines):
@@ -301,7 +303,7 @@ class UniversalDVHParser:
         else:
             return 'Unknown'
     
-    def parse_eclipse_txt(self) -> Tuple[Dict, pd.DataFrame]:
+    def parse_eclipse_txt(self) -> tuple[dict, pd.DataFrame]:
         """
         Parse Varian Eclipse TXT export.
         
@@ -321,7 +323,7 @@ class UniversalDVHParser:
         metadata = {}
         dvh_data = None
         
-        with open(self.file_path, 'r', encoding='utf-8', errors='ignore') as f:
+        with open(self.file_path, encoding='utf-8', errors='ignore') as f:
             lines = f.readlines()
         
         # Extract metadata
@@ -428,7 +430,7 @@ class UniversalDVHParser:
         
         return metadata, dvh_data
     
-    def parse_simple_csv(self) -> Tuple[Dict, pd.DataFrame]:
+    def parse_simple_csv(self) -> tuple[dict, pd.DataFrame]:
         """
         Parse simple CSV format with Dose and Volume columns.
         
@@ -446,7 +448,7 @@ class UniversalDVHParser:
         try:
             df = pd.read_csv(self.file_path)
         except Exception as e:
-            raise ValueError(f"Could not read CSV file: {str(e)}")
+            raise ValueError(f"Could not read CSV file: {str(e)}") from e
         
         # Standardize column names (case-insensitive)
         col_map = {}
@@ -491,7 +493,7 @@ class UniversalDVHParser:
         
         return metadata, df[['Dose[Gy]', 'Volume[cm3]']]
     
-    def parse_dicom_rt(self) -> Tuple[Dict, pd.DataFrame]:
+    def parse_dicom_rt(self) -> tuple[dict, pd.DataFrame]:
         """
         Parse DICOM RT files and calculate DVH.
         
@@ -520,7 +522,7 @@ class UniversalDVHParser:
             raise ImportError(
                 "DICOM support requires: pip install pydicom rt-utils\n"
                 "DICOM DVH extraction will be available in rbGyanX v1.1"
-            )
+            ) from None
         
         # Implementation for DICOM DVH extraction
         # (Complex - requires dose grid + structure contours)
@@ -556,7 +558,7 @@ class UniversalDVHParser:
         else:
             return 'differential'
     
-    def parse(self) -> Tuple[Dict, pd.DataFrame]:
+    def parse(self) -> tuple[dict, pd.DataFrame]:
         """
         Universal parse method that auto-detects format and parses accordingly.
         
@@ -593,7 +595,7 @@ class UniversalDVHParser:
                 raise ValueError(
                     f"Could not parse generic TXT file: {self.file_path.name}\n"
                     "Please ensure it follows Eclipse TXT format or convert to CSV."
-                )
+                ) from None
         elif self.format == 'Generic_CSV':
             # Try simple CSV parser as fallback
             try:
@@ -602,7 +604,7 @@ class UniversalDVHParser:
                 raise ValueError(
                     f"Could not parse CSV file: {self.file_path.name}\n"
                     "Please ensure it has 'Dose' and 'Volume' columns."
-                )
+                ) from None
         else:
             raise ValueError(
                 f"Unsupported file format: {self.format}\n"
@@ -663,8 +665,8 @@ class UniversalDVHParser:
 def preprocess_dvh_intelligent(
     input_path: Path,
     output_dir: Path,
-    file_list: Optional[list] = None,
-) -> Dict:
+    file_list: list | None = None,
+) -> dict:
     """
     Intelligent DVH preprocessing with format auto-detection.
     
@@ -735,7 +737,7 @@ def preprocess_dvh_intelligent(
     summary['total_files'] = len(files)
     
     print(f"\n{'='*70}")
-    print(f"rbGyanX v1.0 - Intelligent DVH Preprocessing")
+    print("rbGyanX v1.0 - Intelligent DVH Preprocessing")
     print(f"{'='*70}")
     print(f"Input: {input_path}")
     print(f"Output: {output_dir}")
@@ -778,10 +780,10 @@ def preprocess_dvh_intelligent(
                     existing_data, existing_meta, existing_file = patient_organs[patient_id]['Parotid']
                     # Keep the one with more data points (better quality)
                     if len(dvh_data) > len(existing_data):
-                        print(f"  [REPLACE] Replacing existing Parotid with better quality data")
+                        print("  [REPLACE] Replacing existing Parotid with better quality data")
                         patient_organs[patient_id]['Parotid'] = (dvh_data, metadata, file_path)
                     else:
-                        print(f"  [SKIP] Keeping existing Parotid (better quality)")
+                        print("  [SKIP] Keeping existing Parotid (better quality)")
                         summary['duplicates_skipped'] += 1
                 else:
                     patient_organs[patient_id]['Parotid'] = (dvh_data, metadata, file_path)
@@ -824,7 +826,7 @@ def preprocess_dvh_intelligent(
     
     # Now process all deduplicated patient-organ combinations
     print(f"\n{'='*70}")
-    print(f"Processing deduplicated patient-organ combinations...")
+    print("Processing deduplicated patient-organ combinations...")
     print(f"{'='*70}\n")
     
     for patient_id, organs in patient_organs.items():
@@ -897,13 +899,13 @@ def preprocess_dvh_intelligent(
                 elif first_volume > 0 and (95 <= first_volume <= 105):
                     # Percentage DVH but no metadata - cannot normalize properly, warn
                     print(f"  [!] Warning: DVH appears to be percentage (starts at {first_volume:.1f}%) but no total_volume in metadata")
-                    print(f"  [!] Cannot convert to absolute volume - keeping as percentage (may cause issues)")
+                    print("  [!] Cannot convert to absolute volume - keeping as percentage (may cause issues)")
                 
                 # CRITICAL FIX: Validate DVH integrity before saving
                 # 1. Check cumulative DVH starts at reasonable volume
                 if len(cdvh) > 0:
                     first_vol = cdvh['Volume[cm3]'].iloc[0]
-                    last_vol = cdvh['Volume[cm3]'].iloc[-1]
+                    cdvh['Volume[cm3]'].iloc[-1]
                     
                     # For PTV/tumor structures, check for unrealistic volumes
                     is_tumor = metadata.get('is_tumor', False)
@@ -911,7 +913,7 @@ def preprocess_dvh_intelligent(
                         # PTV volumes should typically be < 1000 cm³ (unrealistic if > 5000 cm³)
                         if first_vol > 5000:
                             print(f"  [!] WARNING: Unrealistic PTV volume ({first_vol:.1f} cm³) - may be incorrectly normalized")
-                            print(f"  [!] Marking DVH as potentially invalid")
+                            print("  [!] Marking DVH as potentially invalid")
                             # Mark for exclusion but don't fail completely
                             summary['warnings'] = summary.get('warnings', [])
                             summary['warnings'].append({
@@ -928,7 +930,7 @@ def preprocess_dvh_intelligent(
                             non_monotonic_count = np.sum(np.diff(volumes) > 1e-6)
                             if non_monotonic_count > len(volumes) * 0.1:  # More than 10% non-monotonic
                                 print(f"  [!] WARNING: DVH is not monotonic decreasing ({non_monotonic_count} violations)")
-                                print(f"  [!] This may indicate data quality issues")
+                                print("  [!] This may indicate data quality issues")
                                 summary['warnings'] = summary.get('warnings', [])
                                 summary['warnings'].append({
                                     'file': output_filename,
@@ -984,7 +986,7 @@ def preprocess_dvh_intelligent(
     
     # Print summary
     print(f"\n{'='*70}")
-    print(f"PREPROCESSING SUMMARY")
+    print("PREPROCESSING SUMMARY")
     print(f"{'='*70}")
     print(f"Total files: {summary['total_files']}")
     print(f"Processed: {summary['processed']} [OK]")
@@ -994,15 +996,15 @@ def preprocess_dvh_intelligent(
         print(f"Excluded (PRV): {summary['excluded']}")
     print(f"Failed: {summary['failed']} [X]")
     print(f"Unique patients: {len(summary['patients'])}")
-    print(f"\nStandardized structures:")
+    print("\nStandardized structures:")
     for struct, count in summary['structures'].most_common():
         print(f"  - {struct}: {count} patients")
-    print(f"\nFormats processed:")
+    print("\nFormats processed:")
     for fmt, count in summary['formats'].items():
         print(f"  - {fmt}: {count} files")
     
     if summary['failed'] > 0:
-        print(f"\n[!] ERRORS ENCOUNTERED:")
+        print("\n[!] ERRORS ENCOUNTERED:")
         for err in summary['errors']:
             print(f"  - {err['file']}: {err['error']}")
     
@@ -1016,14 +1018,14 @@ def preprocess_dvh_intelligent(
     # Save summary report
     summary_file = output_dir / 'preprocessing_summary.txt'
     with open(summary_file, 'w', encoding='utf-8') as f:
-        f.write(f"rbGyanX v1.0 - DVH Preprocessing Summary\n")
+        f.write("rbGyanX v1.0 - DVH Preprocessing Summary\n")
         f.write(f"{'='*70}\n")
         f.write(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write(f"Input: {input_path}\n")
         f.write(f"Output: {output_dir}\n\n")
         f.write(f"Files processed: {summary['processed']}/{summary['total_files']}\n")
         f.write(f"Unique patients: {len(summary['patients'])}\n")
-        f.write(f"\nPatient IDs:\n")
+        f.write("\nPatient IDs:\n")
         for pid in sorted(summary['patients']):
             f.write(f"  - {pid}\n")
     
@@ -1169,7 +1171,7 @@ def preprocess_dvh_intelligent(
                 structure_summary.columns = ['_'.join(col).strip('_') for col in structure_summary.columns]
                 structure_summary.to_excel(writer, sheet_name='Structure_Summary', index=False)
             
-            print(f"\n[OK] Creating Excel summary for Step 2...")
+            print("\n[OK] Creating Excel summary for Step 2...")
             print(f"[OK] Summary file created: {excel_summary_file}")
             print(f"[OK] Summary contains {len(summary_df)} DVH entries")
             print(f"[OK] Structures: {sorted(summary_df['Structure'].unique())}")
@@ -1178,7 +1180,7 @@ def preprocess_dvh_intelligent(
             summary['summary_file'] = str(excel_summary_file)
             summary['summary_entries'] = len(summary_df)
         else:
-            print(f"\n[!] Warning: No data to write to summary file")
+            print("\n[!] Warning: No data to write to summary file")
             
     except ImportError:
         print("\n[!] Warning: pandas or openpyxl not available - summary file not created")

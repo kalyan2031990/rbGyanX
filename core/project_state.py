@@ -10,11 +10,11 @@ Version: 1.1.0
 """
 
 import json
-import threading
-from pathlib import Path
-from datetime import datetime
-from typing import Dict, Optional, Any
 import logging
+import threading
+from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class ProjectStateManager:
     - auto-save every 5 minutes (config only)
     """
     
-    def __init__(self, project_path: Optional[Path] = None):
+    def __init__(self, project_path: Path | None = None):
         """
         Initialize ProjectStateManager.
         
@@ -162,7 +162,7 @@ class ProjectStateManager:
                     logger.error(f"Project file not found: {project_path}")
                     return False
                 
-                with open(project_path, 'r', encoding='utf-8') as f:
+                with open(project_path, encoding='utf-8') as f:
                     loaded_state = json.load(f)
                 
                 # Validate version compatibility
@@ -180,7 +180,7 @@ class ProjectStateManager:
             logger.error(f"Error loading project: {e}")
             return False
     
-    def save_project(self, project_path: Optional[Path] = None) -> bool:
+    def save_project(self, project_path: Path | None = None) -> bool:
         """
         Save project to file.
         
@@ -238,7 +238,7 @@ class ProjectStateManager:
         """
         return self.save_project(project_path)
     
-    def update_configuration(self, config_updates: Dict[str, Any]):
+    def update_configuration(self, config_updates: dict[str, Any]):
         """
         Update project configuration.
         
@@ -265,7 +265,7 @@ class ProjectStateManager:
             self.state['analysis_stage'] = stage
             self.state['last_modified'] = datetime.now().isoformat()
     
-    def update_enabled_features(self, features: Dict[str, bool]):
+    def update_enabled_features(self, features: dict[str, bool]):
         """
         Update enabled features.
         
@@ -278,7 +278,7 @@ class ProjectStateManager:
             self.state['enabled_features'].update(features)
             self.state['last_modified'] = datetime.now().isoformat()
     
-    def get_state(self) -> Dict[str, Any]:
+    def get_state(self) -> dict[str, Any]:
         """
         Get current project state (read-only copy).
         

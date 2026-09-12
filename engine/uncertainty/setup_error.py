@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import math
 from dataclasses import dataclass
@@ -102,26 +103,18 @@ def run_setup_error_mc(
 
     for i, shift in enumerate(shifts_gy):
         dvh_shifted = _shift_dvh(dvh_df, float(shift))
-        try:
+        with contextlib.suppress(Exception):
             tcp_poisson[i] = poisson_calc.compute_tcp_dvh(
                 dvh_shifted, n_fractions, site_params, target_type
             )["tcp"]
-        except Exception:
-            pass
-        try:
+        with contextlib.suppress(Exception):
             tcp_zm[i] = zm_calc.compute_tcp_dvh(
                 dvh_shifted, n_fractions, site_params, target_type
             )["tcp"]
-        except Exception:
-            pass
-        try:
+        with contextlib.suppress(Exception):
             tcp_geud[i] = geud_calc.compute_tcp(dvh_shifted, site_params)["tcp"]
-        except Exception:
-            pass
-        try:
+        with contextlib.suppress(Exception):
             tcp_logistic[i] = logistic_calc.compute_tcp(dvh_shifted, site_params)["tcp"]
-        except Exception:
-            pass
 
     return {
         "TCP_Poisson_setup_mc": _aggregate_mc(tcp_poisson),

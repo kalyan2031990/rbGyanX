@@ -48,7 +48,7 @@ def save_ntcp_excel(
 ) -> pathlib.Path:
     """Save NTCP summary workbook, bDVH subset, and optional QUANTEC flags."""
     ntcp_df = build_ntcp_table(ntcp_results)
-    bdvh_df = ntcp_df[ntcp_df["bDVH_Applied"] == True][
+    bdvh_df = ntcp_df[ntcp_df["bDVH_Applied"]][
         ["AnonPatientID", "Site", "OAR", "DPF_plan_Gy", "NTCP_LKB_loglogit", "uNTCP_loglogit_mean"]
     ].copy()
     if quantec_df is None:

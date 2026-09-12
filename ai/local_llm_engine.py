@@ -16,9 +16,8 @@ Version: 1.1.0
 """
 
 import logging
-from typing import Optional, Dict, List, Any
 from pathlib import Path
-import json
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +57,7 @@ class LocalLLMEngine:
     - No pandas DataFrame access
     """
     
-    def __init__(self, model_path: Optional[Path] = None, backend: str = 'auto'):
+    def __init__(self, model_path: Path | None = None, backend: str = 'auto'):
         """
         Initialize local LLM engine.
         
@@ -209,9 +208,9 @@ class LocalLLMEngine:
     def ask(
         self,
         query: str,
-        context: Optional[str] = None,
+        context: str | None = None,
         max_tokens: int = 500
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Process a query through the local LLM.
         
@@ -337,7 +336,7 @@ Keep responses educational and cite literature when possible."""
         """
         return GPT4ALL_AVAILABLE or LLAMA_CPP_AVAILABLE or MISTRAL_AVAILABLE
     
-    def get_available_backends(self) -> List[str]:
+    def get_available_backends(self) -> list[str]:
         """
         Get list of available backends.
         
@@ -356,7 +355,7 @@ Keep responses educational and cite literature when possible."""
         return backends
 
 
-def create_ai_assistant(model_path: Optional[Path] = None) -> Optional[LocalLLMEngine]:
+def create_ai_assistant(model_path: Path | None = None) -> LocalLLMEngine | None:
     """
     Factory function to create AI assistant.
     

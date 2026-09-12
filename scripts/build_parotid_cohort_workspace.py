@@ -25,6 +25,7 @@ from radiobiology.geud_tcp import compute_geud
 from radiobiology.ntcp.lkb_loglogit import calculate_ntcp_lkb_loglogit
 from radiobiology.ntcp.rs_poisson import calculate_ntcp_rs_poisson
 
+
 def _default_workspace() -> Path:
     """First rbGyanX_Manuscript_Workspace found walking up from this file."""
     for parent in Path(__file__).resolve().parents:

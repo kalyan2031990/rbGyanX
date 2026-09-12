@@ -10,11 +10,10 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
-import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
-from typing import Optional
-from pathlib import Path
 import sys
+import tkinter as tk
+from pathlib import Path
+from tkinter import messagebox, scrolledtext, ttk
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -37,7 +36,7 @@ class ValidationAcknowledgmentDialog:
     User must actively confirm.
     """
     
-    def __init__(self, parent: Optional[tk.Tk] = None, mode: Optional[str] = None):
+    def __init__(self, parent: tk.Tk | None = None, mode: str | None = None):
         """
         Initialize validation acknowledgment dialog.
         
@@ -50,11 +49,11 @@ class ValidationAcknowledgmentDialog:
         """
         self.parent = parent
         self.mode = mode or "BASIC"
-        self.validation_controller: Optional[ValidationController] = None
-        self.dialog: Optional[tk.Toplevel] = None
+        self.validation_controller: ValidationController | None = None
+        self.dialog: tk.Toplevel | None = None
         self.acknowledged = False
     
-    def show(self) -> Optional[ValidationController]:
+    def show(self) -> ValidationController | None:
         """
         Display dialog and return validation controller if acknowledged.
         

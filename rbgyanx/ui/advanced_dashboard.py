@@ -13,11 +13,10 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
-import tkinter as tk
-from tkinter import ttk, scrolledtext, messagebox
-from typing import Optional, Dict, Any, List
-from pathlib import Path
 import sys
+import tkinter as tk
+from pathlib import Path
+from tkinter import messagebox, scrolledtext, ttk
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -42,8 +41,8 @@ class AdvancedDashboard:
     - Ask rbGyanX (ADVANCED personality)
     """
     
-    def __init__(self, parent, mode_controller: Optional[ModeController] = None, 
-                 validation_controller: Optional[ValidationController] = None):
+    def __init__(self, parent, mode_controller: ModeController | None = None, 
+                 validation_controller: ValidationController | None = None):
         """
         Initialize ADVANCED dashboard.
         
@@ -59,8 +58,8 @@ class AdvancedDashboard:
         self.parent = parent
         self.mode_controller = mode_controller
         self.validation_controller = validation_controller
-        self.advanced_notebook: Optional[ttk.Notebook] = None
-        self.tabs: Dict[str, ttk.Frame] = {}
+        self.advanced_notebook: ttk.Notebook | None = None
+        self.tabs: dict[str, ttk.Frame] = {}
         
     def is_visible(self) -> bool:
         """
@@ -79,7 +78,7 @@ class AdvancedDashboard:
             return False
         return self.validation_controller.is_validation_enabled()
     
-    def create_dashboard(self) -> Optional[ttk.Frame]:
+    def create_dashboard(self) -> ttk.Frame | None:
         """
         Create ADVANCED dashboard frame.
         

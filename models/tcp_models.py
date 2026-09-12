@@ -6,20 +6,19 @@ Wraps existing TCP model implementations from utils/.
 No GUI dependencies, pure backend logic.
 """
 
-from utils.tcp_models import TCPCalculator
-from typing import Dict, Optional, Union
+
 import pandas as pd
-import numpy as np
+from utils.tcp_models import TCPCalculator
 
 __all__ = ['TCPCalculator', 'calculate_tcp', 'get_tcp_parameters']
 
 
 def calculate_tcp(
     model_name: str,
-    dvh: Optional[pd.DataFrame] = None,
-    dose_metrics: Optional[Dict] = None,
+    dvh: pd.DataFrame | None = None,
+    dose_metrics: dict | None = None,
     tumor_type: str = 'HNSCC',
-    config_file: Optional[str] = None
+    config_file: str | None = None
 ) -> float:
     """
     Calculate TCP using specified model.
@@ -97,7 +96,7 @@ def calculate_tcp(
     return 0.0
 
 
-def get_tcp_parameters(tumor_type: str = 'HNSCC', config_file: Optional[str] = None) -> Dict:
+def get_tcp_parameters(tumor_type: str = 'HNSCC', config_file: str | None = None) -> dict:
     """
     Get TCP parameters for specified tumor type.
     

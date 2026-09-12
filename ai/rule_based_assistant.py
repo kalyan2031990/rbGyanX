@@ -9,8 +9,7 @@ Version: 1.0.0
 """
 
 import re
-from typing import Dict, List, Optional, Tuple, Any
-from pathlib import Path
+from typing import Any
 
 
 class RuleBasedAssistant:
@@ -36,7 +35,7 @@ class RuleBasedAssistant:
             "All clinical decisions must be made by qualified healthcare professionals."
         )
     
-    def _load_knowledge_base(self) -> Dict[str, Dict]:
+    def _load_knowledge_base(self) -> dict[str, dict]:
         """Load knowledge base of common questions and answers"""
         return {
             # Software Usage
@@ -363,7 +362,7 @@ This assistant is for educational purposes only.""",
             }
         }
     
-    def ask(self, query: str) -> Dict[str, Any]:
+    def ask(self, query: str) -> dict[str, Any]:
         """
         Answer a query using rule-based matching.
         
@@ -408,7 +407,7 @@ This assistant is for educational purposes only.""",
         best_match = None
         best_confidence = 0.0
         
-        for category, kb_entry in self.knowledge_base.items():
+        for _category, kb_entry in self.knowledge_base.items():
             for pattern in kb_entry['patterns']:
                 if re.search(pattern, query_lower):
                     # Found a match, get best response

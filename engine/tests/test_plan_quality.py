@@ -1,6 +1,10 @@
 """Plan-quality packs and physical metric helpers."""
 
-from config.plan_quality import infer_technique_profile, load_plan_quality_config, resolve_pack_site_key
+from config.plan_quality import (
+    infer_technique_profile,
+    load_plan_quality_config,
+    resolve_pack_site_key,
+)
 from dicom_io.dvh_extractor import DVHExtractor
 from validation.plan_quality_eval import evaluate_plan_quality_flags
 

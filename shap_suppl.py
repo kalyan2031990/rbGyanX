@@ -1,10 +1,14 @@
 ﻿#!/usr/bin/env python3
-import argparse, os, sys, math, json
+import argparse
+import json
+import os
+import sys
+
+import matplotlib
 import numpy as np
 import pandas as pd
-import matplotlib
+
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 
 # optional imports
 try:
@@ -13,20 +17,18 @@ try:
 except Exception:
     HAS_XGB = False
 
+from sklearn.metrics import brier_score_loss, roc_auc_score
 from sklearn.neural_network import MLPClassifier
-from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import roc_auc_score, brier_score_loss, log_loss
-
-import shap
+from sklearn.preprocessing import StandardScaler
 
 # Import refactored SHAP utilities
 from utils.shap_utils import (
+    generate_shap_caption,
+    plot_beeswarm,
+    plot_summary_bar,
     safe_shap_values,
     to_matrix,
-    plot_summary_bar,
-    plot_beeswarm,
-    generate_shap_caption
 )
 
 META_COLS = ["PatientID","Organ","Observed_Toxicity","Set"]
@@ -142,7 +144,8 @@ def main():
     if args.organ:
         df = df[df["Organ"].astype(str).str.lower()==args.organ.lower()].copy()
         if df.empty:
-            print(f"No rows found for organ '{args.organ}'."); sys.exit(1)
+            print(f"No rows found for organ '{args.organ}'.")
+            sys.exit(1)
 
     use_cols = pick_columns(df, only_dvh=args.only_dvh)
     df = ensure_numeric(df, use_cols)
@@ -152,7 +155,8 @@ def main():
     df = df.dropna(subset=["Observed_Toxicity"] + use_cols).copy()
     train_df, eval_df = split_by_set(df, eval_split=args.split)
     if train_df.empty or eval_df.empty:
-        print("Empty train/eval after split; check your Set column."); sys.exit(1)
+        print("Empty train/eval after split; check your Set column.")
+        sys.exit(1)
 
     X_train = train_df[use_cols].copy()
     y_train = train_df["Observed_Toxicity"].astype(int).to_numpy()

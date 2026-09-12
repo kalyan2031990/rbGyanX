@@ -13,23 +13,31 @@ root uses GRID ONLY
 No widget may call pack() with root as parent
 """
 
+import subprocess
+import sys
+import threading
 import tkinter as tk
+from tkinter import filedialog, messagebox, scrolledtext, ttk
+
+from matplotlib.backends.backend_tkagg import (  # type: ignore
+    FigureCanvasTkAgg,
+    NavigationToolbar2Tk,
+)
+from matplotlib.figure import Figure  # type: ignore
+
 # v2 Phase 4 - Slice 1: UI-independent logic lives in rbgyanx.services; this module is a view.
 # NOTE: validate_inputs() deliberately stays here - it also delegates to the optional input
 # router (validate_input_for_mode); rbgyanx.services.validate_run_request holds the same rule
 # set for the Qt app / CLI, and is covered by tests against this method's fallback path.
 from rbgyanx.services import (
     build_canonical_dvh as _svc_build_canonical_dvh,
+)
+from rbgyanx.services import (
     normalize_dvh as _svc_normalize_dvh,
+)
+from rbgyanx.services import (
     validate_dvh_integrity as _svc_validate_dvh_integrity,
 )
-from tkinter import ttk, filedialog, messagebox, scrolledtext
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk  # type: ignore
-from matplotlib.figure import Figure  # type: ignore
-import matplotlib.pyplot as plt  # type: ignore
-import subprocess
-import sys
-import threading
 
 # Phase 1: UTF-8 console on Windows (avoids charmap errors on log/print)
 if sys.platform == "win32":
@@ -38,19 +46,18 @@ if sys.platform == "win32":
         sys.stderr.reconfigure(encoding="utf-8")
     except Exception:
         pass
-import time
 import math
-from pathlib import Path
-import pandas as pd  # type: ignore
-import numpy as np  # type: ignore
-from datetime import datetime
+import time
 from collections import Counter
-from typing import List, Optional, Dict
+from datetime import datetime
 from enum import Enum
+from pathlib import Path
+
+import pandas as pd  # type: ignore
 
 # Try to import PIL for image handling
 try:
-    from PIL import Image, ImageTk, ImageSequence  # type: ignore
+    from PIL import Image, ImageSequence, ImageTk  # type: ignore
     PIL_AVAILABLE = True
 except ImportError:
     PIL_AVAILABLE = False
@@ -58,8 +65,8 @@ except ImportError:
 
 # Import rbGyanX utilities
 try:
-    from utils.error_handler import ErrorHandler
     from utils.dvh_parser import UniversalDVHParser, preprocess_dvh_intelligent
+    from utils.error_handler import ErrorHandler
     UTILITIES_AVAILABLE = True
 except ImportError as e:
     UTILITIES_AVAILABLE = False
@@ -72,10 +79,14 @@ try:
 except ImportError:
     PATHS_AVAILABLE = False
     APP_VERSION = "1.0.0"
-    product_title = lambda mode=None: f"rbGyanX {APP_VERSION}"
-    engine_status_message = lambda: ""
-    get_app_root = lambda: Path(__file__).resolve().parent
-    get_engine_root = lambda: None
+    def product_title(mode=None):
+        return f"rbGyanX {APP_VERSION}"
+    def engine_status_message():
+        return ""
+    def get_app_root():
+        return Path(__file__).resolve().parent
+    def get_engine_root():
+        return None
 
 
 def _rbgyanx_base_dir() -> Path:
@@ -152,10 +163,11 @@ except ImportError:
 
 # Import new backend modules for rbGyanX Pro v1.1.0
 try:
+    import json
+
+    from ai.local_llm_engine import LocalLLMEngine, create_ai_assistant
     from core.project_state import ProjectStateManager
     from qa.qa_overfitting import QAOverfittingInspector
-    from ai.local_llm_engine import LocalLLMEngine, create_ai_assistant
-    import json
     BACKEND_MODULES_AVAILABLE = True
 except ImportError as e:
     BACKEND_MODULES_AVAILABLE = False
@@ -442,7 +454,7 @@ class AnimatedGifLabel(tk.Label):
             # Try to get frame delay from GIF
             try:
                 self.delay = gif.info.get('duration', 50)
-            except:
+            except Exception:
                 self.delay = 50
                 
         except Exception as e:
@@ -574,7 +586,7 @@ class UILayoutConstants:
                 print(f"[UI Guard Warning] Widget {widget} may overflow parent bounds")
             if x < 0 or y < 0:
                 print(f"[UI Guard Warning] Widget {widget} has negative coordinates")
-        except:
+        except Exception:
             pass  # Non-blocking - just log warnings
 
 
@@ -594,7 +606,7 @@ class rbGyanX_GUI:
                 try:
                     from ctypes import windll
                     windll.shcore.SetProcessDpiAwareness(1)
-                except:
+                except Exception:
                     pass
             # Apply Tk scaling for high-resolution displays
             try:
@@ -602,9 +614,9 @@ class rbGyanX_GUI:
                 if dpi > 96:
                     scale_factor = dpi / 96.0
                     root.tk.call('tk', 'scaling', scale_factor)
-            except:
+            except Exception:
                 pass
-        except:
+        except Exception:
             pass
         
         # Branding: Window title reflects product version and mode
@@ -885,7 +897,7 @@ class rbGyanX_GUI:
                 # Keep reference to prevent garbage collection
                 if not hasattr(self, '_icon_photo'):
                     self._icon_photo = icon_photo
-            except Exception as e:
+            except Exception:
                 # Fail silently if icon cannot be loaded
                 pass
     
@@ -946,12 +958,12 @@ CAPABILITIES
 INTENDED USE
 
 rbGyanX ({mode_label}) is intended for:
-{f'• Scientific validation and research using real patient data under institutional governance' if mode_label == 'ADVANCED' else '• Research applications in radiation oncology'}
+{'• Scientific validation and research using real patient data under institutional governance' if mode_label == 'ADVANCED' else '• Research applications in radiation oncology'}
 • Academic use in medical physics and radiobiology
-{f'• Research use only — NOT for clinical decision-making' if mode_label == 'ADVANCED' else '• Clinical decision support (not autonomous decision making)'}
+{'• Research use only — NOT for clinical decision-making' if mode_label == 'ADVANCED' else '• Clinical decision support (not autonomous decision making)'}
 
 All clinical decisions must be made by qualified healthcare professionals. rbGyanX provides analytical tools and insights to inform, not replace, clinical judgment.
-{f'⚠️ ADVANCED MODE: This mode is for scientific validation and research using real patient data under institutional governance. Results are exploratory and non-clinical. NOT FOR CLINICAL USE.' if mode_label == 'ADVANCED' else ''}
+{'⚠️ ADVANCED MODE: This mode is for scientific validation and research using real patient data under institutional governance. Results are exploratory and non-clinical. NOT FOR CLINICAL USE.' if mode_label == 'ADVANCED' else ''}
 
 
 DEVELOPMENT METHODOLOGY
@@ -1127,7 +1139,7 @@ For more information, please refer to the documentation and citation guidelines.
         try:
             self.chakra = AshokaChakra(chakra_container, size=UILayoutConstants.CHAKRA_SIZE)
             self.chakra.pack(anchor="center")
-        except:
+        except Exception:
             # Fallback: placeholder
             tk.Label(chakra_container, text="⚫", font=("Arial", 20), bg=COLORS['bg_light']).pack(anchor="center")
         
@@ -1324,10 +1336,7 @@ For more information, please refer to the documentation and citation guidelines.
         
         # STEP 1: Mode-aware title suffix
         if hasattr(self, 'mode_controller') and self.mode_controller:
-            if self.mode_controller.is_advanced():
-                mode_suffix = " (ADVANCED)"
-            else:
-                mode_suffix = " (BASIC)"
+            mode_suffix = " (ADVANCED)" if self.mode_controller.is_advanced() else " (BASIC)"
         else:
             mode_suffix = " (BASIC)"  # Default fallback
         
@@ -1392,7 +1401,7 @@ For more information, please refer to the documentation and citation guidelines.
         registry_path = _rbgyanx_base_dir() / 'core' / 'feature_registry.json'
         try:
             if registry_path.exists():
-                with open(registry_path, 'r', encoding='utf-8') as f:
+                with open(registry_path, encoding='utf-8') as f:
                     return json.load(f)
         except Exception as e:
             self.log(f"Warning: Could not load feature registry: {e}")
@@ -1403,7 +1412,7 @@ For more information, please refer to the documentation and citation guidelines.
         registry_path = _rbgyanx_base_dir() / 'core' / 'site_registry.json'
         try:
             if registry_path.exists():
-                with open(registry_path, 'r', encoding='utf-8') as f:
+                with open(registry_path, encoding='utf-8') as f:
                     return json.load(f)
         except Exception as e:
             self.log(f"Warning: Could not load site registry: {e}")
@@ -1517,7 +1526,7 @@ For more information, please refer to the documentation and citation guidelines.
             else:
                 messagebox.showerror("Error", "Failed to save project.")
     
-    def get_recent_errors(self) -> List[str]:
+    def get_recent_errors(self) -> list[str]:
         """Get recent error messages from log"""
         if not hasattr(self, 'log_text'):
             return []
@@ -1530,7 +1539,7 @@ For more information, please refer to the documentation and citation guidelines.
         except Exception:
             return []
     
-    def get_qa_warnings(self) -> List[str]:
+    def get_qa_warnings(self) -> list[str]:
         """Get QA warnings from latest report"""
         warnings = []
         
@@ -1608,9 +1617,8 @@ For more information, please refer to the documentation and citation guidelines.
                 self.rule_based_assistant = create_rule_based_assistant()
         
         # Try to initialize local LLM if not already done (optional)
-        if not self.ai_assistant:
-            if BACKEND_MODULES_AVAILABLE and LocalLLMEngine:
-                self.ai_assistant = create_ai_assistant()
+        if not self.ai_assistant and BACKEND_MODULES_AVAILABLE and LocalLLMEngine:
+            self.ai_assistant = create_ai_assistant()
         
         # Determine which assistant to use
         use_enhanced = self.enhanced_assistant is not None
@@ -1835,18 +1843,23 @@ For more information, please refer to the documentation and citation guidelines.
                     
                     ai_window.after(0, update_response)
                     
-                except Exception as e:
-                    def show_error():
+                except Exception as exc:
+                    # Bind the text now. `except ... as exc` deletes `exc` when the block ends,
+                    # and show_error runs later via after(), so closing over the exception itself
+                    # raised NameError inside the error handler and hid the original failure.
+                    detail = str(exc)
+
+                    def show_error(detail=detail):
                         # Re-enable button
                         if ask_button_ref[0]:
                             ask_button_ref[0].config(state=tk.NORMAL)
                         
                         response_text.config(state=tk.NORMAL)
                         response_text.delete("1.0", tk.END)
-                        error_msg = f"Ask rbGyanX error: {str(e)}"
+                        error_msg = f"Ask rbGyanX error: {detail}"
                         response_text.insert("1.0", f"{error_msg}\n\nPlease try again or rephrase your question.")
                         response_text.config(state=tk.DISABLED)
-                        self.log(f"[X] Ask rbGyanX error: {str(e)}")
+                        self.log(f"[X] Ask rbGyanX error: {detail}")
                     ai_window.after(0, show_error)
             
             # Run in background thread
@@ -1875,7 +1888,6 @@ For more information, please refer to the documentation and citation guidelines.
         
         if manual_path.exists():
             import webbrowser
-            import os
             # Use file:// URL for local HTML file
             url = f"file://{manual_path.absolute()}"
             webbrowser.open(url)
@@ -2058,9 +2070,12 @@ For more information, please refer to the documentation and citation guidelines.
                     # Close progress window and show results
                     progress_window.after(0, progress_window.destroy)
                     self.root.after(0, lambda: self._show_self_test_results(results, report_path))
-                except Exception as e:
+                except Exception as exc:
+                    # Same scope trap as above: the lambda runs after the except block has
+                    # ended, so it must capture the message rather than the exception name.
+                    detail = str(exc)
                     progress_window.after(0, progress_window.destroy)
-                    self.root.after(0, lambda: self._show_self_test_error(str(e)))
+                    self.root.after(0, lambda detail=detail: self._show_self_test_error(detail))
             
             thread = threading.Thread(target=run_test, daemon=True)
             thread.start()
@@ -2069,7 +2084,7 @@ For more information, please refer to the documentation and citation guidelines.
             self.log(f"[X] Self-test error: {str(e)}")
             messagebox.showerror("Self-Test Error", f"Error running self-test:\n{str(e)}")
     
-    def _show_self_test_results(self, results: Dict, report_path: Path):
+    def _show_self_test_results(self, results: dict, report_path: Path):
         """Show self-test results dialog"""
         status = results['status']
         summary = results['summary']
@@ -2180,7 +2195,7 @@ For more information, please refer to the documentation and citation guidelines.
             code_modified = False
             if state_file.exists():
                 try:
-                    with open(state_file, 'r') as f:
+                    with open(state_file) as f:
                         state = json.load(f)
                     last_test_time = state.get('last_test_time', 0)
                     
@@ -2240,7 +2255,7 @@ For more information, please refer to the documentation and citation guidelines.
             # Never crash on self-test check
             self.log(f"[!] Self-test check error (non-critical): {str(e)}")
     
-    def _handle_self_test_failures(self, results: Dict):
+    def _handle_self_test_failures(self, results: dict):
         """Handle self-test failures with user consent"""
         summary = results['summary']
         failed_count = summary.get('failed', 0)
@@ -2403,7 +2418,7 @@ For more information, please refer to the documentation and citation guidelines.
             self.log(traceback.format_exc())
             messagebox.showerror("Auto-Correction Error", f"Error running auto-correction:\n{str(e)}")
     
-    def _show_auto_correction_dialog(self, engine: AutoCorrectionEngine, issues: List[Dict], fixes: List[Dict]):
+    def _show_auto_correction_dialog(self, engine: AutoCorrectionEngine, issues: list[dict], fixes: list[dict]):
         """Show auto-correction dialog with proposed fixes and permission request"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Auto-Correction: Proposed Fixes")
@@ -2472,7 +2487,7 @@ For more information, please refer to the documentation and citation guidelines.
         
         # Add fixes to text widget
         for i, fix in enumerate(fixes, 1):
-            issue = fix['issue']
+            fix['issue']
             fixes_text.insert(tk.END, f"{i}. {fix['description']}\n")
             fixes_text.insert(tk.END, f"   Action: {fix['action']}\n")
             fixes_text.insert(tk.END, f"   Risk: {fix['risk_level']}, Reversible: {fix['reversible']}\n\n")
@@ -2613,7 +2628,7 @@ For more information, please refer to the documentation and citation guidelines.
             return
         
         try:
-            with open(report_path, "r", encoding="utf-8") as f:
+            with open(report_path, encoding="utf-8") as f:
                 content = f.read()
         except Exception as e:
             messagebox.showerror(
@@ -2656,8 +2671,8 @@ For more information, please refer to the documentation and citation guidelines.
         Rollback last analysis outputs (basic version).
         Does NOT modify code. Only restores output directories.
         """
-        import tkinter.messagebox as messagebox
         import shutil
+        import tkinter.messagebox as messagebox
         from pathlib import Path
         
         # Get output directory from GUI
@@ -2862,7 +2877,7 @@ For more information, please refer to the documentation and citation guidelines.
         
         if current_state == 'normal':
             # Maximize this panel, minimize others - OBJECTIVE 3: Use grid column weights
-            for name, panel in self.panels.items():
+            for name, _panel in self.panels.items():
                 if name == panel_name:
                     self.panel_states[name] = 'maximized'
                     # Maximize: high weight
@@ -2877,7 +2892,7 @@ For more information, please refer to the documentation and citation guidelines.
             self.body_frame.grid_columnconfigure(1, weight=2, minsize=250)  # Center
             self.body_frame.grid_columnconfigure(2, weight=2, minsize=250)  # Right
             
-            for name, panel in self.panels.items():
+            for name, _panel in self.panels.items():
                 self.panel_states[name] = 'normal'
     
     def _get_panel_column(self, panel_name):
@@ -2921,7 +2936,7 @@ For more information, please refer to the documentation and citation guidelines.
         panel = ttk.Frame(self.root, relief=tk.RIDGE, borderwidth=2)
         
         # OBJECTIVE 2: Add panel header with maximize control (packed first)
-        header = self._create_panel_header(panel, 'left', 'Workflow & Steps')
+        self._create_panel_header(panel, 'left', 'Workflow & Steps')
         
         # Create separate content frame for scrollable area (uses grid)
         content_frame = ttk.Frame(panel)
@@ -3163,7 +3178,7 @@ For more information, please refer to the documentation and citation guidelines.
             )
         else:
             self.site_status_label.config(
-                text=f"⚠ Supported - Evidence evolving (use with caution)", 
+                text="⚠ Supported - Evidence evolving (use with caution)", 
                 foreground="orange"
             )
             self.log(f"[INFO] Cancer site: {site_data.get('display_name', site_key)} - Evidence level: {evidence_level}")
@@ -3253,7 +3268,7 @@ For more information, please refer to the documentation and citation guidelines.
         try:
             style = ttk.Style()
             bg_color = style.lookup('TFrame', 'background')
-        except:
+        except Exception:
             bg_color = '#f0f0f0'
         owl_step1 = BlinkingOwlIndicator(
             button_frame,
@@ -3293,7 +3308,7 @@ For more information, please refer to the documentation and citation guidelines.
         try:
             style = ttk.Style()
             bg_color = style.lookup('TFrame', 'background')
-        except:
+        except Exception:
             bg_color = '#f0f0f0'
         owl_step2 = BlinkingOwlIndicator(
             button_frame,
@@ -3558,7 +3573,7 @@ For more information, please refer to the documentation and citation guidelines.
         try:
             style = ttk.Style()
             bg_color = style.lookup('TFrame', 'background')
-        except:
+        except Exception:
             bg_color = '#f0f0f0'
         owl_step3 = BlinkingOwlIndicator(
             button_frame,
@@ -3639,7 +3654,7 @@ For more information, please refer to the documentation and citation guidelines.
         try:
             style = ttk.Style()
             bg_color = style.lookup('TFrame', 'background')
-        except:
+        except Exception:
             bg_color = '#f0f0f0'
         owl_step5 = BlinkingOwlIndicator(
             button_frame,
@@ -3692,7 +3707,7 @@ For more information, please refer to the documentation and citation guidelines.
         try:
             style = ttk.Style()
             bg_color = style.lookup('TFrame', 'background')
-        except:
+        except Exception:
             bg_color = '#f0f0f0'
         owl_step6 = BlinkingOwlIndicator(
             button_frame,
@@ -3766,7 +3781,7 @@ For more information, please refer to the documentation and citation guidelines.
                     dashboard_frame.pack(fill=tk.BOTH, expand=True)
                     self.advanced_dashboard = advanced_dashboard  # Store reference
                     return panel
-            except ImportError as e:
+            except ImportError:
                 # Fallback to BASIC if ADVANCED dashboard not available
                 pass
         
@@ -3777,7 +3792,7 @@ For more information, please refer to the documentation and citation guidelines.
             header_title = 'Advanced Dashboard — Research & Validation'
         else:
             header_title = 'Data Summary & QA — Clinical Decision Support'
-        header = self._create_panel_header(panel, 'center', header_title)
+        self._create_panel_header(panel, 'center', header_title)
         
         # Create separate content frame for scrollable area (uses grid)
         content_frame = ttk.Frame(panel)
@@ -3956,7 +3971,7 @@ For more information, please refer to the documentation and citation guidelines.
         if (self.mode_controller and self.mode_controller.is_advanced() and
             self.validation_controller and self.validation_controller.is_validation_enabled()):
             panel_title = 'ADVANCED Visualizations & Dashboard'
-        header = self._create_panel_header(panel, 'right', panel_title)
+        self._create_panel_header(panel, 'right', panel_title)
         
         # Create separate content frame for scrollable area (uses grid)
         content_frame = ttk.Frame(panel)
@@ -4158,7 +4173,7 @@ For more information, please refer to the documentation and citation guidelines.
                             return len(df['Patient_ID'].unique())
                         elif 'Patient' in df.columns:
                             return len(df['Patient'].unique())
-                    except:
+                    except Exception:
                         pass
                     return len(dvh_files)
             
@@ -4172,11 +4187,11 @@ For more information, please refer to the documentation and citation guidelines.
                             return len(df['Patient_ID'].unique())
                         elif 'Patient' in df.columns:
                             return len(df['Patient'].unique())
-                    except:
+                    except Exception:
                         pass
             
             return 0
-        except:
+        except Exception:
             return 0
     
     def _get_current_step(self):
@@ -4309,7 +4324,6 @@ For more information, please refer to the documentation and citation guidelines.
                     return [("Status", "No QUANTEC violations", "#27AE60")]
                 n_viol = int((df.get("Severity", pd.Series()) == "VIOLATION").sum())
                 n_warn = int((df.get("Severity", pd.Series()) == "WARNING").sum())
-                color = "#C0392B" if n_viol else "#E67E22" if n_warn else "#27AE60"
                 return [
                     ("Violations", str(n_viol), "#C0392B" if n_viol else None),
                     ("Warnings", str(n_warn), "#E67E22" if n_warn else None),
@@ -4629,7 +4643,6 @@ For more information, please refer to the documentation and citation guidelines.
         def on_status_column_hover(event):
             # Show tooltip when hovering over Status column header
             if event.x < 120:  # Status column is first 120 pixels
-                tooltip_text = "FLAG = Physics consistency warning, not execution failure."
                 # Create tooltip (simple approach using messagebox on right-click)
                 pass  # Tooltip will be shown via column header text
         
@@ -5009,7 +5022,7 @@ For more information, please refer to the documentation and citation guidelines.
                 first_file = txt_files[0]
                 
                 try:
-                    with open(first_file, 'r', encoding='utf-8', errors='ignore') as f:
+                    with open(first_file, encoding='utf-8', errors='ignore') as f:
                         header = ''.join([f.readline() for _ in range(20)])
                     
                     # Diagnosis mapping
@@ -6025,7 +6038,7 @@ REFERENCES:
                         
                         # Try parsing
                         metadata, dvh = parser.parse()
-                        summary.append(f"\nExtracted Metadata:")
+                        summary.append("\nExtracted Metadata:")
                         summary.append(f"  Patient ID: {metadata.get('patient_id', 'Unknown')}")
                         summary.append(f"  Structure: {metadata.get('structure_name', 'Unknown')}")
                         summary.append(f"  Type: {'TUMOR' if metadata.get('is_tumor') else 'OAR'}")
@@ -6039,7 +6052,7 @@ REFERENCES:
                 else:
                     # Fallback: read first few lines
                     try:
-                        with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+                        with open(path, encoding='utf-8', errors='ignore') as f:
                             lines = [f.readline().strip() for _ in range(5)]
                         summary.append("\nFirst 5 lines:")
                         summary.extend([f"  {line}" for line in lines if line])
@@ -6079,9 +6092,9 @@ REFERENCES:
                                     tumor_count += 1
                                 else:
                                     oar_count += 1
-                            except:
+                            except Exception:
                                 pass
-                        except:
+                        except Exception:
                             formats['Unknown'] += 1
                     
                     summary.append(f"\nFormats detected (sample of {sample_size}):")
@@ -6099,17 +6112,17 @@ REFERENCES:
                             summary.append(f"  ... and {len(patients) - 10} more")
                     
                     if structures:
-                        summary.append(f"\nStructures (sample):")
+                        summary.append("\nStructures (sample):")
                         for struct, count in structures.most_common(10):
                             summary.append(f"  - {struct}: {count} files")
                     
                     if tumor_count > 0 or oar_count > 0:
-                        summary.append(f"\nStructure Types (sample):")
+                        summary.append("\nStructure Types (sample):")
                         summary.append(f"  - OAR: {oar_count}")
                         summary.append(f"  - Tumor/PTV: {tumor_count}")
                 else:
                     # Fallback: basic file listing
-                    summary.append(f"\nFile types:")
+                    summary.append("\nFile types:")
                     exts = Counter([f.suffix for f in files])
                     for ext, count in sorted(exts.items()):
                         summary.append(f"  {ext}: {count} files")
@@ -6248,7 +6261,7 @@ REFERENCES:
     def initialize_placeholders(self):
         """Initialize all visualization tabs with placeholders"""
         if hasattr(self, 'viz_tabs'):
-            for viz_type in self.viz_tabs.keys():
+            for viz_type in self.viz_tabs:
                 self.create_placeholder_plot(viz_type)
     
     def load_image_to_viz(self, tab_name, image_path):
@@ -6258,7 +6271,6 @@ REFERENCES:
             return
         
         try:
-            from PIL import Image  # type: ignore
             import matplotlib.image as mpimg  # type: ignore
             
             # Verify file exists
@@ -6333,7 +6345,7 @@ REFERENCES:
                                 if f.suffix == '.csv':
                                     pd.read_csv(f, nrows=1)
                                 elif f.suffix == '.txt':
-                                    with open(f, 'r', encoding='utf-8', errors='ignore') as fp:
+                                    with open(f, encoding='utf-8', errors='ignore') as fp:
                                         fp.readline()
                                 readable_count += 1
                             except Exception:
@@ -6343,7 +6355,7 @@ REFERENCES:
                         if input_path.suffix == '.csv':
                             pd.read_csv(input_path, nrows=1)
                         elif input_path.suffix == '.txt':
-                            with open(input_path, 'r', encoding='utf-8', errors='ignore') as fp:
+                            with open(input_path, encoding='utf-8', errors='ignore') as fp:
                                 fp.readline()
                     except Exception as e:
                         warnings_found.append(f"Cannot read DVH file: {input_path.name} ({str(e)})")
@@ -6455,7 +6467,7 @@ REFERENCES:
         
         return True
     
-    def _prepare_pipeline_input(self) -> Optional[PipelineInput]:
+    def _prepare_pipeline_input(self) -> PipelineInput | None:
         """
         Prepare PipelineInput from GUI state.
         
@@ -6838,7 +6850,7 @@ REFERENCES:
         except Exception as e:
             error_msg = str(e)
             if self.error_handler:
-                helpful_msg = self.error_handler.handle_error(
+                self.error_handler.handle_error(
                     e,
                     context="Step 1: DVH Preprocessing",
                     show_gui=True
@@ -6974,7 +6986,7 @@ REFERENCES:
         
         # Use preprocessing summary if available
         if preprocessing_summary:
-            summary.append(f"\nProcessing Summary:")
+            summary.append("\nProcessing Summary:")
             summary.append(f"  Total files: {preprocessing_summary['total_files']}")
             summary.append(f"  Processed: {preprocessing_summary['processed']} [OK]")
             if preprocessing_summary['failed'] > 0:
@@ -6982,12 +6994,12 @@ REFERENCES:
             summary.append(f"  Unique patients: {len(preprocessing_summary['patients'])}")
             
             if preprocessing_summary['structures']:
-                summary.append(f"\nStructures detected:")
+                summary.append("\nStructures detected:")
                 for struct, count in preprocessing_summary['structures'].most_common(10):
                     summary.append(f"  - {struct}: {count} files")
             
             if preprocessing_summary['formats']:
-                summary.append(f"\nFormats processed:")
+                summary.append("\nFormats processed:")
                 for fmt, count in preprocessing_summary['formats'].items():
                     summary.append(f"  - {fmt}: {count} files")
         else:
@@ -7004,7 +7016,7 @@ REFERENCES:
                 summary.append(f"\nUnique patients: {len(patients)}")
                 summary.append(f"Organs/structures: {len(organs)}")
                 if organs:
-                    summary.append(f"\nOrgans detected:")
+                    summary.append("\nOrgans detected:")
                     for organ in sorted(organs):
                         summary.append(f"  - {organ}")
         
@@ -7064,9 +7076,9 @@ REFERENCES:
             # Use pipeline if available, otherwise subprocess
             use_pipeline = False
             if PIPELINE_AVAILABLE:
-                self.log(f"Using pipeline orchestration for Step 2...")
+                self.log("Using pipeline orchestration for Step 2...")
                 self.log(f"Analysis type: {self.analysis_type.get()}")
-                self.log(f"Processing all structures (OARs and Targets) from Step 1 output...")
+                self.log("Processing all structures (OARs and Targets) from Step 1 output...")
                 pipeline_input = self._prepare_pipeline_input()
                 if pipeline_input:
                     # Update output directory to base_dir (contains processed_DVH)
@@ -7100,7 +7112,7 @@ REFERENCES:
                 
                 self.log(f"Executing: python code2_dvh_plot_and_summary.py {code1_dir.name} --outdir dose_metrics")
                 self.log(f"Analysis type: {self.analysis_type.get()}")
-                self.log(f"Processing all structures (OARs and Targets) from Step 1 output...")
+                self.log("Processing all structures (OARs and Targets) from Step 1 output...")
                 
                 result = subprocess.run(cmd, capture_output=True, text=True, 
                                       cwd=_rbgyanx_base_dir())
@@ -7391,7 +7403,7 @@ REFERENCES:
         thread = threading.Thread(target=run_adapter, daemon=True)
         thread.start()
     
-    def _show_clinical_data_summary(self, status: str, messages: List[str], clinical_path: Path):
+    def _show_clinical_data_summary(self, status: str, messages: list[str], clinical_path: Path):
         """Show clinical data summary popup (dismissible)"""
         self.log(f"[INFO] Showing clinical data summary (status: {status})")
         
@@ -7452,8 +7464,8 @@ REFERENCES:
         def on_open_template():
             template_dir = _rbgyanx_base_dir() / "clinical" / "templates"
             if template_dir.exists():
-                import subprocess
                 import platform
+                import subprocess
                 if platform.system() == "Windows":
                     subprocess.Popen(f'explorer "{template_dir}"')
                 elif platform.system() == "Darwin":
@@ -7466,10 +7478,9 @@ REFERENCES:
             dialog.destroy()
         
         def on_proceed():
-            if status == 'insufficient':
-                if self.enable_ml.get():
-                    self.enable_ml.set(False)
-                    self.log("[!] ML disabled due to insufficient clinical data")
+            if status == 'insufficient' and self.enable_ml.get():
+                self.enable_ml.set(False)
+                self.log("[!] ML disabled due to insufficient clinical data")
             self.log("[OK] Proceeding with current clinical data")
             dialog.destroy()
         
@@ -7549,7 +7560,7 @@ REFERENCES:
         dialog.wait_window()
         return confirmed[0]
     
-    def _adapt_clinical_data_for_step3(self, base_dir: Path, mode: str) -> Optional[Path]:
+    def _adapt_clinical_data_for_step3(self, base_dir: Path, mode: str) -> Path | None:
         """
         Adapt clinical data using adapter layer (before Step 3).
         
@@ -7673,7 +7684,7 @@ REFERENCES:
             self.log("[!] Using original clinical file")
             return original_file
     
-    def _run_engine_endpoint(self, base_dir: Path, endpoint: str, clinical_file: Optional[Path] = None) -> bool:
+    def _run_engine_endpoint(self, base_dir: Path, endpoint: str, clinical_file: Path | None = None) -> bool:
         """Run rbgyanx-engine for DICOM TCP/NTCP (Phase R2)."""
         if not ENGINE_BRIDGE_AVAILABLE or not is_engine_available():
             return False
@@ -7716,7 +7727,7 @@ REFERENCES:
             self.log(f"[!] Engine error: {exc}")
             return False
 
-    def _execute_tcp_branch(self, base_dir: Path, clinical_file: Optional[Path] = None) -> bool:
+    def _execute_tcp_branch(self, base_dir: Path, clinical_file: Path | None = None) -> bool:
         """Execute TCP analysis branch (runs independently after Step 2)"""
         try:
             if self._run_engine_endpoint(base_dir, "tcp", clinical_file):
@@ -7832,7 +7843,7 @@ REFERENCES:
             self.set_workflow_state(WorkflowState.ERROR)
             return False
     
-    def _execute_ntcp_branch(self, base_dir: Path, clinical_file: Optional[Path] = None) -> bool:
+    def _execute_ntcp_branch(self, base_dir: Path, clinical_file: Path | None = None) -> bool:
         """
         Execute NTCP analysis branch (runs independently after Step 2)
         
@@ -8092,13 +8103,13 @@ REFERENCES:
                     # Show model predictions
                     model_cols = [col for col in df.columns if 'NTCP' in col.upper() or 'TCP' in col.upper() or 'Prediction' in col]
                     if model_cols:
-                        summary.append(f"\nModel predictions:")
+                        summary.append("\nModel predictions:")
                         for col in model_cols[:10]:  # Show first 10 models
                             try:
                                 mean_pred = df[col].mean()
                                 std_pred = df[col].std()
                                 summary.append(f"  {col}: {mean_pred:.3f} ± {std_pred:.3f}")
-                            except:
+                            except Exception:
                                 pass
                     
                     # Show available columns
@@ -8190,10 +8201,10 @@ REFERENCES:
                 if summary_xlsx.exists():
                     try:
                         df = pd.read_excel(summary_xlsx, sheet_name=None)
-                        summary.append(f"\n\nQA Summary Tables:")
+                        summary.append("\n\nQA Summary Tables:")
                         for sheet_name, sheet_df in df.items():
                             summary.append(f"\n  {sheet_name}: {len(sheet_df)} rows")
-                    except:
+                    except Exception:
                         pass
             else:
                 summary.append(f"\n[!] QA directory not found: {qa_dir}")
@@ -8271,7 +8282,7 @@ REFERENCES:
                 return
             
             base_dir = Path(self.output_dir.get())
-            factors_dir = base_dir / "clinical_factors"
+            base_dir / "clinical_factors"
             
             # CLINICAL FACTORS ANALYSIS: Works for both TCP and NTCP
             # Run analysis for each enabled branch
@@ -8294,8 +8305,8 @@ REFERENCES:
             
             if not analysis_dirs:
                 raise FileNotFoundError(
-                    f"No analysis directories found.\n"
-                    f"Please run Step 3 first to generate TCP/NTCP results."
+                    "No analysis directories found.\n"
+                    "Please run Step 3 first to generate TCP/NTCP results."
                 )
             
             # Run clinical factors analysis for each enabled branch
@@ -8501,12 +8512,12 @@ REFERENCES:
                     else:
                         # QA failures are advisory only - don't block
                         self.log(f"[!] {analysis_type} QA returned code {result.returncode} (advisory only)")
-                        self.log(f"[!] This does not affect analysis validity - QA is advisory")
+                        self.log("[!] This does not affect analysis validity - QA is advisory")
                 
                 except Exception as e:
                     # QA errors are advisory - log but don't fail
                     self.log(f"[!] {analysis_type} QA error (advisory): {str(e)}")
-                    self.log(f"[!] QA is advisory only - analysis results remain valid")
+                    self.log("[!] QA is advisory only - analysis results remain valid")
             
             # Complete Step 5 (always succeeds - QA is advisory)
             self._complete_step5_advisory()
@@ -8514,7 +8525,7 @@ REFERENCES:
         except Exception as e:
             # Even if QA completely fails, mark as advisory success
             self.log(f"[!] QA execution error (advisory): {str(e)}")
-            self.log(f"[!] QA is advisory only - analysis results remain valid")
+            self.log("[!] QA is advisory only - analysis results remain valid")
             self._complete_step5_advisory()
     
     def _complete_step5_advisory(self):
@@ -8596,7 +8607,7 @@ REFERENCES:
                 "--output_dir", str(integration_dir.resolve())  # OBJECTIVE A: Use correct argument name
             ]
             
-            self.log(f"Executing: python code7_tcp_ntcp_integration.py ...")
+            self.log("Executing: python code7_tcp_ntcp_integration.py ...")
             
             result = subprocess.run(cmd, capture_output=True, text=True, 
                                   cwd=_rbgyanx_base_dir())
@@ -8823,7 +8834,7 @@ REFERENCES:
         self.raw_input.set("")
         
         # Reset step statuses
-        for step_key, status_label in self.step_status_labels.items():
+        for _step_key, status_label in self.step_status_labels.items():
             status_label.config(text="[ ] Not Started", foreground="gray")
         
         # Reset step completion tracking
@@ -8896,7 +8907,7 @@ REFERENCES:
         
         if filename:
             try:
-                with open(filename, 'r') as f:
+                with open(filename) as f:
                     config = yaml.safe_load(f)
                 
                 # Apply configuration
@@ -8972,13 +8983,13 @@ REFERENCES:
             )
             
             if "error" not in validation:
-                self.log(f"\n📊 Validation Results:")
+                self.log("\n📊 Validation Results:")
                 self.log(f"  Step 1: {validation['step1']['count']} samples, {validation['step1']['patients']} patients")
                 self.log(f"  Step 2: {validation['step2']['count']} samples, {validation['step2']['patients']} patients")
                 self.log(f"  Step 3: {validation['step3']['count']} samples, {validation['step3']['patients']} patients")
                 
                 if validation.get('consistency_issues'):
-                    self.log(f"\n⚠️  Consistency Issues:")
+                    self.log("\n⚠️  Consistency Issues:")
                     for issue in validation['consistency_issues']:
                         self.log(f"  - {issue}")
                 else:
@@ -8994,7 +9005,7 @@ REFERENCES:
             if Path(log_path).exists():
                 findings = qa_engine.analyze_pipeline_log(str(log_path))
                 
-                self.log(f"\n📋 QA Findings:")
+                self.log("\n📋 QA Findings:")
                 self.log(f"  Errors: {len(findings.get('errors', []))}")
                 self.log(f"  Warnings: {len(findings.get('warnings', []))}")
                 self.log(f"  Suggestions: {len(findings.get('suggestions', []))}")
@@ -9084,7 +9095,7 @@ def main():
     root.grid_rowconfigure(1, weight=1)   # body
     root.grid_columnconfigure(0, weight=1)
     
-    app = rbGyanX_GUI(root, mode_controller=mode_controller)
+    rbGyanX_GUI(root, mode_controller=mode_controller)
     root.mainloop()
 
 

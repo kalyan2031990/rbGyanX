@@ -1,13 +1,13 @@
 """
 Data validation utilities
 """
-import pandas as pd
-import numpy as np
 from pathlib import Path
-from typing import List, Tuple, Optional, Dict
+
+import numpy as np
+import pandas as pd
 
 
-def validate_dvh_file(dvh_path: Path) -> Tuple[bool, Optional[str]]:
+def validate_dvh_file(dvh_path: Path) -> tuple[bool, str | None]:
     """
     Validate DVH file format
     
@@ -44,7 +44,7 @@ def validate_dvh_file(dvh_path: Path) -> Tuple[bool, Optional[str]]:
 
 
 def validate_clinical_data(clinical_df: pd.DataFrame, 
-                          required_columns: List[str]) -> Tuple[bool, Optional[str], List[str]]:
+                          required_columns: list[str]) -> tuple[bool, str | None, list[str]]:
     """
     Validate clinical data DataFrame
     
@@ -78,7 +78,7 @@ def validate_clinical_data(clinical_df: pd.DataFrame,
     return True, None, []
 
 
-def validate_patient_id_format(patient_ids: pd.Series) -> Tuple[bool, Optional[str]]:
+def validate_patient_id_format(patient_ids: pd.Series) -> tuple[bool, str | None]:
     """
     Validate patient ID format
     
@@ -110,7 +110,7 @@ def validate_patient_id_format(patient_ids: pd.Series) -> Tuple[bool, Optional[s
 
 def validate_dose_range(dose_values: np.ndarray, 
                        min_dose: float = 0.0, 
-                       max_dose: float = 100.0) -> Tuple[bool, Optional[str]]:
+                       max_dose: float = 100.0) -> tuple[bool, str | None]:
     """
     Validate dose values are in reasonable range
     
@@ -141,7 +141,7 @@ def validate_dose_range(dose_values: np.ndarray,
 
 
 def validate_outcome_column(outcome_values: pd.Series, 
-                            binary: bool = True) -> Tuple[bool, Optional[str]]:
+                            binary: bool = True) -> tuple[bool, str | None]:
     """
     Validate outcome column (e.g., toxicity, tumor control)
     
@@ -165,7 +165,7 @@ def validate_outcome_column(outcome_values: pd.Series,
     
     if binary:
         unique_values = outcome_values.unique()
-        valid_values = {0, 1, 0.0, 1.0, True, False}
+        valid_values = {0, 1}
         
         if not all(v in valid_values for v in unique_values):
             return False, f"Outcome values must be binary (0/1), found: {unique_values}"

@@ -12,7 +12,6 @@ import json
 import os
 import shutil
 import sys
-import tempfile
 import traceback
 from pathlib import Path
 
@@ -72,7 +71,11 @@ def run_clinical(clinical_path: Path, out_dir: Path, analysis_mode: str) -> dict
 
 
 def run_engine(input_path: Path, out_dir: Path, endpoint: str, mode: str, site: str) -> dict:
-    from rbgyanx.logic.engine_bridge import is_engine_available, map_site_override, run_engine_analysis
+    from rbgyanx.logic.engine_bridge import (
+        is_engine_available,
+        map_site_override,
+        run_engine_analysis,
+    )
 
     if not is_engine_available():
         return {"skipped": True, "reason": "engine not installed"}

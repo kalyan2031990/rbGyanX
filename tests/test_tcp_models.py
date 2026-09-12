@@ -13,11 +13,12 @@ Author: TCP_NTCP Pipeline Team
 Version: 2.0.0
 """
 
+import sys
 import unittest
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-import sys
-from pathlib import Path
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -290,7 +291,7 @@ class TestTCPModels(unittest.TestCase):
         self.assertIn('EUD_TCP', results)
         
         # Each result should have TCP value
-        for model_name, result in results.items():
+        for _model_name, result in results.items():
             self.assertIn('TCP', result)
             tcp = result['TCP']
             self.assertGreaterEqual(tcp, 0.0)
@@ -334,7 +335,7 @@ class TestTCPModels(unittest.TestCase):
     def test_tcp_parameter_sensitivity(self):
         """Test sensitivity to parameter changes"""
         # Higher D50 should give lower TCP for same dose
-        dvh = pd.DataFrame({'dose_gy': [50.0], 'volume_cm3': [100.0]})
+        pd.DataFrame({'dose_gy': [50.0], 'volume_cm3': [100.0]})
         metrics = {'mean_dose': 50.0, 'max_dose': 50.0, 'v_effective': 100.0}
         
         tcp_low_d50 = self.tcp_calc.tcp_logistic(metrics, D50=40.0, k=0.35)
@@ -342,8 +343,8 @@ class TestTCPModels(unittest.TestCase):
         self.assertGreater(tcp_low_d50, tcp_high_d50)
         
         # Higher gamma50/k should give steeper curve
-        tcp_low_k = self.tcp_calc.tcp_logistic(metrics, D50=50.0, k=0.25)
-        tcp_high_k = self.tcp_calc.tcp_logistic(metrics, D50=50.0, k=0.50)
+        self.tcp_calc.tcp_logistic(metrics, D50=50.0, k=0.25)
+        self.tcp_calc.tcp_logistic(metrics, D50=50.0, k=0.50)
         # At D50, both should be 0.5, but away from D50, higher k gives steeper curve
         # Test at dose > D50
         metrics_high = {'mean_dose': 60.0}

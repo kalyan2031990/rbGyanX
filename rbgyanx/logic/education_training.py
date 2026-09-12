@@ -12,9 +12,10 @@ Version: 1.0.0
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 from enum import Enum
+from typing import Any
+
 import numpy as np
 
 
@@ -43,14 +44,14 @@ class PlateauRegion:
     
     Phase 11: Demonstrates non-intuitive TCP saturation behavior.
     """
-    dose_range: Tuple[float, float]
-    tcp_range: Tuple[float, float]
+    dose_range: tuple[float, float]
+    tcp_range: tuple[float, float]
     gradient_threshold: float = 0.01  # ∂TCP/∂Dose threshold
     saturation_level: float = 0.0
     explanation: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'dose_range': self.dose_range,
@@ -69,15 +70,15 @@ class CliffRegion:
     
     Phase 11: Demonstrates non-intuitive NTCP cliff behavior.
     """
-    dose_range: Optional[Tuple[float, float]] = None
-    volume_range: Optional[Tuple[float, float]] = None
-    ntcp_range: Tuple[float, float] = (0.0, 1.0)
+    dose_range: tuple[float, float] | None = None
+    volume_range: tuple[float, float] | None = None
+    ntcp_range: tuple[float, float] = (0.0, 1.0)
     gradient_threshold: float = 0.10  # ∂NTCP/∂Dose or ∂NTCP/∂Volume threshold
     cliff_severity: float = 0.0
     explanation: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'dose_range': self.dose_range,
@@ -98,13 +99,13 @@ class FragilityZone:
     Phase 11: Demonstrates non-intuitive fragility behavior.
     """
     parameter_name: str
-    parameter_range: Tuple[float, float]
+    parameter_range: tuple[float, float]
     outcome_sensitivity: float = 0.0
     fragility_index: float = 0.0
     explanation: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'parameter_name': self.parameter_name,
@@ -127,12 +128,12 @@ class TeachingOverlay:
     topic: LearningTopic
     title: str
     content: str
-    visual_elements: Dict[str, Any] = field(default_factory=dict)
-    annotations: List[str] = field(default_factory=list)
-    timestamp: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    visual_elements: dict[str, Any] = field(default_factory=dict)
+    annotations: list[str] = field(default_factory=list)
+    timestamp: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'overlay_type': self.overlay_type.value,
@@ -157,12 +158,12 @@ class LearningPathStep:
     topic: LearningTopic
     title: str
     description: str
-    teaching_overlay: Optional[TeachingOverlay] = None
-    prerequisites: List[str] = field(default_factory=list)
-    learning_objectives: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    teaching_overlay: TeachingOverlay | None = None
+    prerequisites: list[str] = field(default_factory=list)
+    learning_objectives: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'step_number': self.step_number,
@@ -186,12 +187,12 @@ class StructuredLearningPath:
     """
     path_name: str
     path_description: str
-    steps: List[LearningPathStep]
-    estimated_duration: Optional[str] = None
-    target_audience: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    steps: list[LearningPathStep]
+    estimated_duration: str | None = None
+    target_audience: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'path_name': self.path_name,
@@ -213,14 +214,14 @@ class NonIntuitiveBehaviorDemo:
     demo_name: str
     topic: LearningTopic
     description: str
-    plateaus: List[PlateauRegion] = field(default_factory=list)
-    cliffs: List[CliffRegion] = field(default_factory=list)
-    fragility_zones: List[FragilityZone] = field(default_factory=list)
-    teaching_overlays: List[TeachingOverlay] = field(default_factory=list)
+    plateaus: list[PlateauRegion] = field(default_factory=list)
+    cliffs: list[CliffRegion] = field(default_factory=list)
+    fragility_zones: list[FragilityZone] = field(default_factory=list)
+    teaching_overlays: list[TeachingOverlay] = field(default_factory=list)
     explanation: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'demo_name': self.demo_name,
@@ -242,14 +243,14 @@ class EducationTrainingResult:
     
     Phase 11: No scoring, no recommendations, no pass/fail logic.
     """
-    learning_paths: List[StructuredLearningPath] = field(default_factory=list)
-    demonstrations: List[NonIntuitiveBehaviorDemo] = field(default_factory=list)
-    teaching_overlays: List[TeachingOverlay] = field(default_factory=list)
+    learning_paths: list[StructuredLearningPath] = field(default_factory=list)
+    demonstrations: list[NonIntuitiveBehaviorDemo] = field(default_factory=list)
+    teaching_overlays: list[TeachingOverlay] = field(default_factory=list)
     disclaimer: str = "EDUCATIONAL USE ONLY - No scoring, no recommendations, no pass/fail logic"
-    timestamp: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    timestamp: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'learning_paths': [path.to_dict() for path in self.learning_paths],
@@ -329,7 +330,7 @@ class EducationTrainingWorkflow:
             ),
             annotations=[
                 f"Plateau detected in {len(plateaus)} dose range(s)",
-                "Gradient threshold: {:.4f}".format(gradient_threshold)
+                f"Gradient threshold: {gradient_threshold:.4f}"
             ],
             metadata={'plateau_count': len(plateaus)}
         )
@@ -397,7 +398,7 @@ class EducationTrainingWorkflow:
             ),
             annotations=[
                 f"Cliff detected in {len(cliffs)} dose range(s)",
-                "Gradient threshold: {:.4f}".format(gradient_threshold)
+                f"Gradient threshold: {gradient_threshold:.4f}"
             ],
             metadata={'cliff_count': len(cliffs)}
         )
@@ -494,7 +495,7 @@ class EducationTrainingWorkflow:
         self,
         path_name: str,
         path_description: str,
-        topics: List[LearningTopic]
+        topics: list[LearningTopic]
     ) -> StructuredLearningPath:
         """
         Create structured learning path.

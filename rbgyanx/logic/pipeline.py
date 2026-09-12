@@ -18,84 +18,61 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
-import sys
-import subprocess
-import time
 import random
-import numpy as np
-from pathlib import Path
-from typing import Dict, List, Optional, Any
+import subprocess
+import sys
+import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from pathlib import Path
+from typing import Any
 
-# Phase 2: Import provenance and structured logging
-from rbgyanx.logic.provenance import ProvenanceTracker, create_provenance_record
-from rbgyanx.logic.structured_logging import StructuredLogger, LogCategory
+import numpy as np
+
+# Phase 10: Import AI integration
+from rbgyanx.logic.ai_integration import AIPersonality, AskRbGyanXIntegration
 
 # Phase 3: Import applicability checking
 from rbgyanx.logic.applicability import (
     ApplicabilityChecker,
-    ApplicabilityResult,
-    TreatmentTechnique,
-    BiologicalModel
+    BiologicalModel,
 )
-
-# Phase 4: Import mode controller
-from rbgyanx.logic.mode_controller import ModeController, RunMode, ModeError
-
-# Phase 6.1: Import model agreement analysis
-from rbgyanx.logic.model_agreement import ModelAgreementAnalyzer, ModelAgreementResult
-
-# Phase 6.2: Import sensitivity analysis
-from rbgyanx.logic.sensitivity_analysis import SensitivityAnalyzer, StabilityAnalysisResult
-
-# Phase 6.3: Import uncertainty decomposition
-from rbgyanx.logic.uncertainty_decomposition import UncertaintyDecomposer, UncertaintyDecompositionResult
-
-# Phase 6.4: Import robustness analysis
-from rbgyanx.logic.robustness_analysis import RobustnessAnalyzer, RobustnessAnalysisResult
 
 # Phase 6.5: Import applicability boundary detection
 from rbgyanx.logic.applicability_boundary import (
-    ApplicabilityBoundaryDetector, 
-    ApplicabilityBoundaryResult,
-    BoundaryType
-)
-
-# Phase 7: Import developer mode
-from rbgyanx.logic.developer_mode import (
-    DeveloperModeSandbox,
-    ScientificIntentMetadata
+    ApplicabilityBoundaryDetector,
+    BoundaryType,
 )
 
 # Phase 8: Import benchmark integration
-from rbgyanx.logic.benchmark_integration import (
-    BenchmarkIntegration,
-    DICOMImporter,
-    BenchmarkIntegrationResult
-)
-
-# Phase 9: Import protocol stress-testing
-from rbgyanx.logic.protocol_stress_testing import (
-    ProtocolStressTestingSandbox,
-    ProtocolStressTestResult
-)
-
-# Phase 10: Import AI integration
-from rbgyanx.logic.ai_integration import (
-    AskRbGyanXIntegration,
-    AIPersonality
-)
+# Phase 7: Import developer mode
+from rbgyanx.logic.developer_mode import DeveloperModeSandbox
 
 # Phase 11: Import education & training
-from rbgyanx.logic.education_training import (
-    EducationTrainingWorkflow,
-    EducationTrainingResult
-)
+from rbgyanx.logic.education_training import EducationTrainingWorkflow
+
+# Phase 4: Import mode controller
+from rbgyanx.logic.mode_controller import ModeController, RunMode
+
+# Phase 6.1: Import model agreement analysis
+from rbgyanx.logic.model_agreement import ModelAgreementAnalyzer
+
+# Phase 9: Import protocol stress-testing
+# Phase 2: Import provenance and structured logging
+from rbgyanx.logic.provenance import ProvenanceTracker
 
 # Phase 12: Import publication & provenance toolkit
-from rbgyanx.logic.publication_provenance import (
-    PublicationProvenanceToolkit
+from rbgyanx.logic.publication_provenance import PublicationProvenanceToolkit
+
+# Phase 6.4: Import robustness analysis
+from rbgyanx.logic.robustness_analysis import RobustnessAnalyzer
+
+# Phase 6.2: Import sensitivity analysis
+from rbgyanx.logic.sensitivity_analysis import SensitivityAnalyzer
+from rbgyanx.logic.structured_logging import LogCategory, StructuredLogger
+
+# Phase 6.3: Import uncertainty decomposition
+from rbgyanx.logic.uncertainty_decomposition import (
+    UncertaintyDecomposer,
 )
 
 
@@ -144,15 +121,15 @@ class PipelineInput:
     """
     dvh_directory: Path
     output_directory: Path
-    dicom_directory: Optional[Path] = None
+    dicom_directory: Path | None = None
     input_source: str = "auto"  # auto | dicom | tps_txt
-    engine_root: Optional[Path] = None
-    patient_data_file: Optional[Path] = None
-    clinical_file: Optional[Path] = None
-    treatment_info: Optional[Dict[str, Any]] = None
-    config: Optional[Dict[str, Any]] = None
-    tcp_config: Optional[Dict[str, Any]] = None
-    ntcp_config: Optional[Dict[str, Any]] = None
+    engine_root: Path | None = None
+    patient_data_file: Path | None = None
+    clinical_file: Path | None = None
+    treatment_info: dict[str, Any] | None = None
+    config: dict[str, Any] | None = None
+    tcp_config: dict[str, Any] | None = None
+    ntcp_config: dict[str, Any] | None = None
 
 
 @dataclass
@@ -189,41 +166,41 @@ class PipelineOutput:
         Execution mode: 'pipeline' or 'subprocess' (for debugging)
     """
     status: str
-    physical_results_path: Optional[Path] = None
-    biological_results_path: Optional[Path] = None
-    qa_results_path: Optional[Path] = None
-    logs: List[str] = field(default_factory=list)
+    physical_results_path: Path | None = None
+    biological_results_path: Path | None = None
+    qa_results_path: Path | None = None
+    logs: list[str] = field(default_factory=list)
     execution_time: float = 0.0
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
-    tcp_results_path: Optional[Path] = None
-    ntcp_results_path: Optional[Path] = None
-    site_detection_path: Optional[Path] = None
-    execution_mode: Optional[str] = None
-    provenance: Optional[Any] = None  # ProvenanceRecord
-    structured_logs: Optional[Any] = None  # StructuredLogger
-    applicability_result: Optional[Any] = None  # ApplicabilityResult (Phase 3)
-    model_agreement_result: Optional[Any] = None  # ModelAgreementResult (Phase 6.1)
-    sensitivity_analysis_result: Optional[Any] = None  # StabilityAnalysisResult (Phase 6.2)
-    uncertainty_decomposition_result: Optional[Any] = None  # UncertaintyDecompositionResult (Phase 6.3)
-    robustness_analysis_result: Optional[Any] = None  # RobustnessAnalysisResult (Phase 6.4)
-    applicability_boundary_result: Optional[Any] = None  # ApplicabilityBoundaryResult (Phase 6.5)
-    developer_mode_session: Optional[Any] = None  # DeveloperModeSession (Phase 7)
-    benchmark_integration_result: Optional[Any] = None  # BenchmarkIntegrationResult (Phase 8)
-    protocol_stress_test_result: Optional[Any] = None  # ProtocolStressTestResult (Phase 9)
-    ai_integration: Optional[Any] = None  # AskRbGyanXIntegration (Phase 10)
-    education_training_result: Optional[Any] = None  # EducationTrainingResult (Phase 11)
-    publication_provenance_toolkit: Optional[Any] = None  # PublicationProvenanceToolkit (Phase 12)
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    tcp_results_path: Path | None = None
+    ntcp_results_path: Path | None = None
+    site_detection_path: Path | None = None
+    execution_mode: str | None = None
+    provenance: Any | None = None  # ProvenanceRecord
+    structured_logs: Any | None = None  # StructuredLogger
+    applicability_result: Any | None = None  # ApplicabilityResult (Phase 3)
+    model_agreement_result: Any | None = None  # ModelAgreementResult (Phase 6.1)
+    sensitivity_analysis_result: Any | None = None  # StabilityAnalysisResult (Phase 6.2)
+    uncertainty_decomposition_result: Any | None = None  # UncertaintyDecompositionResult (Phase 6.3)
+    robustness_analysis_result: Any | None = None  # RobustnessAnalysisResult (Phase 6.4)
+    applicability_boundary_result: Any | None = None  # ApplicabilityBoundaryResult (Phase 6.5)
+    developer_mode_session: Any | None = None  # DeveloperModeSession (Phase 7)
+    benchmark_integration_result: Any | None = None  # BenchmarkIntegrationResult (Phase 8)
+    protocol_stress_test_result: Any | None = None  # ProtocolStressTestResult (Phase 9)
+    ai_integration: Any | None = None  # AskRbGyanXIntegration (Phase 10)
+    education_training_result: Any | None = None  # EducationTrainingResult (Phase 11)
+    publication_provenance_toolkit: Any | None = None  # PublicationProvenanceToolkit (Phase 12)
 
 
 def run_analysis_pipeline(
     inputs: PipelineInput,
-    steps: Optional[List[str]] = None,
+    steps: list[str] | None = None,
     timeout: int = 300,
-    random_seed: Optional[int] = None,
+    random_seed: int | None = None,
     enable_provenance: bool = True,
     enable_structured_logging: bool = True,
-    mode_controller: Optional[ModeController] = None
+    mode_controller: ModeController | None = None
 ) -> PipelineOutput:
     """
     Execute the rbGyanX analysis pipeline.
@@ -782,7 +759,7 @@ def run_analysis_pipeline(
         # Initialize model agreement analyzer
         # Note: Actual analysis will be performed when TCP/NTCP results are available
         # This is a placeholder for future integration with result processing
-        model_agreement_analyzer = ModelAgreementAnalyzer()
+        ModelAgreementAnalyzer()
         
         if structured_logger:
             structured_logger.info(
@@ -806,7 +783,7 @@ def run_analysis_pipeline(
         # Initialize sensitivity analyzer
         # Note: Actual analysis will be performed when model results are available
         # This is a placeholder for future integration with result processing
-        sensitivity_analyzer = SensitivityAnalyzer()
+        SensitivityAnalyzer()
         
         if structured_logger:
             structured_logger.info(
@@ -830,7 +807,7 @@ def run_analysis_pipeline(
         # Initialize uncertainty decomposer
         # Note: Actual decomposition will be performed when uncertainty data is available
         # This is a placeholder for future integration with uncertainty quantification
-        uncertainty_decomposer = UncertaintyDecomposer()
+        UncertaintyDecomposer()
         
         if structured_logger:
             structured_logger.info(
@@ -854,7 +831,7 @@ def run_analysis_pipeline(
         # Initialize robustness analyzer
         # Note: Actual analysis will be performed when perturbation data is available
         # This is a placeholder for future integration with perturbation analysis
-        robustness_analyzer = RobustnessAnalyzer()
+        RobustnessAnalyzer()
         
         if structured_logger:
             structured_logger.info(
@@ -977,7 +954,7 @@ def run_analysis_pipeline(
     # Phase 2: Finalize structured logging
     if enable_structured_logging and structured_logger:
         structured_logger.info(
-            f"Pipeline execution completed",
+            "Pipeline execution completed",
             metadata={
                 'status': output.status,
                 'execution_time': output.execution_time,
@@ -1027,7 +1004,7 @@ def run_analysis_pipeline(
     return output
 
 
-def _run_dvh_preprocessing(inputs: PipelineInput, script_dir: Path, timeout: int) -> Dict[str, Any]:
+def _run_dvh_preprocessing(inputs: PipelineInput, script_dir: Path, timeout: int) -> dict[str, Any]:
     """Run DVH preprocessing step."""
     script_path = script_dir / 'code1_dvh_preprocess.py'
     if not script_path.exists():
@@ -1066,7 +1043,7 @@ def _run_dvh_preprocessing(inputs: PipelineInput, script_dir: Path, timeout: int
         return {'error': str(e)}
 
 
-def _run_physical_metrics(inputs: PipelineInput, script_dir: Path, timeout: int) -> Dict[str, Any]:
+def _run_physical_metrics(inputs: PipelineInput, script_dir: Path, timeout: int) -> dict[str, Any]:
     """Run physical metrics calculation step."""
     script_path = script_dir / 'code2_dvh_plot_and_summary.py'
     if not script_path.exists():
@@ -1110,7 +1087,7 @@ def _run_physical_metrics(inputs: PipelineInput, script_dir: Path, timeout: int)
         return {'error': str(e)}
 
 
-def _run_ntcp_analysis(inputs: PipelineInput, script_dir: Path, timeout: int) -> Dict[str, Any]:
+def _run_ntcp_analysis(inputs: PipelineInput, script_dir: Path, timeout: int) -> dict[str, Any]:
     """
     Run NTCP analysis step.
 
@@ -1221,7 +1198,7 @@ def _run_ntcp_analysis(inputs: PipelineInput, script_dir: Path, timeout: int) ->
         return {'error': str(e)}
 
 
-def _run_qa_reporting(inputs: PipelineInput, script_dir: Path, timeout: int) -> Dict[str, Any]:
+def _run_qa_reporting(inputs: PipelineInput, script_dir: Path, timeout: int) -> dict[str, Any]:
     """Run QA reporting step."""
     script_path = script_dir / 'code4_ntcp_output_QA_reporter.py'
     if not script_path.exists():
@@ -1263,7 +1240,7 @@ def _run_qa_reporting(inputs: PipelineInput, script_dir: Path, timeout: int) -> 
         return {'error': str(e)}
 
 
-def _run_factors_analysis(inputs: PipelineInput, script_dir: Path, timeout: int) -> Dict[str, Any]:
+def _run_factors_analysis(inputs: PipelineInput, script_dir: Path, timeout: int) -> dict[str, Any]:
     """Run clinical factors analysis step."""
     script_path = script_dir / 'code5_ntcp_factors_analysis.py'
     if not script_path.exists():
@@ -1308,7 +1285,7 @@ def _run_factors_analysis(inputs: PipelineInput, script_dir: Path, timeout: int)
         return {'error': str(e)}
 
 
-def _run_tcp_analysis(inputs: PipelineInput, script_dir: Path, timeout: int) -> Dict[str, Any]:
+def _run_tcp_analysis(inputs: PipelineInput, script_dir: Path, timeout: int) -> dict[str, Any]:
     """
     Run TCP analysis step.
 
@@ -1452,7 +1429,7 @@ def _run_tcp_analysis(inputs: PipelineInput, script_dir: Path, timeout: int) -> 
         return {'error': str(e)}
 
 
-def _run_integration(inputs: PipelineInput, script_dir: Path, timeout: int) -> Dict[str, Any]:
+def _run_integration(inputs: PipelineInput, script_dir: Path, timeout: int) -> dict[str, Any]:
     """Run TCP/NTCP integration step."""
     script_path = script_dir / 'code7_tcp_ntcp_integration.py'
     if not script_path.exists():

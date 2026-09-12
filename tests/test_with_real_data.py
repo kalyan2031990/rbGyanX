@@ -1,8 +1,9 @@
 """Integration tests with real clinical data from input_folders."""
 import os
-import pytest
 from pathlib import Path
+
 import pandas as pd
+import pytest
 
 _INPUT_ROOT = Path(
     os.environ.get(

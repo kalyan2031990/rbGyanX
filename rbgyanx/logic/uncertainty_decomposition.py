@@ -11,11 +11,10 @@ Version: 1.0.0
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Any
-import pandas as pd
-import numpy as np
-from pathlib import Path
 from enum import Enum
+from typing import Any
+
+import numpy as np
 
 
 class UncertaintyType(Enum):
@@ -45,9 +44,9 @@ class UncertaintyComponent:
     magnitude: float
     contribution_percent: float
     reducibility: str  # "reducible", "irreducible", "partially_reducible"
-    attribution_details: Dict[str, Any] = field(default_factory=dict)
+    attribution_details: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'source': self.source.value,
@@ -68,14 +67,14 @@ class UncertaintyDecompositionResult:
     No rankings, no recommendations - only attribution.
     """
     total_uncertainty: float
-    uncertainty_components: List[UncertaintyComponent] = field(default_factory=list)
-    dominant_source: Optional[UncertaintySource] = None
-    dominant_type: Optional[UncertaintyType] = None
-    reducibility_analysis: Dict[str, Any] = field(default_factory=dict)
-    contribution_breakdown: Dict[str, float] = field(default_factory=dict)
-    attribution_summary: List[str] = field(default_factory=list)
+    uncertainty_components: list[UncertaintyComponent] = field(default_factory=list)
+    dominant_source: UncertaintySource | None = None
+    dominant_type: UncertaintyType | None = None
+    reducibility_analysis: dict[str, Any] = field(default_factory=dict)
+    contribution_breakdown: dict[str, float] = field(default_factory=dict)
+    attribution_summary: list[str] = field(default_factory=list)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'total_uncertainty': self.total_uncertainty,
@@ -108,13 +107,13 @@ class UncertaintyDecomposer:
     
     def decompose_uncertainty(
         self,
-        dosimetric_uncertainty: Optional[float] = None,
-        biological_uncertainty: Optional[float] = None,
-        model_structure_uncertainty: Optional[float] = None,
-        data_domain_uncertainty: Optional[float] = None,
-        aleatoric_components: Optional[Dict[str, float]] = None,
-        epistemic_components: Optional[Dict[str, float]] = None,
-        structural_components: Optional[Dict[str, float]] = None
+        dosimetric_uncertainty: float | None = None,
+        biological_uncertainty: float | None = None,
+        model_structure_uncertainty: float | None = None,
+        data_domain_uncertainty: float | None = None,
+        aleatoric_components: dict[str, float] | None = None,
+        epistemic_components: dict[str, float] | None = None,
+        structural_components: dict[str, float] | None = None
     ) -> UncertaintyDecompositionResult:
         """
         Decompose uncertainty into explicit sources with attribution.
@@ -253,8 +252,8 @@ class UncertaintyDecomposer:
     
     def _analyze_reducibility(
         self,
-        components: List[UncertaintyComponent]
-    ) -> Dict[str, Any]:
+        components: list[UncertaintyComponent]
+    ) -> dict[str, Any]:
         """
         Analyze reducibility of uncertainty sources.
         
@@ -290,9 +289,9 @@ class UncertaintyDecomposer:
     
     def _generate_attribution_summary(
         self,
-        components: List[UncertaintyComponent],
+        components: list[UncertaintyComponent],
         result: UncertaintyDecompositionResult
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Generate attribution summary (descriptive, not recommendations).
         

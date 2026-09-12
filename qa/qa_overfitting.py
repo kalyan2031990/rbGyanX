@@ -15,16 +15,17 @@ Author: rbGyanX Team
 Version: 1.1.0
 """
 
-import pandas as pd
-import numpy as np
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
 import logging
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
 try:
-    from sklearn.metrics import roc_auc_score, brier_score_loss, calibration_curve
+    from sklearn.metrics import brier_score_loss, calibration_curve, roc_auc_score
     SKLEARN_AVAILABLE = True
 except ImportError:
     SKLEARN_AVAILABLE = False
@@ -52,8 +53,8 @@ class QAOverfittingInspector:
     def inspect_analysis_output(
         self,
         analysis_dir: Path,
-        ntcp_df: Optional[pd.DataFrame] = None
-    ) -> Dict[str, Any]:
+        ntcp_df: pd.DataFrame | None = None
+    ) -> dict[str, Any]:
         """
         Inspect analysis output directory for QA issues.
         
@@ -102,7 +103,7 @@ class QAOverfittingInspector:
             'summary': self._generate_summary()
         }
     
-    def _load_ntcp_results(self, analysis_dir: Path) -> Optional[pd.DataFrame]:
+    def _load_ntcp_results(self, analysis_dir: Path) -> pd.DataFrame | None:
         """Load NTCP results from analysis directory."""
         # Look for common result file names
         result_files = [
@@ -487,7 +488,7 @@ class QAOverfittingInspector:
         warnings_count = len(self.warnings)
         flags_count = len(self.flags)
         
-        summary = f"QA Inspection Summary:\n"
+        summary = "QA Inspection Summary:\n"
         summary += f"  Total checks: {total_checks}\n"
         summary += f"  Passed: {passed}\n"
         summary += f"  Warnings: {warnings_count}\n"

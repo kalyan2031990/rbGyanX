@@ -15,7 +15,6 @@ def test_uniform_dvh_metrics(uniform_dvh_result):
 
 def test_volume_frac_sums_to_one(uniform_dvh_result):
     """Differential DVH volume_frac must sum to ~1.0 (CURSOR_FIXES §15)."""
-    import numpy as np
     dvh_df = uniform_dvh_result.dvh_object
     if dvh_df is None:
         return  # no raw df available in this fixture variant
@@ -28,7 +27,11 @@ def test_volume_frac_sums_to_one(uniform_dvh_result):
 
 def test_dvh_shape_features_no_runtime_warning(uniform_dvh_result):
     """Near-identical DVH values must not raise RuntimeWarning (CURSOR_FIXES §17)."""
-    import warnings, pandas as pd, numpy as np
+    import warnings
+
+    import numpy as np
+    import pandas as pd
+
     from dicom_io.dvh_shape_features import compute_dvh_shape_features
     # Uniform DVH: all doses nearly equal → previously caused catastrophic cancellation
     uniform_df = pd.DataFrame({
@@ -43,7 +46,7 @@ def test_dvh_shape_features_no_runtime_warning(uniform_dvh_result):
             assert feat["dose_skewness"] == 0.0
             assert feat["dose_kurtosis"] == 0.0
         except RuntimeWarning as e:
-            raise AssertionError(f"RuntimeWarning raised: {e}")
+            raise AssertionError(f"RuntimeWarning raised: {e}") from e
 
 
 def test_ramp_dvh_d95(ramp_dvh_result):

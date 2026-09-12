@@ -12,10 +12,10 @@ Version: 1.0.0
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Any
-import pandas as pd
+from typing import Any
+
 import numpy as np
-from pathlib import Path
+import pandas as pd
 
 
 @dataclass
@@ -25,14 +25,14 @@ class ModelAgreementResult:
     
     Phase 6.1: Descriptive only. No rankings, no recommendations.
     """
-    agreement_metrics: Dict[str, float] = field(default_factory=dict)
-    disagreement_zones: List[Dict[str, Any]] = field(default_factory=list)
-    stability_metrics: Dict[str, float] = field(default_factory=dict)
-    model_predictions: Dict[str, List[float]] = field(default_factory=dict)
-    agreement_bands: Dict[str, Tuple[float, float]] = field(default_factory=dict)
-    divergence_explanations: List[str] = field(default_factory=list)
+    agreement_metrics: dict[str, float] = field(default_factory=dict)
+    disagreement_zones: list[dict[str, Any]] = field(default_factory=list)
+    stability_metrics: dict[str, float] = field(default_factory=dict)
+    model_predictions: dict[str, list[float]] = field(default_factory=dict)
+    agreement_bands: dict[str, tuple[float, float]] = field(default_factory=dict)
+    divergence_explanations: list[str] = field(default_factory=list)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'agreement_metrics': self.agreement_metrics,
@@ -64,9 +64,9 @@ class ModelAgreementAnalyzer:
     
     def analyze_tcp_agreement(
         self,
-        tcp_results: Dict[str, List[float]],
-        patient_ids: Optional[List[str]] = None,
-        dose_metrics: Optional[Dict[str, List[float]]] = None
+        tcp_results: dict[str, list[float]],
+        patient_ids: list[str] | None = None,
+        dose_metrics: dict[str, list[float]] | None = None
     ) -> ModelAgreementResult:
         """
         Analyze agreement between multiple TCP models.
@@ -118,9 +118,9 @@ class ModelAgreementAnalyzer:
     
     def analyze_ntcp_agreement(
         self,
-        ntcp_results: Dict[str, Dict[str, List[float]]],
-        patient_ids: Optional[List[str]] = None,
-        dose_metrics: Optional[Dict[str, List[float]]] = None
+        ntcp_results: dict[str, dict[str, list[float]]],
+        patient_ids: list[str] | None = None,
+        dose_metrics: dict[str, list[float]] | None = None
     ) -> ModelAgreementResult:
         """
         Analyze agreement between multiple NTCP models.
@@ -180,8 +180,8 @@ class ModelAgreementAnalyzer:
     
     def _calculate_agreement_metrics(
         self,
-        model_results: Dict[str, List[float]]
-    ) -> Dict[str, float]:
+        model_results: dict[str, list[float]]
+    ) -> dict[str, float]:
         """
         Calculate descriptive agreement metrics.
         
@@ -224,8 +224,8 @@ class ModelAgreementAnalyzer:
     
     def _calculate_agreement_bands(
         self,
-        model_results: Dict[str, List[float]]
-    ) -> Dict[str, Tuple[float, float]]:
+        model_results: dict[str, list[float]]
+    ) -> dict[str, tuple[float, float]]:
         """
         Calculate agreement bands (not "best model").
         
@@ -258,8 +258,8 @@ class ModelAgreementAnalyzer:
     
     def _calculate_stability_metrics(
         self,
-        model_results: Dict[str, List[float]]
-    ) -> Dict[str, float]:
+        model_results: dict[str, list[float]]
+    ) -> dict[str, float]:
         """
         Calculate stability metrics across models.
         
@@ -288,10 +288,10 @@ class ModelAgreementAnalyzer:
     
     def _identify_disagreement_zones(
         self,
-        model_results: Dict[str, List[float]],
-        patient_ids: Optional[List[str]] = None,
-        dose_metrics: Optional[Dict[str, List[float]]] = None
-    ) -> List[Dict[str, Any]]:
+        model_results: dict[str, list[float]],
+        patient_ids: list[str] | None = None,
+        dose_metrics: dict[str, list[float]] | None = None
+    ) -> list[dict[str, Any]]:
         """
         Identify zones where models disagree.
         
@@ -339,9 +339,9 @@ class ModelAgreementAnalyzer:
     
     def _generate_divergence_explanations(
         self,
-        model_results: Dict[str, List[float]],
-        disagreement_zones: List[Dict[str, Any]]
-    ) -> List[str]:
+        model_results: dict[str, list[float]],
+        disagreement_zones: list[dict[str, Any]]
+    ) -> list[str]:
         """
         Generate descriptive explanations for divergence.
         

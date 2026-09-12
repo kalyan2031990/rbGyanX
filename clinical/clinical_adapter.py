@@ -9,14 +9,13 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
-import pandas as pd
-import numpy as np
-from pathlib import Path
-from typing import Dict, Optional, Tuple, List
+import json
 import logging
 import tempfile
-import shutil
-import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -63,7 +62,7 @@ class ClinicalDataAdapter:
         }
         self.schema = self._load_schema()
     
-    def _load_schema(self) -> Optional[Dict]:
+    def _load_schema(self) -> dict | None:
         """
         Load clinical schema from JSON file.
         
@@ -75,14 +74,14 @@ class ClinicalDataAdapter:
         schema_path = Path(__file__).parent / "clinical_schema.json"
         if schema_path.exists():
             try:
-                with open(schema_path, 'r', encoding='utf-8') as f:
+                with open(schema_path, encoding='utf-8') as f:
                     return json.load(f)
             except Exception as e:
                 logger.warning(f"[!] Could not load clinical schema: {e}")
                 return None
         return None
         
-    def read_excel(self) -> Dict[str, pd.DataFrame]:
+    def read_excel(self) -> dict[str, pd.DataFrame]:
         """
         Read Excel file and detect available sheets.
         
@@ -110,7 +109,7 @@ class ClinicalDataAdapter:
             logger.error(f"[X] Error reading Excel file: {e}")
             return {}
     
-    def map_sheets(self) -> Dict[str, Optional[pd.DataFrame]]:
+    def map_sheets(self) -> dict[str, pd.DataFrame | None]:
         """
         Map detected sheets to standardized internal structure.
         
@@ -217,7 +216,6 @@ class ClinicalDataAdapter:
 
         cols = list(combined.columns)
         cols_lower_map = {c: c.lower() for c in cols}
-        col_blob = " ".join(cols_lower_map.values())
 
         def pick_cols(keywords):
             return [c for c in cols if any(kw in cols_lower_map[c] for kw in keywords)]
@@ -305,7 +303,7 @@ class ClinicalDataAdapter:
         if self.mapped_data["treatment"] is combined and tx_cols:
             self.mapped_data["treatment"] = combined[[pid] + tx_cols].drop_duplicates(subset=[pid]).copy()
     
-    def validate_against_schema(self, sheet_name: str, df: pd.DataFrame) -> List[str]:
+    def validate_against_schema(self, sheet_name: str, df: pd.DataFrame) -> list[str]:
         """
         Validate a DataFrame against the clinical schema.
         
@@ -370,7 +368,7 @@ class ClinicalDataAdapter:
         
         return messages
     
-    def assess_sufficiency(self, analysis_mode: str) -> Tuple[str, List[str]]:
+    def assess_sufficiency(self, analysis_mode: str) -> tuple[str, list[str]]:
         """
         Assess data sufficiency for ML model training.
         
@@ -481,7 +479,7 @@ class ClinicalDataAdapter:
         
         return status, messages
     
-    def create_standardized_file(self, output_path: Optional[Path] = None) -> Path:
+    def create_standardized_file(self, output_path: Path | None = None) -> Path:
         """
         Create a standardized single-sheet Excel file compatible with existing code.
         
@@ -569,7 +567,7 @@ class ClinicalDataAdapter:
             logger.error(f"[X] Error creating standardized file: {e}")
             raise
     
-    def get_summary(self) -> Dict:
+    def get_summary(self) -> dict:
         """
         Get summary of mapped data.
         
@@ -597,7 +595,7 @@ class ClinicalDataAdapter:
 
 
 def adapt_clinical_data(excel_file: Path, analysis_mode: str, 
-                       output_dir: Optional[Path] = None) -> Tuple[Dict, str, List[str], Optional[Path]]:
+                       output_dir: Path | None = None) -> tuple[dict, str, list[str], Path | None]:
     """
     Convenience function to adapt clinical data.
     

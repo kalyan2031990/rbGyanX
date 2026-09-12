@@ -1,7 +1,7 @@
 """Test plotting standardization"""
-import pytest
+
 import matplotlib.pyplot as plt
-from pathlib import Path
+import pytest
 
 try:
     from PIL import Image
@@ -13,7 +13,7 @@ except ImportError:
 def test_plot_config():
     """Test unified plot configuration"""
     try:
-        from utils.plot_config import apply_rbgyanx_style, RBGYANX_COLORS
+        from utils.plot_config import RBGYANX_COLORS, apply_rbgyanx_style
         
         apply_rbgyanx_style()
         
@@ -33,8 +33,8 @@ def test_plot_config():
 def test_plot_generation_600dpi(temp_output_dir):
     """Test plots are actually 600 DPI"""
     try:
-        from utils.plot_config import apply_rbgyanx_style, save_publication_plot
         import numpy as np
+        from utils.plot_config import apply_rbgyanx_style, save_publication_plot
         
         apply_rbgyanx_style()
         

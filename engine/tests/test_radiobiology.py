@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
-import copy
-import math
-
 import numpy as np
 import pandas as pd
 import pytest
+from synthetic_data.dvh_fixtures import (
+    make_ramp_dvh,
+    make_sbrt_dvh,
+    make_uniform_dvh,
+)
 
 from config.site_params import SITE_PARAMS
-from radiobiology.geud_tcp import GEUDTCPCalculator, compute_geud, geud_tcp_niemierko
-from radiobiology.logistic_tcp import LogisticTCPCalculator, logistic_tcp
+from radiobiology.geud_tcp import compute_geud, geud_tcp_niemierko
+from radiobiology.logistic_tcp import logistic_tcp
 from radiobiology.lq_model import (
     bed,
     eqd2,
@@ -22,11 +24,6 @@ from radiobiology.lq_model import (
 from radiobiology.poisson_tcp import PoissonTCPCalculator
 from radiobiology.tcp_calculator import TCPCalculator
 from radiobiology.zaider_minerbo import ZMTCPCalculator
-from synthetic_data.dvh_fixtures import (
-    make_ramp_dvh,
-    make_sbrt_dvh,
-    make_uniform_dvh,
-)
 
 
 # Group 1 — LQ model
@@ -217,7 +214,7 @@ def test_logistic_tcp_asymptotes():
 def mock_dvh_result():
     from types import SimpleNamespace
 
-    dvh_df = make_uniform_dvh(60.0)
+    make_uniform_dvh(60.0)
     from dicompylercore.dvh import DVH
 
     counts = np.full(1, 1.0)
@@ -280,7 +277,7 @@ def test_lq_caution_flag_set_for_sbrt(mock_dvh_result):
         "n_fractions": 3,
         "prescription_dose_gy": 54.0,
     }
-    dvh = make_sbrt_dvh()
+    make_sbrt_dvh()
     from types import SimpleNamespace
 
     res = SimpleNamespace(
@@ -289,10 +286,8 @@ def test_lq_caution_flag_set_for_sbrt(mock_dvh_result):
         dmean_gy=54.0,
         quality_flag="OK",
     )
-    from radiobiology import dvh_object_to_dataframe
 
     res.dvh_object = None
-    frame = dvh
     from dicompylercore.dvh import DVH
 
     counts = np.array([1.0])

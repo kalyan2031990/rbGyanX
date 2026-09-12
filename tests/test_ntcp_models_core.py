@@ -9,8 +9,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "engine"))
 
-from radiobiology.ntcp.lkb_loglogit import calculate_ntcp_lkb_loglogit as eng_ll
 from rbgyanx.core.ntcp.lkb_loglogit import calculate_ntcp_lkb_loglogit as core_ll
+
+from radiobiology.ntcp.lkb_loglogit import calculate_ntcp_lkb_loglogit as eng_ll
 
 
 def test_lkb_loglogit_core_matches_engine():
@@ -19,8 +20,8 @@ def test_lkb_loglogit_core_matches_engine():
 
 
 def test_empty_dvh_ntcp_metrics_nan():
-    from radiobiology.ntcp_calculator import NTCPCalculator
     from config.site_ntcp_params import load_site_ntcp_params
+    from radiobiology.ntcp_calculator import NTCPCalculator
 
     params = load_site_ntcp_params("HN")
     organ = params.organs["Parotid_L"]

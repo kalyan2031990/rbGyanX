@@ -8,21 +8,20 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
-import pandas as pd
-import numpy as np
-from pathlib import Path
-from typing import Dict, List, Optional
 from datetime import datetime
+from pathlib import Path
+
+import pandas as pd
 
 
 def create_unified_qa_summary(
     output_root: Path,
     mode: str,
-    steps_executed: List[str],
-    validation_flags: Optional[Dict] = None,
-    ml_status: Optional[Dict] = None,
-    tcp_qa_path: Optional[Path] = None,
-    ntcp_qa_path: Optional[Path] = None
+    steps_executed: list[str],
+    validation_flags: dict | None = None,
+    ml_status: dict | None = None,
+    tcp_qa_path: Path | None = None,
+    ntcp_qa_path: Path | None = None
 ) -> Path:
     """
     GAP 4: Create unified QA summary file.
@@ -83,7 +82,7 @@ def create_unified_qa_summary(
                 try:
                     tcp_summary = pd.read_excel(tcp_qa_path, sheet_name='Summary', engine='openpyxl')
                     tcp_qa_data['TCP_QA_Rows'] = [len(tcp_summary)]
-                except:
+                except Exception:
                     tcp_qa_data['TCP_QA_Rows'] = ['N/A']
             else:
                 tcp_qa_data['TCP_QA_Available'] = ['No']
@@ -102,7 +101,7 @@ def create_unified_qa_summary(
                 try:
                     ntcp_summary = pd.read_excel(ntcp_qa_path, sheet_name='PerOrganSummary', engine='openpyxl')
                     ntcp_qa_data['NTCP_QA_Organs'] = [len(ntcp_summary)]
-                except:
+                except Exception:
                     ntcp_qa_data['NTCP_QA_Organs'] = ['N/A']
             else:
                 ntcp_qa_data['NTCP_QA_Available'] = ['No']

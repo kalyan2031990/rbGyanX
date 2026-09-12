@@ -12,11 +12,10 @@ Version: 1.0.0
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Tuple
-from pathlib import Path
 from datetime import datetime
 from enum import Enum
-import warnings
+from pathlib import Path
+from typing import Any
 
 
 class BenchmarkSource(Enum):
@@ -37,13 +36,13 @@ class BenchmarkReference:
     source: BenchmarkSource
     organ_name: str
     metric_name: str
-    reference_value: Optional[float] = None
-    reference_range: Optional[Tuple[float, float]] = None
-    citation: Optional[str] = None
-    context: Optional[str] = None
+    reference_value: float | None = None
+    reference_range: tuple[float, float] | None = None
+    citation: str | None = None
+    context: str | None = None
     note: str = "Contextual reference only - not a constraint or recommendation"
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'source': self.source.value,
@@ -66,10 +65,10 @@ class BenchmarkComparison:
     """
     metric_name: str
     calculated_value: float
-    benchmark_references: List[BenchmarkReference] = field(default_factory=list)
-    contextual_notes: List[str] = field(default_factory=list)
+    benchmark_references: list[BenchmarkReference] = field(default_factory=list)
+    contextual_notes: list[str] = field(default_factory=list)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'metric_name': self.metric_name,
@@ -86,12 +85,12 @@ class BenchmarkIntegrationResult:
     
     Phase 8: Contextual reference only. No enforcement, no pass/fail logic.
     """
-    comparisons: List[BenchmarkComparison] = field(default_factory=list)
-    dicom_metadata: Optional[Dict[str, Any]] = None
-    benchmark_sources_used: List[BenchmarkSource] = field(default_factory=list)
-    contextual_summary: List[str] = field(default_factory=list)
+    comparisons: list[BenchmarkComparison] = field(default_factory=list)
+    dicom_metadata: dict[str, Any] | None = None
+    benchmark_sources_used: list[BenchmarkSource] = field(default_factory=list)
+    contextual_summary: list[str] = field(default_factory=list)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'comparisons': [comp.to_dict() for comp in self.comparisons],
@@ -118,7 +117,7 @@ class BenchmarkIntegration:
     
     # Literature benchmark data (contextual reference only)
     # These are simplified examples - full implementation would include comprehensive data
-    BENCHMARK_DATA: Dict[str, List[BenchmarkReference]] = {
+    BENCHMARK_DATA: dict[str, list[BenchmarkReference]] = {
         # QUANTEC references (simplified examples)
         'parotid': [
             BenchmarkReference(
@@ -182,8 +181,8 @@ class BenchmarkIntegration:
     def get_benchmark_references(
         self,
         organ_name: str,
-        metric_name: Optional[str] = None
-    ) -> List[BenchmarkReference]:
+        metric_name: str | None = None
+    ) -> list[BenchmarkReference]:
         """
         Get literature benchmark references for an organ and optional metric.
         
@@ -284,7 +283,7 @@ class DICOMImporter:
     def import_dicom_metadata(
         self,
         dicom_file_path: Path
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Import DICOM file metadata (read-only).
         
@@ -310,7 +309,7 @@ class DICOMImporter:
         except ImportError:
             raise ImportError(
                 "DICOM import requires pydicom: pip install pydicom"
-            )
+            ) from None
         
         if not dicom_file_path.exists():
             raise FileNotFoundError(f"DICOM file not found: {dicom_file_path}")
@@ -319,7 +318,7 @@ class DICOMImporter:
         try:
             ds = pydicom.dcmread(str(dicom_file_path), stop_before_pixels=True)
         except Exception as e:
-            raise ValueError(f"Failed to read DICOM file: {str(e)}")
+            raise ValueError(f"Failed to read DICOM file: {str(e)}") from e
         
         # Extract relevant metadata (read-only, no modification)
         metadata = {
@@ -337,7 +336,7 @@ class DICOMImporter:
         
         return metadata
     
-    def validate_dicom_file(self, dicom_file_path: Path) -> Tuple[bool, List[str]]:
+    def validate_dicom_file(self, dicom_file_path: Path) -> tuple[bool, list[str]]:
         """
         Validate DICOM file (read-only validation).
         
@@ -359,7 +358,7 @@ class DICOMImporter:
         
         try:
             import pydicom
-            ds = pydicom.dcmread(str(dicom_file_path), stop_before_pixels=True)
+            pydicom.dcmread(str(dicom_file_path), stop_before_pixels=True)
             notes.append("DICOM file readable (validation only, not enforcement)")
             return True, notes
         except ImportError:

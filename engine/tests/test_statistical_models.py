@@ -1,12 +1,11 @@
 """Unit tests for Phase 4 statistical models."""
 
-import math
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from statistical_models.epv_guard import EPV_MINIMUM, compute_epv, select_features_by_epv
+from statistical_models.epv_guard import compute_epv, select_features_by_epv
 
 
 def make_balanced_outcome(n: int = 100, seed: int = 0) -> np.ndarray:
@@ -166,7 +165,7 @@ def test_cox_hazard_ratios_positive():
 
     df = make_cox_df(60)
     result = fit_cox_tcp(df, feature_cols=["TCP_Poisson", "EQD2_gy"])
-    for feat, hr in result.hazard_ratios.items():
+    for _feat, hr in result.hazard_ratios.items():
         assert hr > 0
 
 

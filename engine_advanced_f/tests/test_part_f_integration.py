@@ -8,8 +8,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "engine"))
 sys.path.insert(0, str(ROOT / "engine_advanced_f"))
 
-from rbgyanx_engine.run_config import RunConfig
 from rbgyanx_advanced_f.integration import enable_part_f_analysis
+from rbgyanx_engine.run_config import RunConfig
 
 
 def test_enable_part_f_bayesian(tmp_path):

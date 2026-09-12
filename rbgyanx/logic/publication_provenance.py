@@ -11,14 +11,15 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
-import json
 import hashlib
+import json
 import shutil
 import zipfile
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Union
+from typing import Any
+
 import numpy as np
 
 
@@ -31,12 +32,12 @@ class ReplayConfiguration:
     """
     provenance_record_path: Path
     output_directory: Path
-    random_seed: Optional[int] = None
+    random_seed: int | None = None
     overwrite_existing: bool = False
     verify_hashes: bool = True
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'provenance_record_path': str(self.provenance_record_path),
@@ -57,18 +58,18 @@ class ProvenanceBundle:
     """
     bundle_id: str
     creation_timestamp: str
-    provenance_record: Dict[str, Any]
-    input_files: Dict[str, str]  # name -> filepath
-    output_files: Dict[str, str]  # name -> filepath
-    configuration: Dict[str, Any]
-    structured_logs: List[Dict[str, Any]]
-    figure_metadata: Dict[str, Dict[str, Any]] = field(default_factory=dict)  # figure_name -> metadata
+    provenance_record: dict[str, Any]
+    input_files: dict[str, str]  # name -> filepath
+    output_files: dict[str, str]  # name -> filepath
+    configuration: dict[str, Any]
+    structured_logs: list[dict[str, Any]]
+    figure_metadata: dict[str, dict[str, Any]] = field(default_factory=dict)  # figure_name -> metadata
     code_version: str = "1.0.0"
-    system_info: Dict[str, Any] = field(default_factory=dict)
-    reviewer_notes: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    system_info: dict[str, Any] = field(default_factory=dict)
+    reviewer_notes: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'bundle_id': self.bundle_id,
@@ -98,17 +99,17 @@ class JournalExport:
     Phase 12: Format suitable for journal submission and review.
     """
     export_id: str
-    journal_name: Optional[str]
-    manuscript_info: Dict[str, Any]
+    journal_name: str | None
+    manuscript_info: dict[str, Any]
     provenance_bundle: ProvenanceBundle
-    figure_files: List[str]
-    supplementary_materials: List[str]
-    reproducibility_script: Optional[str] = None
-    readme_content: Optional[str] = None
-    export_timestamp: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    figure_files: list[str]
+    supplementary_materials: list[str]
+    reproducibility_script: str | None = None
+    readme_content: str | None = None
+    export_timestamp: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'export_id': self.export_id,
@@ -145,15 +146,15 @@ class PublicationProvenanceToolkit:
     
     def create_provenance_bundle(
         self,
-        provenance_record: Dict[str, Any],
-        input_files: Dict[str, Union[str, Path]],
-        output_files: Dict[str, Union[str, Path]],
-        structured_logs: List[Dict[str, Any]],
-        configuration: Optional[Dict[str, Any]] = None,
-        figure_metadata: Optional[Dict[str, Dict[str, Any]]] = None,
+        provenance_record: dict[str, Any],
+        input_files: dict[str, str | Path],
+        output_files: dict[str, str | Path],
+        structured_logs: list[dict[str, Any]],
+        configuration: dict[str, Any] | None = None,
+        figure_metadata: dict[str, dict[str, Any]] | None = None,
         code_version: str = "1.0.0",
-        system_info: Optional[Dict[str, Any]] = None,
-        reviewer_notes: Optional[str] = None
+        system_info: dict[str, Any] | None = None,
+        reviewer_notes: str | None = None
     ) -> ProvenanceBundle:
         """
         Create provenance bundle for publication.
@@ -218,7 +219,7 @@ class PublicationProvenanceToolkit:
     def export_provenance_bundle(
         self,
         bundle: ProvenanceBundle,
-        output_directory: Union[str, Path],
+        output_directory: str | Path,
         include_files: bool = True,
         create_zip: bool = True
     ) -> Path:
@@ -293,12 +294,12 @@ class PublicationProvenanceToolkit:
     def create_journal_export(
         self,
         bundle: ProvenanceBundle,
-        journal_name: Optional[str] = None,
-        manuscript_info: Optional[Dict[str, Any]] = None,
-        figure_files: Optional[List[Union[str, Path]]] = None,
-        supplementary_materials: Optional[List[Union[str, Path]]] = None,
-        reproducibility_script: Optional[str] = None,
-        readme_content: Optional[str] = None
+        journal_name: str | None = None,
+        manuscript_info: dict[str, Any] | None = None,
+        figure_files: list[str | Path] | None = None,
+        supplementary_materials: list[str | Path] | None = None,
+        reproducibility_script: str | None = None,
+        readme_content: str | None = None
     ) -> JournalExport:
         """
         Create journal-ready export package.
@@ -344,7 +345,7 @@ class PublicationProvenanceToolkit:
     def export_journal_package(
         self,
         journal_export: JournalExport,
-        output_directory: Union[str, Path]
+        output_directory: str | Path
     ) -> Path:
         """
         Export journal-ready package to directory.
@@ -412,7 +413,7 @@ class PublicationProvenanceToolkit:
         
         return export_dir
     
-    def load_provenance_bundle(self, bundle_file: Union[str, Path]) -> ProvenanceBundle:
+    def load_provenance_bundle(self, bundle_file: str | Path) -> ProvenanceBundle:
         """
         Load provenance bundle from JSON file.
         
@@ -427,16 +428,16 @@ class PublicationProvenanceToolkit:
             Loaded provenance bundle
         """
         bundle_path = Path(bundle_file)
-        with open(bundle_path, 'r') as f:
+        with open(bundle_path) as f:
             data = json.load(f)
         
         return ProvenanceBundle(**data)
     
     def create_replay_configuration(
         self,
-        provenance_record_path: Union[str, Path],
-        output_directory: Union[str, Path],
-        random_seed: Optional[int] = None,
+        provenance_record_path: str | Path,
+        output_directory: str | Path,
+        random_seed: int | None = None,
         overwrite_existing: bool = False,
         verify_hashes: bool = True
     ) -> ReplayConfiguration:
@@ -472,7 +473,7 @@ class PublicationProvenanceToolkit:
     def generate_reproducibility_script(
         self,
         bundle: ProvenanceBundle,
-        script_template: Optional[str] = None
+        script_template: str | None = None
     ) -> str:
         """
         Generate Python script for reproducing analysis.
@@ -528,7 +529,7 @@ print(f"System info: {{bundle.system_info}}")
     def create_reviewer_readme(
         self,
         bundle: ProvenanceBundle,
-        additional_notes: Optional[str] = None
+        additional_notes: str | None = None
     ) -> str:
         """
         Create README for reviewers.

@@ -1,6 +1,5 @@
 """Engine API smoke tests."""
 
-from pathlib import Path
 
 from rbgyanx_engine import RunConfig, __version__, run_analysis
 

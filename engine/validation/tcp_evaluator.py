@@ -85,7 +85,7 @@ def compute_ece(
 
     bins = np.linspace(0, 1, n_bins + 1)
     ece = 0.0
-    for lo, hi in zip(bins[:-1], bins[1:]):
+    for lo, hi in zip(bins[:-1], bins[1:], strict=True):
         mask = (p >= lo) & (p < hi)
         if not mask.any():
             continue

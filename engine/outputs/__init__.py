@@ -3,12 +3,12 @@ from outputs.figures import (
     plot_model_comparison_bar,
     plot_uncertainty_bands,
 )
+from outputs.ntcp_reporter import build_ntcp_table, save_ntcp_excel
 from outputs.reporter import (
     build_benchmarking_table,
     print_summary_table,
     save_benchmarking_excel,
 )
-from outputs.ntcp_reporter import build_ntcp_table, save_ntcp_excel
 
 __all__ = [
     "build_benchmarking_table",

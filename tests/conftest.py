@@ -1,12 +1,13 @@
 """
 Pytest fixtures for rbGyanX testing
 """
+import contextlib
 import os
-import pytest
-import tempfile
-import shutil
-from pathlib import Path
 import sys
+import tempfile
+from pathlib import Path
+
+import pytest
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -35,7 +36,7 @@ requires_dicom = pytest.mark.skipif(
 )
 
 try:
-    from clinical_template_generator import create_tcp_template, create_ntcp_template
+    from clinical_template_generator import create_ntcp_template, create_tcp_template
     TEMPLATE_GENERATOR_AVAILABLE = True
 except ImportError:
     TEMPLATE_GENERATOR_AVAILABLE = False
@@ -52,10 +53,8 @@ def tcp_template():
     with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as f:
         template_path = create_tcp_template(f.name, with_samples=True, n_samples=30)
         yield template_path
-        try:
+        with contextlib.suppress(PermissionError):
             Path(template_path).unlink(missing_ok=True)
-        except PermissionError:
-            pass
 
 
 @pytest.fixture(scope="session")
@@ -67,10 +66,8 @@ def ntcp_template():
     with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as f:
         template_path = create_ntcp_template(f.name, with_samples=True, n_samples=30)
         yield template_path
-        try:
+        with contextlib.suppress(PermissionError):
             Path(template_path).unlink(missing_ok=True)
-        except PermissionError:
-            pass
 
 
 @pytest.fixture

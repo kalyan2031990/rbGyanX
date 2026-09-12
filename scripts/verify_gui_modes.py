@@ -39,7 +39,7 @@ def main() -> int:
         errors.append("rbgyanx-engine not found under engine/ or engine_bundle/")
 
     for mode in (RunMode.BASIC, RunMode.ADVANCED):
-        mc = ModeController(mode)
+        ModeController(mode)
         caps = CAPABILITY_EXPOSURE[mode]
         ai = caps.get("ai_integration")
         ml_cap = "on" if ai else "off"

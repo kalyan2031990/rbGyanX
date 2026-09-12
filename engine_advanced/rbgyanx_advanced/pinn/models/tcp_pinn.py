@@ -29,7 +29,7 @@ class PINNTCPAdapter:
         self.feat_names = feat_names or []
 
     @classmethod
-    def load(cls, path: Path, site: str = "HN") -> "PINNTCPAdapter":
+    def load(cls, path: Path, site: str = "HN") -> PINNTCPAdapter:
         if not TORCH_AVAILABLE or not path.is_file():
             return cls(model=None, site=site)
         import torch
@@ -79,7 +79,9 @@ class PINNTCPAdapter:
         x = torch.tensor(vec, dtype=torch.float32).unsqueeze(0)
         if self.feat_means is not None and self.feat_stds is not None and len(self.feat_names):
             out = np.zeros(len(self.feat_names), dtype=np.float32)
-            name_to_val = dict(zip(self._default_feat_names(), vec))
+            # strict=False deliberately: the lookup below tolerates a short vector via
+            # .get(name, 0.0), so a length mismatch is handled rather than fatal.
+            name_to_val = dict(zip(self._default_feat_names(), vec, strict=False))
             for i, name in enumerate(self.feat_names):
                 out[i] = name_to_val.get(name, 0.0)
             stds = np.asarray(self.feat_stds, dtype=np.float32)

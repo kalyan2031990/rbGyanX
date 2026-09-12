@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
-
 Endpoint = Literal["tcp", "ntcp", "both"]
 InputKind = Literal["dicom", "dvh_txt"]
 RunMode = Literal["basic", "advanced"]

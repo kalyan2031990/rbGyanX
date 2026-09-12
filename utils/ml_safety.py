@@ -28,11 +28,12 @@ Author: KB (rbGyanX Project)
 License: MIT
 """
 
-import numpy as np
-import pandas as pd
+import json
 import warnings
 from pathlib import Path
-import json
+
+import numpy as np
+import pandas as pd
 
 
 class CohortConsistencyChecker:
@@ -142,7 +143,7 @@ class CohortConsistencyChecker:
         except np.linalg.LinAlgError:
             warnings.warn(
                 "Covariance matrix is singular. Using pseudoinverse. "
-                "CCS may be unreliable with current training data."
+                "CCS may be unreliable with current training data.", stacklevel=2
             )
             self.sigma_inv = np.linalg.pinv(self.sigma)
         
@@ -348,7 +349,7 @@ class CohortConsistencyChecker:
             raise FileNotFoundError(f"CCS file not found: {filepath}")
         
         # Load from JSON
-        with open(filepath, 'r') as f:
+        with open(filepath) as f:
             data = json.load(f)
         
         # Create checker

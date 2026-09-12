@@ -31,7 +31,7 @@ including the effects of inhomogeneous distributions of dose and clonogenic
 cell density. Phys Med Biol. 38(6):653-666.
 """
 
-from typing import Optional
+
 import numpy as np
 import pandas as pd
 

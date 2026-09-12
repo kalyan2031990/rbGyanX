@@ -64,8 +64,9 @@ def test_workflow_state_transitions():
 def test_template_download_functionality():
     """Test clinical template download"""
     try:
-        from clinical_template_generator import create_tcp_template, create_ntcp_template
         import tempfile
+
+        from clinical_template_generator import create_ntcp_template, create_tcp_template
         
         with tempfile.TemporaryDirectory() as tmpdir:
             # Test TCP template

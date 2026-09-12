@@ -10,13 +10,12 @@ Version: 1.0.0
 """
 
 import json
-import os
-import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
-from pathlib import Path
-from typing import Dict, List, Optional, Any
-from datetime import datetime
 import threading
+import tkinter as tk
+from datetime import datetime
+from pathlib import Path
+from tkinter import messagebox, scrolledtext, ttk
+from typing import Any
 
 # API client imports
 OPENAI_AVAILABLE = False
@@ -45,7 +44,7 @@ except ImportError:
 class APILLMEngine:
     """API-based LLM engine for Ask rbGyanX"""
     
-    def __init__(self, provider: str = "openai", api_key: Optional[str] = None):
+    def __init__(self, provider: str = "openai", api_key: str | None = None):
         """
         Initialize API LLM engine
         
@@ -58,13 +57,13 @@ class APILLMEngine:
         """
         self.provider = provider.lower()
         self.api_key = api_key or self._load_api_key()
-        self.conversation_history: List[Dict[str, str]] = []
+        self.conversation_history: list[dict[str, str]] = []
         self.model = self._get_default_model()
         
         # Initialize client
         self.client = self._initialize_client()
     
-    def _load_api_key(self) -> Optional[str]:
+    def _load_api_key(self) -> str | None:
         """Load API key from config file - STEP 1: Robust loading with validation"""
         config_path = Path.home() / ".rbgyanx" / "api_config.json"
         if config_path.exists():
@@ -80,7 +79,7 @@ class APILLMEngine:
         return None
     
     @staticmethod
-    def load_openai_api_key() -> Optional[str]:
+    def load_openai_api_key() -> str | None:
         """STEP 1: Helper function to load OpenAI API key"""
         config_path = Path.home() / ".rbgyanx" / "api_config.json"
         if config_path.exists():
@@ -126,7 +125,7 @@ class APILLMEngine:
         else:
             return None
     
-    def chat(self, message: str, context: Optional[Dict] = None) -> Dict[str, Any]:
+    def chat(self, message: str, context: dict | None = None) -> dict[str, Any]:
         """
         Send message to LLM API - STEP 5: With provenance logging
         
@@ -150,7 +149,7 @@ class APILLMEngine:
         
         if not self.client:
             error_msg = 'Error: API client not initialized. Please configure API key.'
-            logger.error(f"API client not initialized for Ask rbGyanX")
+            logger.error("API client not initialized for Ask rbGyanX")
             return {
                 'text': error_msg,
                 'source': 'error',
@@ -210,7 +209,7 @@ class APILLMEngine:
                 'tokens_used': 0
             }
     
-    def _build_system_prompt(self, context: Optional[Dict] = None) -> str:
+    def _build_system_prompt(self, context: dict | None = None) -> str:
         """Build system prompt with rbGyanX context - STEP 3: Mode-aware personality"""
         # STEP 3: Use mode-aware system prompt from context if provided
         if context and context.get('system_prompt_override'):
@@ -250,7 +249,7 @@ rbGyanX is a research tool for:
         
         return prompt
     
-    def _format_context(self, context: Dict) -> str:
+    def _format_context(self, context: dict) -> str:
         """Format context for LLM"""
         parts = []
         
@@ -266,7 +265,7 @@ rbGyanX is a research tool for:
         
         return "\n".join(parts) if parts else ""
     
-    def _call_openai(self, system_prompt: str) -> Dict[str, Any]:
+    def _call_openai(self, system_prompt: str) -> dict[str, Any]:
         """Call OpenAI API - STEP 2: Real API calls with mode-aware temperature"""
         import logging
         logger = logging.getLogger(__name__)
@@ -356,7 +355,7 @@ rbGyanX is a research tool for:
         
         return text
     
-    def _call_anthropic(self, system_prompt: str) -> Dict[str, Any]:
+    def _call_anthropic(self, system_prompt: str) -> dict[str, Any]:
         """Call Anthropic Claude API"""
         messages = []
         
@@ -381,7 +380,7 @@ rbGyanX is a research tool for:
             'tokens_used': response.usage.input_tokens + response.usage.output_tokens
         }
     
-    def _call_google(self, system_prompt: str) -> Dict[str, Any]:
+    def _call_google(self, system_prompt: str) -> dict[str, Any]:
         """Call Google Gemini API"""
         model = genai.GenerativeModel(self.model)
         
@@ -409,7 +408,7 @@ rbGyanX is a research tool for:
 class AskrbGyanXDialog:
     """Dialog window for Ask rbGyanX with API-based LLM"""
     
-    def __init__(self, parent, context: Optional[Dict] = None, mode_controller=None):
+    def __init__(self, parent, context: dict | None = None, mode_controller=None):
         """
         Initialize Ask rbGyanX dialog
         
@@ -455,7 +454,7 @@ class AskrbGyanXDialog:
     def _initialize_ai_integration(self):
         """Initialize AI integration with mode-aware personality"""
         try:
-            from rbgyanx.logic.ai_integration import AskRbGyanXIntegration, AIPersonality
+            from rbgyanx.logic.ai_integration import AIPersonality, AskRbGyanXIntegration
             
             # Determine personality based on mode
             if self.mode_controller and self.mode_controller.is_advanced():
@@ -714,15 +713,9 @@ class AskrbGyanXDialog:
                 
                 # STEP 3: Relax safety filters - validate query through AI integration
                 if self.ai_integration:
-                    from rbgyanx.logic.ai_integration import AIInteractionType
                     # Default to EXPLANATION, but allow analytical queries
-                    interaction_type = AIInteractionType.EXPLANATION
-                    if any(kw in question.lower() for kw in ['why', 'what causes', 'how does', 'explain']):
-                        interaction_type = AIInteractionType.EXPLANATION
-                    elif any(kw in question.lower() for kw in ['disagree', 'divergence', 'difference', 'compare']):
-                        interaction_type = AIInteractionType.DIVERGENCE_ANALYSIS
-                    elif any(kw in question.lower() for kw in ['uncertainty', 'error', 'variance', 'source']):
-                        interaction_type = AIInteractionType.UNCERTAINTY_DISCUSSION
+                    if any(kw in question.lower() for kw in ['why', 'what causes', 'how does', 'explain']) or any(kw in question.lower() for kw in ['disagree', 'divergence', 'difference', 'compare']) or any(kw in question.lower() for kw in ['uncertainty', 'error', 'variance', 'source']):
+                        pass
                     
                     # STEP 3: Only block if truly asking for action/recommendation
                     is_blocked = any(kw in question.lower() for kw in ['recommend', 'should i', 'which is better', 'optimize', 'choose'])
@@ -734,8 +727,8 @@ class AskrbGyanXDialog:
                             self.conversation_text.delete("1.0", tk.END)
                             self.conversation_text.insert("1.0", content)
                             self.conversation_text.insert(tk.END, 
-                                f"Ask rbGyanX: This query was blocked because it requests a recommendation or action.\n"
-                                f"Please rephrase as an analytical question (e.g., 'Why does this model behave this way?' or 'What causes disagreement between models?')\n\n")
+                                "Ask rbGyanX: This query was blocked because it requests a recommendation or action.\n"
+                                "Please rephrase as an analytical question (e.g., 'Why does this model behave this way?' or 'What causes disagreement between models?')\n\n")
                             self.conversation_text.insert(tk.END, "=" * 60 + "\n\n")
                             self.conversation_text.see(tk.END)
                             self.conversation_text.config(state=tk.DISABLED)

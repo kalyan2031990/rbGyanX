@@ -8,8 +8,6 @@ Version: 1.0.0
 """
 
 import re
-from typing import Dict, List, Tuple, Optional
-from pathlib import Path
 
 
 class ScopeGuard:
@@ -26,7 +24,7 @@ class ScopeGuard:
         self.allowed_patterns = self._load_allowed_patterns()
         self.data_access_patterns = self._load_data_access_patterns()
     
-    def _load_blocked_patterns(self) -> List[Tuple[str, str]]:
+    def _load_blocked_patterns(self) -> list[tuple[str, str]]:
         """
         Load patterns that should be blocked (clinical decision making).
         
@@ -67,7 +65,7 @@ class ScopeGuard:
             (r'automatically.*choose', 'Automatic selection is not allowed'),
         ]
     
-    def _load_allowed_patterns(self) -> List[str]:
+    def _load_allowed_patterns(self) -> list[str]:
         """
         Load patterns that are explicitly allowed (educational).
         
@@ -90,7 +88,7 @@ class ScopeGuard:
             r'what.*does.*warning.*mean',  # QA explanation OK
         ]
     
-    def _load_data_access_patterns(self) -> List[str]:
+    def _load_data_access_patterns(self) -> list[str]:
         """
         Load patterns that indicate data access attempts.
         
@@ -110,7 +108,7 @@ class ScopeGuard:
             r'load.*clinical',
         ]
     
-    def check_query(self, query: str) -> Tuple[bool, Optional[str], Optional[str]]:
+    def check_query(self, query: str) -> tuple[bool, str | None, str | None]:
         """
         Check if query is within allowed scope.
         

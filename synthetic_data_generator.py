@@ -12,10 +12,12 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
-import pandas as pd
-import numpy as np
-from pathlib import Path
 import warnings
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
 warnings.filterwarnings('ignore')
 
 
@@ -221,7 +223,7 @@ class SyntheticClinicalDataGenerator:
         """Generate DVH CSV files for each patient-organ combination"""
         dvh_files = []
         
-        for idx, patient in patient_metadata.iterrows():
+        for _idx, patient in patient_metadata.iterrows():
             patient_id = patient['PatientID']
             total_dose = patient['TotalDose_Gy']
             
@@ -260,7 +262,7 @@ class SyntheticClinicalDataGenerator:
             # Tumor DVH - should receive prescription dose
             # Peak around prescription dose with some heterogeneity
             mean_dose = prescription_dose * 0.98
-            std_dose = prescription_dose * 0.05
+            prescription_dose * 0.05
             
             # Create DVH distribution
             dvh_volumes = np.zeros_like(dose_bins)
@@ -285,25 +287,18 @@ class SyntheticClinicalDataGenerator:
             if 'Parotid' in organ:
                 # Parotid: mean dose ~25-35 Gy
                 mean_dose = np.random.uniform(20, 35)
-                std_dose = 8
             elif 'Submandibular' in organ:
                 mean_dose = np.random.uniform(30, 45)
-                std_dose = 10
             elif 'Oral_Cavity' in organ:
                 mean_dose = np.random.uniform(25, 40)
-                std_dose = 12
             elif 'Pharynx' in organ:
                 mean_dose = np.random.uniform(40, 55)
-                std_dose = 8
             elif 'SpinalCord' in organ:
                 mean_dose = np.random.uniform(15, 35)
-                std_dose = 5
             elif 'Brainstem' in organ:
                 mean_dose = np.random.uniform(10, 30)
-                std_dose = 5
             else:
                 mean_dose = np.random.uniform(20, 40)
-                std_dose = 10
             
             # Create dose distribution (exponential decay)
             dvh_volumes = np.zeros_like(dose_bins)
@@ -345,7 +340,7 @@ class SyntheticClinicalDataGenerator:
         # Create NTCP clinical data (multi-organ)
         ntcp_rows = []
         
-        for idx, patient in patient_metadata.iterrows():
+        for _idx, patient in patient_metadata.iterrows():
             patient_id = patient['PatientID']
             age = patient['Age']
             gender = patient['Gender']

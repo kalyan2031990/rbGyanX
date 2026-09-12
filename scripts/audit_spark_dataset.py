@@ -11,6 +11,7 @@ Step 1:
 import os
 from pathlib import Path
 
+
 def _default_workspace() -> Path:
     """First rbGyanX_Manuscript_Workspace found walking up from this file."""
     for parent in Path(__file__).resolve().parents:

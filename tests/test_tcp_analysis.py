@@ -1,10 +1,10 @@
 """Test TCP analysis workflow end-to-end"""
-import pytest
 import subprocess
 import sys
 from pathlib import Path
+
 import pandas as pd
-import numpy as np
+import pytest
 
 
 def test_tcp_with_synthetic_data(synthetic_data_dir, tcp_template, temp_output_dir):
@@ -45,7 +45,7 @@ def test_tcp_with_synthetic_data(synthetic_data_dir, tcp_template, temp_output_d
         from PIL import Image
         sample_plot = plot_files[0]
         img = Image.open(sample_plot)
-        dpi = img.info.get('dpi', (0, 0))
+        img.info.get('dpi', (0, 0))
         # Note: PNG files may not always store DPI in metadata
         # The actual DPI is set during savefig, so we check if file exists and is reasonable size
         assert sample_plot.stat().st_size > 1000, "Plot file too small (likely not 600 DPI)"
@@ -124,8 +124,9 @@ def test_tcp_ml_with_minimal_clinical_data(synthetic_data_dir, temp_output_dir):
     
     # Load full template and keep only required columns
     try:
-        from clinical_template_generator import create_tcp_template
         import tempfile
+
+        from clinical_template_generator import create_tcp_template
         
         with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as f:
             full_template = create_tcp_template(f.name, with_samples=True, n_samples=30)

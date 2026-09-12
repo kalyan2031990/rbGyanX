@@ -136,7 +136,7 @@ def fit_random_forest_tcp(
         outer_auc = float(roc_auc_score(y_te, prob_te))
         outer_aucs.append(outer_auc)
 
-    for i, (inn, out) in enumerate(zip(inner_aucs, outer_aucs)):
+    for i, (inn, out) in enumerate(zip(inner_aucs, outer_aucs, strict=True)):
         if out > inn + 0.15:
             warns.append(
                 f"Outer fold {i}: outer AUC {out:.3f} > inner AUC {inn:.3f} + 0.15 "
@@ -157,7 +157,7 @@ def fit_random_forest_tcp(
     final_model = gs_final.best_estimator_
 
     rf_step = final_model.named_steps["rf"]
-    importances = dict(zip(fname, rf_step.feature_importances_.tolist()))
+    importances = dict(zip(fname, rf_step.feature_importances_.tolist(), strict=True))
 
     shap_values, shap_ev = None, None
     if compute_shap:

@@ -4,11 +4,12 @@ Unit tests for biological transforms module
 Tests for rbgyanx.core.biological.transforms (Phase 1 refactoring)
 """
 
-import pytest
+import sys
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
-import sys
+import pytest
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -180,7 +181,6 @@ class TestFractionationAwareDVH:
         
         # For 2 Gy per fraction, BED should be close to total dose
         # BED = n * d * (1 + d/alpha_beta) = 30 * 2 * (1 + 2/10) = 60 * 1.2 = 72
-        dose_per_fraction = 60 / 30  # 2 Gy
         expected_bed_per_bin = 30 * (60 / 30) * (1 + (60 / 30) / 10.0)
         
         # Check approximate equivalence (allowing for bin-by-bin variation)
@@ -188,8 +188,8 @@ class TestFractionationAwareDVH:
     
     def test_backward_compatibility_import(self):
         """Test that old import path still works"""
-        from utils.biological_transforms import FractionationAwareDVH as OldImport
         from rbgyanx.core.biological.transforms import FractionationAwareDVH as NewImport
+        from utils.biological_transforms import FractionationAwareDVH as OldImport
         
         # Both should be the same class
         assert OldImport is NewImport

@@ -9,16 +9,14 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
-import sys
-import subprocess
-import traceback
 import os
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional
-from datetime import datetime
-import json
-import tempfile
 import shutil
+import subprocess
+import sys
+import tempfile
+import traceback
+from datetime import datetime
+from pathlib import Path
 
 # Try to import required modules
 try:
@@ -75,7 +73,7 @@ class SelfTestEngine:
             else:
                 self.mode = "basic"  # Default to basic
         
-    def run_all_tests(self) -> Dict:
+    def run_all_tests(self) -> dict:
         """
         Run all self-tests.
         
@@ -141,7 +139,7 @@ class SelfTestEngine:
             'suggested_actions': self.suggested_actions
         }
     
-    def _add_test_result(self, name: str, status: str, message: str, details: Optional[str] = None):
+    def _add_test_result(self, name: str, status: str, message: str, details: str | None = None):
         """
         Add a test result.
         
@@ -291,7 +289,7 @@ class SelfTestEngine:
                     test_name,
                     "PASS",
                     "DICOM test cohort available (engine path)",
-                    f"Use test_data/dicom_input for rbgyanx-engine smoke tests",
+                    "Use test_data/dicom_input for rbgyanx-engine smoke tests",
                 )
                 return
             if not test_data_dir.exists():
@@ -614,7 +612,7 @@ class SelfTestEngine:
                 return
             
             # Check for common GUI methods
-            with open(gui_file, 'r', encoding='utf-8') as f:
+            with open(gui_file, encoding='utf-8') as f:
                 gui_content = f.read()
                 
             required_methods = [
@@ -674,9 +672,8 @@ class SelfTestEngine:
             output_dirs = ['reports', 'plots', 'qa/reports']
             for dir_name in output_dirs:
                 dir_path = self.repo_root / dir_name
-                if dir_path.exists():
-                    if not os.access(dir_path, os.W_OK):
-                        permission_issues.append(f"{dir_name}: No write permission")
+                if dir_path.exists() and not os.access(dir_path, os.W_OK):
+                    permission_issues.append(f"{dir_name}: No write permission")
             
             if permission_issues:
                 self._add_test_result(
@@ -705,7 +702,7 @@ class SelfTestEngine:
             header = None
             try:
                 header = root.nametowidget("header_frame")
-            except:
+            except Exception:
                 # Try alternative: look for header_frame attribute
                 if hasattr(root, 'header_frame'):
                     header = root.header_frame
@@ -771,7 +768,7 @@ class SelfTestEngine:
                 self._add_test_result(test_name, 'WARN', "GUI file not found", "Cannot check GUI layout")
                 return
             
-            with open(gui_file, 'r', encoding='utf-8') as f:
+            with open(gui_file, encoding='utf-8') as f:
                 gui_content = f.read()
             
             issues = []
@@ -857,7 +854,7 @@ class SelfTestEngine:
             if not gui_file.exists():
                 self._add_test_result(test_name, 'WARN', "GUI file not found", "Cannot check menu callbacks")
                 return
-            with open(gui_file, 'r', encoding='utf-8') as f:
+            with open(gui_file, encoding='utf-8') as f:
                 gui_content = f.read()
             menu_patterns = [
                 (r'menu_run_self_test', 'self.menu_run_self_test'),
@@ -866,7 +863,7 @@ class SelfTestEngine:
                 (r'menu_ask_rbgyanx', 'self.menu_ask_rbgyanx'),
             ]
             missing_callbacks = []
-            for pattern, callback in menu_patterns:
+            for _pattern, callback in menu_patterns:
                 if f'command={callback}' in gui_content or f'command=self.{callback.split(".")[1]}' in gui_content:
                     if f'def {callback.split(".")[1]}' not in gui_content:
                         missing_callbacks.append(callback)
@@ -886,7 +883,7 @@ class SelfTestEngine:
                 self._add_test_result(test_name, 'WARN', "ML analysis script not found", "ML pipeline cannot be tested")
                 return
             
-            with open(ml_script, 'r', encoding='utf-8') as f:
+            with open(ml_script, encoding='utf-8') as f:
                 ml_content = f.read()
             
             # Check mode and adjust expectations
@@ -1020,7 +1017,7 @@ class SelfTestEngine:
                 )
                 return
             
-            with open(gui_file, 'r', encoding='utf-8') as f:
+            with open(gui_file, encoding='utf-8') as f:
                 gui_content = f.read()
             
             # Check for menu_ask_rbgyanx method
@@ -1073,7 +1070,7 @@ class SelfTestEngine:
                     rule_based_path = self.repo_root / "ask_rbgyanx" / "rule_based_assistant.py"
                     if rule_based_path.exists():
                         assistant_available = True
-                except:
+                except Exception:
                     pass
                 
                 if assistant_available:
@@ -1352,7 +1349,7 @@ class SelfTestEngine:
         return output_path
 
 
-def run_self_test(repo_root: Optional[Path] = None) -> Dict:
+def run_self_test(repo_root: Path | None = None) -> dict:
     """
     Convenience function to run self-test.
     

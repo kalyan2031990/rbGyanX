@@ -4,19 +4,20 @@ Unit tests for TCP models in rbgyanx.core.tcp
 Tests for Phase 1B.2 refactoring (core layer extraction)
 """
 
-import pytest
+import sys
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
-import sys
+import pytest
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from rbgyanx.core.tcp.poisson import calculate_tcp_poisson
+from rbgyanx.core.tcp.eud import calculate_tcp_eud
 from rbgyanx.core.tcp.lkb import calculate_tcp_lkb
 from rbgyanx.core.tcp.logistic import calculate_tcp_logistic
-from rbgyanx.core.tcp.eud import calculate_tcp_eud
+from rbgyanx.core.tcp.poisson import calculate_tcp_poisson
 
 
 class TestTCPPoisson:
@@ -212,8 +213,8 @@ class TestBackwardCompatibility:
     
     def test_new_import_works(self):
         """Test that new import path works"""
-        from rbgyanx.core.tcp.poisson import calculate_tcp_poisson
         from rbgyanx.core.tcp.lkb import calculate_tcp_lkb
+        from rbgyanx.core.tcp.poisson import calculate_tcp_poisson
         
         # Should import successfully
         assert calculate_tcp_poisson is not None

@@ -18,7 +18,7 @@ Version: 1.0.0
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Optional, Dict, Any
+from typing import Any
 
 
 class TreatmentTechnique(Enum):
@@ -50,7 +50,7 @@ class ApplicabilityWarning:
     category: str  # "fractionation", "model_validity", "dose_range", etc.
     message: str
     confidence: str  # "high", "medium", "low"
-    context: Dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -62,13 +62,13 @@ class ApplicabilityResult:
     No recommendations - only informative warnings.
     """
     biological_allowed: bool  # Always True (non-blocking)
-    selected_model: Optional[BiologicalModel]
-    warnings: List[ApplicabilityWarning] = field(default_factory=list)
+    selected_model: BiologicalModel | None
+    warnings: list[ApplicabilityWarning] = field(default_factory=list)
     fractionation_compatible: bool = True
     model_validity: str = "unknown"  # "valid", "limited", "questionable", "unknown"
     confidence: str = "medium"  # "high", "medium", "low"
     
-    def add_warning(self, category: str, message: str, confidence: str = "medium", context: Optional[Dict[str, Any]] = None):
+    def add_warning(self, category: str, message: str, confidence: str = "medium", context: dict[str, Any] | None = None):
         """Add a warning to the result."""
         self.warnings.append(ApplicabilityWarning(
             category=category,
@@ -94,7 +94,7 @@ class ApplicabilityChecker:
     
     # Model validity matrix (from literature and manifesto)
     # Values: "valid", "limited", "questionable", "unknown"
-    VALIDITY_MATRIX: Dict[TreatmentTechnique, Dict[BiologicalModel, str]] = {
+    VALIDITY_MATRIX: dict[TreatmentTechnique, dict[BiologicalModel, str]] = {
         TreatmentTechnique.CONVENTIONAL: {
             BiologicalModel.LQ: "valid",
             BiologicalModel.LQL: "valid",
@@ -139,7 +139,7 @@ class ApplicabilityChecker:
     SBRT_RANGE = (5.0, 20.0)  # Gy per fraction
     SRS_RANGE = (10.0, 30.0)  # Gy per fraction
     
-    def detect_technique(self, dose_per_fraction: float, n_fractions: Optional[int] = None) -> TreatmentTechnique:
+    def detect_technique(self, dose_per_fraction: float, n_fractions: int | None = None) -> TreatmentTechnique:
         """
         Detect treatment technique from fractionation parameters.
         
@@ -169,9 +169,9 @@ class ApplicabilityChecker:
     def check_fractionation_compatibility(
         self,
         dose_per_fraction: float,
-        n_fractions: Optional[int] = None,
-        technique: Optional[TreatmentTechnique] = None
-    ) -> tuple[bool, List[ApplicabilityWarning]]:
+        n_fractions: int | None = None,
+        technique: TreatmentTechnique | None = None
+    ) -> tuple[bool, list[ApplicabilityWarning]]:
         """
         Check fractionation compatibility.
         
@@ -189,7 +189,7 @@ class ApplicabilityChecker:
         tuple[bool, List[ApplicabilityWarning]]
             (is_compatible, warnings)
         """
-        warnings: List[ApplicabilityWarning] = []
+        warnings: list[ApplicabilityWarning] = []
         is_compatible = True
         
         if technique is None:
@@ -243,7 +243,7 @@ class ApplicabilityChecker:
         self,
         technique: TreatmentTechnique,
         model: BiologicalModel
-    ) -> tuple[str, List[ApplicabilityWarning]]:
+    ) -> tuple[str, list[ApplicabilityWarning]]:
         """
         Check model validity for treatment technique.
         
@@ -259,7 +259,7 @@ class ApplicabilityChecker:
         tuple[str, List[ApplicabilityWarning]]
             (validity_status, warnings)
         """
-        warnings: List[ApplicabilityWarning] = []
+        warnings: list[ApplicabilityWarning] = []
         
         validity = self.VALIDITY_MATRIX.get(technique, {}).get(model, "unknown")
         
@@ -290,10 +290,10 @@ class ApplicabilityChecker:
     def check_applicability(
         self,
         dose_per_fraction: float,
-        n_fractions: Optional[int] = None,
-        technique: Optional[TreatmentTechnique] = None,
-        requested_model: Optional[BiologicalModel] = None,
-        alpha_beta_ratio: Optional[float] = None
+        n_fractions: int | None = None,
+        technique: TreatmentTechnique | None = None,
+        requested_model: BiologicalModel | None = None,
+        alpha_beta_ratio: float | None = None
     ) -> ApplicabilityResult:
         """
         Check overall applicability and scientific validity.

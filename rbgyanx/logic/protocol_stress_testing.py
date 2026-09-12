@@ -12,11 +12,9 @@ Version: 1.0.0
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Tuple
-from pathlib import Path
 from datetime import datetime
 from enum import Enum
-import copy
+from typing import Any
 
 
 class ProtocolComponent(Enum):
@@ -39,10 +37,10 @@ class ProtocolAssumption:
     parameter_name: str
     baseline_value: float
     assumption_description: str
-    perturbation_range: Optional[Tuple[float, float]] = None
-    contextual_notes: List[str] = field(default_factory=list)
+    perturbation_range: tuple[float, float] | None = None
+    contextual_notes: list[str] = field(default_factory=list)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'component': self.component.value,
@@ -65,11 +63,11 @@ class ProtocolPerturbation:
     assumption: ProtocolAssumption
     perturbed_value: float
     perturbation_magnitude: float  # Relative change from baseline
-    stability_indicators: List[str] = field(default_factory=list)
-    robustness_metrics: Dict[str, float] = field(default_factory=dict)
-    exploratory_notes: List[str] = field(default_factory=list)
+    stability_indicators: list[str] = field(default_factory=list)
+    robustness_metrics: dict[str, float] = field(default_factory=dict)
+    exploratory_notes: list[str] = field(default_factory=list)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'perturbation_id': self.perturbation_id,
@@ -92,10 +90,10 @@ class FragileProtocolRegion:
     region_name: str
     component: ProtocolComponent
     description: str
-    sensitivity_indicators: List[str] = field(default_factory=list)
-    exploration_summary: List[str] = field(default_factory=list)
+    sensitivity_indicators: list[str] = field(default_factory=list)
+    exploration_summary: list[str] = field(default_factory=list)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'region_name': self.region_name,
@@ -114,13 +112,13 @@ class ProtocolStressTestResult:
     Phase 9: Research only - no enforcement, no accept/reject logic, no clinical recommendations.
     """
     protocol_name: str
-    assumptions: List[ProtocolAssumption] = field(default_factory=list)
-    perturbations: List[ProtocolPerturbation] = field(default_factory=list)
-    fragile_regions: List[FragileProtocolRegion] = field(default_factory=list)
-    exploration_summary: List[str] = field(default_factory=list)
+    assumptions: list[ProtocolAssumption] = field(default_factory=list)
+    perturbations: list[ProtocolPerturbation] = field(default_factory=list)
+    fragile_regions: list[FragileProtocolRegion] = field(default_factory=list)
+    exploration_summary: list[str] = field(default_factory=list)
     disclaimer: str = "RESEARCH ONLY - No enforcement, no accept/reject logic, no clinical recommendations"
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'protocol_name': self.protocol_name,
@@ -156,8 +154,8 @@ class ProtocolStressTestingSandbox:
     def register_protocol_assumptions(
         self,
         protocol_name: str,
-        assumptions: List[ProtocolAssumption]
-    ) -> List[ProtocolAssumption]:
+        assumptions: list[ProtocolAssumption]
+    ) -> list[ProtocolAssumption]:
         """
         Register protocol assumptions for stress-testing.
         
@@ -183,7 +181,7 @@ class ProtocolStressTestingSandbox:
         self,
         assumption: ProtocolAssumption,
         perturbed_value: float,
-        perturbation_id: Optional[str] = None
+        perturbation_id: str | None = None
     ) -> ProtocolPerturbation:
         """
         Create a protocol perturbation scenario.
@@ -235,8 +233,8 @@ class ProtocolStressTestingSandbox:
     def explore_edge_cases(
         self,
         assumption: ProtocolAssumption,
-        perturbation_values: List[float]
-    ) -> List[ProtocolPerturbation]:
+        perturbation_values: list[float]
+    ) -> list[ProtocolPerturbation]:
         """
         Explore edge cases for a protocol assumption.
         
@@ -266,9 +264,9 @@ class ProtocolStressTestingSandbox:
     
     def identify_fragile_regions(
         self,
-        perturbations: List[ProtocolPerturbation],
+        perturbations: list[ProtocolPerturbation],
         sensitivity_threshold: float = 0.1
-    ) -> List[FragileProtocolRegion]:
+    ) -> list[FragileProtocolRegion]:
         """
         Identify fragile protocol regions based on perturbation results.
         
@@ -287,7 +285,7 @@ class ProtocolStressTestingSandbox:
         fragile_regions = []
         
         # Group perturbations by component
-        component_perturbations: Dict[ProtocolComponent, List[ProtocolPerturbation]] = {}
+        component_perturbations: dict[ProtocolComponent, list[ProtocolPerturbation]] = {}
         for pert in perturbations:
             component = pert.assumption.component
             if component not in component_perturbations:
@@ -323,8 +321,8 @@ class ProtocolStressTestingSandbox:
     def test_guideline_sensitivity(
         self,
         protocol_name: str,
-        assumptions: List[ProtocolAssumption],
-        perturbation_scenarios: List[Dict[str, float]]
+        assumptions: list[ProtocolAssumption],
+        perturbation_scenarios: list[dict[str, float]]
     ) -> ProtocolStressTestResult:
         """
         Test guideline sensitivity through assumption perturbation.

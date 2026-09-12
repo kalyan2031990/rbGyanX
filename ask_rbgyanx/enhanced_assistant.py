@@ -8,32 +8,32 @@ Version: 1.0.0
 """
 
 import re
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Any
 
 # Import components
 try:
-    from ask_rbgyanx.scope_guard import ScopeGuard, create_scope_guard
+    from ask_rbgyanx.scope_guard import create_scope_guard
     SCOPE_GUARD_AVAILABLE = True
 except ImportError:
     SCOPE_GUARD_AVAILABLE = False
     create_scope_guard = None
 
 try:
-    from ask_rbgyanx.calculator import ScientificCalculator, create_calculator
+    from ask_rbgyanx.calculator import create_calculator
     CALCULATOR_AVAILABLE = True
 except ImportError:
     CALCULATOR_AVAILABLE = False
     create_calculator = None
 
 try:
-    from ask_rbgyanx.math_tools import MathEquationHelper, create_equation_helper
+    from ask_rbgyanx.math_tools import create_equation_helper
     EQUATION_HELPER_AVAILABLE = True
 except ImportError:
     EQUATION_HELPER_AVAILABLE = False
     create_equation_helper = None
 
 try:
-    from ai.rule_based_assistant import RuleBasedAssistant, create_rule_based_assistant
+    from ai.rule_based_assistant import create_rule_based_assistant
     RULE_BASED_AVAILABLE = True
 except ImportError:
     RULE_BASED_AVAILABLE = False
@@ -62,7 +62,7 @@ class EnhancedAskrbGyanX:
         # Expanded knowledge (will be loaded from registry)
         self.expanded_knowledge = self._load_expanded_knowledge()
     
-    def _load_expanded_knowledge(self) -> Dict[str, Dict]:
+    def _load_expanded_knowledge(self) -> dict[str, dict]:
         """Load expanded knowledge base"""
         # This will be populated with all new topics
         # For now, return structure
@@ -452,7 +452,7 @@ References:
             }
         }
     
-    def ask(self, query: str) -> Dict[str, Any]:
+    def ask(self, query: str) -> dict[str, Any]:
         """
         Process query through enhanced assistant.
         
@@ -515,7 +515,7 @@ References:
             'source': 'enhanced_assistant'
         }
     
-    def _handle_calculation(self, calc_request: Dict) -> Optional[Dict[str, Any]]:
+    def _handle_calculation(self, calc_request: dict) -> dict[str, Any] | None:
         """Handle calculation request"""
         if not self.calculator:
             return None
@@ -580,7 +580,7 @@ References:
         
         return None
     
-    def _handle_equation(self, eq_request: Dict) -> Optional[Dict[str, Any]]:
+    def _handle_equation(self, eq_request: dict) -> dict[str, Any] | None:
         """Handle equation request"""
         if not self.equation_helper:
             return None
@@ -604,7 +604,7 @@ References:
         
         return None
     
-    def _search_expanded_knowledge(self, query: str) -> Optional[Dict[str, Any]]:
+    def _search_expanded_knowledge(self, query: str) -> dict[str, Any] | None:
         """Search expanded knowledge base"""
         query_lower = query.lower().strip()
         

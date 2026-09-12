@@ -38,7 +38,7 @@ Fowler JF (1989). Br J Radiol. 62(740):679-694.
 McMahon SJ (2019). Phys Med Biol. 64(1):01TR01.
 """
 
-from typing import Optional, Dict, List
+
 import numpy as np
 import pandas as pd
 
@@ -93,7 +93,7 @@ class FractionationAwareDVH:
         tissue_type : str, optional
             'tumor', 'acute', 'late', or 'early' (sets default α/β)
         """
-        _tissue_defaults: Dict[str, float] = {
+        _tissue_defaults: dict[str, float] = {
             "tumor": 10.0,
             "acute": 10.0,
             "late": 3.0,
@@ -109,8 +109,8 @@ class FractionationAwareDVH:
         self, 
         dvh_df: pd.DataFrame, 
         n_fractions: int, 
-        total_dose: Optional[float] = None, 
-        dose_per_fraction: Optional[float] = None
+        total_dose: float | None = None, 
+        dose_per_fraction: float | None = None
     ) -> pd.DataFrame:
         """
         Transform physical DVH to BED-normalized DVH
@@ -148,8 +148,8 @@ class FractionationAwareDVH:
         
         # Extract physical doses from DVH
         # Handle different column name formats
-        dose_col: Optional[str] = None
-        vol_col: Optional[str] = None
+        dose_col: str | None = None
+        vol_col: str | None = None
         
         for col in dvh_df.columns:
             if 'dose' in col.lower() and 'gy' in col.lower():
@@ -204,8 +204,8 @@ class FractionationAwareDVH:
         self, 
         dvh_df: pd.DataFrame, 
         n_fractions: int, 
-        total_dose: Optional[float] = None, 
-        dose_per_fraction: Optional[float] = None
+        total_dose: float | None = None, 
+        dose_per_fraction: float | None = None
     ) -> pd.DataFrame:
         """
         Calculate EQD2 (Equivalent Dose in 2 Gy fractions) for DVH
@@ -244,8 +244,8 @@ class FractionationAwareDVH:
             dose_per_fraction = total_dose / n_fractions
         
         # Find dose column
-        dose_col: Optional[str] = None
-        vol_col: Optional[str] = None
+        dose_col: str | None = None
+        vol_col: str | None = None
         
         for col in dvh_df.columns:
             if 'dose' in col.lower() and 'gy' in col.lower():
@@ -289,8 +289,8 @@ class FractionationAwareDVH:
         self, 
         dvh_df: pd.DataFrame, 
         n_fractions: int, 
-        total_dose: Optional[float] = None
-    ) -> Dict[str, float]:
+        total_dose: float | None = None
+    ) -> dict[str, float]:
         """
         Calculate BED-based dose metrics from DVH
         
@@ -328,7 +328,7 @@ class FractionationAwareDVH:
         # Min BED
         bed_min = float(bed_values.min())
         
-        metrics: Dict[str, float] = {
+        metrics: dict[str, float] = {
             'BED_mean': float(bed_mean),
             'BED_max': bed_max,
             'BED_min': bed_min,
@@ -341,7 +341,7 @@ class FractionationAwareDVH:
     def compare_fractionation_schemes(
         self, 
         dvh_df: pd.DataFrame, 
-        schemes: List[Dict[str, float]]
+        schemes: list[dict[str, float]]
     ) -> pd.DataFrame:
         """
         Compare multiple fractionation schemes using FDVH
@@ -358,7 +358,7 @@ class FractionationAwareDVH:
         comparison_df : pd.DataFrame
             Comparative BED metrics for each scheme
         """
-        results: List[Dict[str, float]] = []
+        results: list[dict[str, float]] = []
         
         for scheme in schemes:
             metrics = self.get_bed_metrics(

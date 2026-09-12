@@ -20,12 +20,11 @@ as part of Phase 1 refactoring (3-layer architecture).
 
 # Backward compatibility: Import from new location
 # Phase 1 refactoring: Core computation moved to rbgyanx.core.biological.transforms
-from rbgyanx.core.biological.transforms import FractionationAwareDVH
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from pathlib import Path
-from typing import Optional, Dict
+from rbgyanx.core.biological.transforms import FractionationAwareDVH
 
 # Re-export for backward compatibility
 __all__ = ['FractionationAwareDVH', 'create_bed_dvh_report']
@@ -37,8 +36,8 @@ def create_bed_dvh_report(
     total_dose: float, 
     alpha_beta: float = 10.0, 
     structure_name: str = 'Structure', 
-    output_file: Optional[Path] = None
-) -> Dict:
+    output_file: Path | None = None
+) -> dict:
     """
     Generate comprehensive BED-DVH analysis report
     
@@ -77,7 +76,7 @@ def create_bed_dvh_report(
     # Calculate EQD2
     eqd2_dvh = fdvh.calculate_eqd2(dvh_df, n_fractions, total_dose)
     
-    report: Dict = {
+    report: dict = {
         'structure': structure_name,
         'fractionation': {
             'n_fractions': n_fractions,

@@ -7,7 +7,6 @@ import math
 from dataclasses import dataclass, field
 
 import numpy as np
-import pandas as pd
 from dicompylercore import dvhcalc
 from dicompylercore.dvh import DVH
 
@@ -287,4 +286,7 @@ class DVHExtractor:
         return metrics
 
 
-from dicom_io.dvh_shape_features import compute_dvh_shape_features, extract_3d_dose_array  # noqa: E402,F401
+from dicom_io.dvh_shape_features import (  # noqa: E402,F401
+    compute_dvh_shape_features,
+    extract_3d_dose_array,
+)

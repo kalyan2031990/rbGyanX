@@ -40,15 +40,13 @@ jobs:
       # _actions/.../__tests__/data/inner/pyproject.toml (a deliberately-malformed fixture) and
       # fail with a TOML parse error that neither --config nor a version pin avoids. Gating to
       # Linux both fixes that and keeps the Windows/macOS matrix focused on runtime (pytest).
+      # Lints the WHOLE maintained tree. This used to name nine specific paths, so a green
+      # "Ruff" check said nothing about the other ~140 files -- including the two undefined-name
+      # bugs in rbgyanx_gui.py that this scope change surfaced. legacy/ and analysis/ are
+      # excluded in pyproject.toml, each for a stated reason.
       - name: Ruff
         if: runner.os == 'Linux'
-        run: |
-          ruff check --config pyproject.toml \
-            engine/radiobiology engine/tests/test_ntcp_scientific_anchors.py \
-            tests/synthetic engine/dicom_io/input_validation.py \
-            engine/validation/clinical_cohort.py examples \
-            tests/test_input_validation.py tests/test_reusable_interfaces.py \
-            tests/test_examples_smoke.py
+        run: ruff check --config pyproject.toml .
 
       - name: Black
         if: runner.os == 'Linux'
@@ -93,7 +91,11 @@ jobs:
 
       - name: Install full stack
         run: |
-          python -m pip install --upgrade pip
+          # setuptools is upgraded explicitly, not incidentally: pip-audit below is a blocking
+          # gate and setuptools < 83 carries PYSEC-2026-3447. The runner's bundled setuptools is
+          # whatever the image shipped, so pinning the floor here is what makes that gate pass
+          # for the right reason rather than by luck.
+          python -m pip install --upgrade pip "setuptools>=83"
           pip install -e "./engine[ml]" -e "./engine_advanced[pinn]" -e "./engine_advanced_f[bayesian,pinn]" -e ".[dev,ml,torch,bayesian]"
 
       - name: Pytest (full suite)
@@ -104,11 +106,19 @@ jobs:
           pytest --import-mode=importlib -q --tb=short \
             --cov=engine --cov-report=xml --cov-fail-under=70
 
-      - name: Bandit
-        run: bandit -q -r engine/rbgyanx_engine rbgyanx || true
+      # Both of these ended in `|| true` until v1.3.0, so the build went green whether or not
+      # they passed -- and both were in fact failing when the mask was removed. Every finding is
+      # now either fixed or recorded in SECURITY.md with a reason; see also [tool.bandit] in
+      # pyproject.toml. Do not reintroduce `|| true`: a check that cannot fail is not a check.
+      - name: Bandit (blocking)
+        run: bandit -c pyproject.toml -q -r engine/rbgyanx_engine rbgyanx
 
-      - name: pip-audit
-        run: pip-audit || true
+      # PYSEC-2026-2266 (pydicom 2.4.5, DICOMDIR path traversal in the FileSet API) is accepted
+      # and NOT exploitable here: pydicom is pinned <3.0 because dicompyler-core 0.5.6 imports
+      # pydicom.pixel_data_handlers, and this codebase never touches FileSet/DICOMDIR. The full
+      # justification, and what would invalidate it, is in SECURITY.md. Nothing else is ignored.
+      - name: pip-audit (blocking)
+        run: pip-audit --ignore-vuln PYSEC-2026-2266
 
   paper-figures:
     name: Paper figure capsule

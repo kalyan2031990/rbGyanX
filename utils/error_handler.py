@@ -13,8 +13,6 @@ License: MIT
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Dict, List
-import sys
 
 # Try to import tkinter for GUI error dialogs
 try:
@@ -65,7 +63,7 @@ class ErrorHandler:
         List of recorded errors
     """
     
-    def __init__(self, log_file: Optional[Path] = None):
+    def __init__(self, log_file: Path | None = None):
         """
         Initialize the Error Handler.
         
@@ -87,7 +85,7 @@ class ErrorHandler:
     def _initialize_log(self):
         """Initialize log file with header"""
         with open(self.log_file, 'w', encoding='utf-8') as f:
-            f.write(f"rbGyanX v1.0 - Execution Log\n")
+            f.write("rbGyanX v1.0 - Execution Log\n")
             f.write(f"{'='*70}\n")
             f.write(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write(f"{'='*70}\n\n")
@@ -339,7 +337,7 @@ class ErrorHandler:
             Path to save summary file
         """
         with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(f"rbGyanX v1.0 - Error Summary\n")
+            f.write("rbGyanX v1.0 - Error Summary\n")
             f.write(f"{'='*70}\n")
             f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write(f"{'='*70}\n\n")

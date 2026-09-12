@@ -29,9 +29,10 @@ Niemierko A (1999). A generalized concept of equivalent uniform dose.
 Med Phys. 26(6):1100.
 """
 
-from typing import Optional
+
 import numpy as np
 import pandas as pd
+
 from rbgyanx.core.dvh_columns import normalize_dvh_columns
 from rbgyanx.core.tcp._eqd2 import convert_to_eqd2
 

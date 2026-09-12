@@ -12,10 +12,10 @@ Author: rbGyanX Team
 Version: 1.0.0
 """
 
-from dataclasses import dataclass, field
-from typing import Optional, Dict, Any
-from datetime import datetime
 import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -27,13 +27,13 @@ class ValidationProfile:
     while preserving all safeguards.
     """
     validation_enabled: bool = False
-    acknowledgment_timestamp: Optional[str] = None
-    user_identifier: Optional[str] = None
-    dataset_identifiers: Dict[str, str] = field(default_factory=dict)  # name -> hash
-    mode: Optional[str] = None  # BASIC or ADVANCED
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    acknowledgment_timestamp: str | None = None
+    user_identifier: str | None = None
+    dataset_identifiers: dict[str, str] = field(default_factory=dict)  # name -> hash
+    mode: str | None = None  # BASIC or ADVANCED
+    metadata: dict[str, Any] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             'validation_enabled': self.validation_enabled,
@@ -67,9 +67,9 @@ class ValidationController:
     
     def enable_validation(
         self,
-        user_identifier: Optional[str] = None,
-        mode: Optional[str] = None,
-        dataset_identifiers: Optional[Dict[str, str]] = None
+        user_identifier: str | None = None,
+        mode: str | None = None,
+        dataset_identifiers: dict[str, str] | None = None
     ) -> bool:
         """
         Enable validation mode.
@@ -127,7 +127,7 @@ class ValidationController:
         """
         return self.profile
     
-    def hash_dataset_identifier(self, dataset_name: str, dataset_path: Optional[str] = None) -> str:
+    def hash_dataset_identifier(self, dataset_name: str, dataset_path: str | None = None) -> str:
         """
         Hash dataset identifier for logging.
         
@@ -146,7 +146,7 @@ class ValidationController:
         identifier = f"{dataset_name}:{dataset_path or 'unknown'}"
         return hashlib.sha256(identifier.encode('utf-8')).hexdigest()[:16]
     
-    def track_dataset(self, dataset_name: str, dataset_path: Optional[str] = None):
+    def track_dataset(self, dataset_name: str, dataset_path: str | None = None):
         """
         Track dataset identifier.
         

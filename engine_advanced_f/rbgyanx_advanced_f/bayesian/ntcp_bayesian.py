@@ -159,7 +159,7 @@ def _fit_pymc(
     valid = np.isfinite(geud) & np.isfinite(y)
     geud, y = geud[valid], y[valid]
 
-    with pm.Model() as model:
+    with pm.Model():
         td50 = pm.TruncatedNormal("TD50", mu=prior_td50_mean, sigma=prior_td50_sd, lower=5.0)
         m = pm.TruncatedNormal("m", mu=prior_m_mean, sigma=prior_m_sd, lower=0.01, upper=0.8)
         t = (geud - td50) / (m * td50)

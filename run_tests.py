@@ -1,7 +1,8 @@
 # run_tests.py
 """Run all rbGyanX tests"""
-import pytest
 import sys
+
+import pytest
 
 if __name__ == "__main__":
     # Run with coverage
