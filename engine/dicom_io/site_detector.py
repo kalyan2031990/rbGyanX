@@ -206,7 +206,11 @@ def params_site_key(site: str, histology: str = "") -> str:
     """
     Map detected anatomy (+ brain histology) to YAML parameter keys.
 
-    YAML keys reflect tumour type, not delivery technique.
+    Keys mostly reflect tumour type rather than delivery technique, but the two technique keys
+    that carry their own parameter set (LUNG_SBRT, PROSTATE_SBRT) are passed through rather than
+    folded into the conventional key. An explicit LUNG_SBRT request used to come back as LUNG,
+    which meant a caller asking for SBRT parameters silently received conventional-fractionation
+    ones; see rbgyanx_engine.config.site_params for the resolution rule.
     """
     s = str(site or "").upper().strip()
     h = str(histology or "").upper().strip()
@@ -219,12 +223,16 @@ def params_site_key(site: str, histology: str = "") -> str:
         if h in ("METS", "METASTASIS", "METASTASES", "METASTATIC"):
             return "BRAIN_METS"
         return "BRAIN_GBM"
-    if s in ("LUNG", "LUNG_SBRT", "NSCLC"):
+    if s == "LUNG_SBRT":
+        return "LUNG_SBRT"
+    if s in ("LUNG", "NSCLC"):
         return "LUNG"
     if s == "HN":
         return "HN"
     if s == "BREAST":
         return "BREAST"
+    if s == "PROSTATE_SBRT":
+        return "PROSTATE_SBRT"
     if s in ("PROSTATE", "CAP"):
         return "PROSTATE"
     if s in ("PELVIS", "CERVIX", "ENDOMETRIUM"):
@@ -239,7 +247,7 @@ def params_site_key(site: str, histology: str = "") -> str:
 _SITE_KEY_MAP_FALLBACK: dict[str, str] = {
     "BRAIN_GBM": "BRAIN_GBM",
     "BRAIN_METS": "BRAIN_METS",
-    "LUNG_SBRT": "LUNG",
+    "LUNG_SBRT": "LUNG_SBRT",
 }
 
 

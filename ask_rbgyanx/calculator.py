@@ -4,13 +4,91 @@ Scientific Calculator for Ask rbGyanX
 Provides mathematical calculations on user-provided numbers only.
 Does NOT access patient data or files.
 
+Evaluation strategy (rewritten in v1.3.0). Expressions are parsed with :mod:`ast` and walked
+against an explicit allow-list of node types, operators, functions and constants. Anything not on
+the list is refused by name. ``eval`` is not used.
+
+The previous implementation called ``eval(expression, {"__builtins__": {}}, {"math": math})``
+behind a blocklist that checked for a handful of substrings ("import", "exec", "__", ...). A
+blocklist on an ``eval`` of user input is the wrong shape of defence: it has to anticipate every
+spelling of every attack, and its companion character check was inert -- every branch of that
+loop ended in ``continue``, so it rejected nothing.
+
+Fixing it also fixed three advertised functions that had never worked. ``exp(1)``, ``abs(-3)``
+and ``pow(2,3)`` all failed: the old code textually substituted ``'e'`` with ``str(math.e)``
+*before* rewriting function names, which turned ``exp(`` into ``2.718281828459045xp(``, and
+``abs``/``pow`` are builtins that an empty ``__builtins__`` had removed. Resolving names against
+an explicit table instead of rewriting the source string removes both failure modes at once.
+
 Author: rbGyanX Team
 Version: 1.0.0
 """
 
+import ast
 import math
 import re
-from typing import Dict, Optional, Tuple, Any
+from collections.abc import Callable
+from typing import Any
+
+#: Functions callable from an expression, resolved by name rather than by string rewriting.
+#: ``log`` is base 10 (matching the original intent) and ``ln`` is the natural log.
+_ALLOWED_FUNCTIONS: dict[str, Callable[..., float]] = {
+    "sqrt": math.sqrt,
+    "log": math.log10,
+    "log10": math.log10,
+    "log2": math.log2,
+    "ln": math.log,
+    "exp": math.exp,
+    "sin": math.sin,
+    "cos": math.cos,
+    "tan": math.tan,
+    "asin": math.asin,
+    "acos": math.acos,
+    "atan": math.atan,
+    "abs": abs,
+    "pow": pow,
+    "factorial": math.factorial,
+    "floor": math.floor,
+    "ceil": math.ceil,
+    "degrees": math.degrees,
+    "radians": math.radians,
+}
+
+#: The only bare names an expression may reference.
+_ALLOWED_CONSTANTS: dict[str, float] = {
+    "pi": math.pi,
+    "e": math.e,
+    "tau": math.tau,
+}
+
+#: Binary and unary operators, mapped to their implementations.
+_ALLOWED_BINARY_OPERATORS: dict[type, Callable[[Any, Any], Any]] = {
+    ast.Add: lambda a, b: a + b,
+    ast.Sub: lambda a, b: a - b,
+    ast.Mult: lambda a, b: a * b,
+    ast.Div: lambda a, b: a / b,
+    ast.FloorDiv: lambda a, b: a // b,
+    ast.Mod: lambda a, b: a % b,
+    ast.Pow: lambda a, b: a**b,
+}
+
+_ALLOWED_UNARY_OPERATORS: dict[type, Callable[[Any], Any]] = {
+    ast.UAdd: lambda a: +a,
+    ast.USub: lambda a: -a,
+}
+
+#: Caps that keep a one-line expression from becoming a denial of service. ``2**10**10`` would
+#: otherwise try to materialise a number with billions of digits before anything could reject it.
+_MAX_POW_EXPONENT = 1000
+_MAX_FACTORIAL_INPUT = 170  # 171! overflows a float
+
+
+class UnsafeExpressionError(ValueError):
+    """The expression contains something outside the allow-list.
+
+    A ValueError subclass so that ``calculate`` keeps reporting it through the same
+    ``{'success': False, 'error': ...}`` contract as any other bad input.
+    """
 
 
 class ScientificCalculator:
@@ -30,7 +108,7 @@ class ScientificCalculator:
             'sin', 'cos', 'tan', 'asin', 'acos', 'atan'
         ]
     
-    def calculate(self, expression: str) -> Dict[str, Any]:
+    def calculate(self, expression: str) -> dict[str, Any]:
         """
         Calculate mathematical expression.
         
@@ -66,96 +144,159 @@ class ScientificCalculator:
             }
     
     def _sanitize_expression(self, expression: str) -> str:
+        """Normalise user-friendly notation into Python syntax.
+
+        Only two rewrites happen, both purely syntactic: ``^`` means exponentiation to a user but
+        bitwise XOR to Python, and ``\u03c0`` is a spelling of ``pi``. Everything else is left alone --
+        the safety decision belongs to the AST walk in :meth:`_evaluate_expression`, not to string
+        munging. In particular no attempt is made to substitute constants textually, which is what
+        used to corrupt ``exp(`` into ``2.718...xp(``.
         """
-        Sanitize expression to prevent code execution.
-        
-        Parameters
-        ----------
-        expression : str
-            Raw expression
-        
-        Returns
-        -------
-        str
-            Sanitized expression
-        """
-        # Remove potentially dangerous patterns
-        dangerous = ['__', 'import', 'exec', 'eval', 'open', 'file', 'read']
-        for pattern in dangerous:
-            if pattern in expression.lower():
-                raise ValueError(f"Invalid expression: contains '{pattern}'")
-        
-        # Only allow safe mathematical operations
-        allowed_chars = set('0123456789+-*/.()^eπpi ')
-        allowed_funcs = ['sqrt', 'log', 'ln', 'exp', 'sin', 'cos', 'tan', 
-                        'asin', 'acos', 'atan', 'abs', 'pow', 'factorial']
-        
-        # Check for allowed functions
-        for func in allowed_funcs:
-            if func in expression.lower():
-                allowed_chars.update(func)
-        
-        # Basic check (not perfect, but helps)
-        for char in expression:
-            if char.isalnum() or char in allowed_chars:
-                continue
-            if any(func in expression.lower() for func in allowed_funcs):
-                continue
-            # Allow some special chars
-            if char in '+-*/.()^[]{}':
-                continue
-        
-        return expression
-    
+        if not isinstance(expression, str):
+            raise UnsafeExpressionError("Expression must be a string")
+        if not expression.strip():
+            raise UnsafeExpressionError("Empty expression")
+        if len(expression) > 500:
+            raise UnsafeExpressionError("Expression too long (limit 500 characters)")
+
+        return expression.replace("^", "**").replace("\u03c0", "pi")
+
     def _evaluate_expression(self, expression: str) -> float:
-        """
-        Safely evaluate mathematical expression.
-        
-        Parameters
-        ----------
-        expression : str
-            Mathematical expression
-        
+        """Parse and evaluate an expression against the allow-list.
+
         Returns
         -------
         float
-            Calculated result
+            Calculated result.
+
+        Raises
+        ------
+        UnsafeExpressionError
+            If the expression contains any construct not explicitly permitted.
+        ValueError
+            If the expression is permitted but mathematically invalid (e.g. ``sqrt(-1)``).
         """
-        # Replace common math functions
-        expression = expression.replace('^', '**')  # Power operator
-        expression = expression.replace('π', str(math.pi))
-        expression = expression.replace('pi', str(math.pi))
-        expression = expression.replace('e', str(math.e))
-        
-        # Handle functions
-        func_replacements = {
-            'sqrt': 'math.sqrt',
-            'log': 'math.log10',
-            'ln': 'math.log',
-            'exp': 'math.exp',
-            'sin': 'math.sin',
-            'cos': 'math.cos',
-            'tan': 'math.tan',
-            'asin': 'math.asin',
-            'acos': 'math.acos',
-            'atan': 'math.atan',
-            'abs': 'abs',
-            'pow': 'pow',
-            'factorial': 'math.factorial',
-        }
-        
-        for func, math_func in func_replacements.items():
-            # Replace function calls
-            pattern = rf'\b{func}\s*\('
-            expression = re.sub(pattern, f'{math_func}(', expression, flags=re.IGNORECASE)
-        
-        # Evaluate safely
         try:
-            result = eval(expression, {"__builtins__": {}}, {"math": math})
-            return float(result)
-        except Exception as e:
-            raise ValueError(f"Error evaluating expression: {str(e)}")
-    
+            tree = ast.parse(expression, mode="eval")
+        except SyntaxError as exc:
+            raise UnsafeExpressionError(f"Could not parse expression: {exc.msg}") from exc
+
+        result = self._eval_node(tree.body)
+
+        if isinstance(result, complex):
+            raise ValueError("Expression produced a complex number")
+        return float(result)
+
+    def _eval_node(self, node: ast.AST) -> Any:
+        """Recursively evaluate one allow-listed AST node.
+
+        Written as an explicit type dispatch rather than a generic visitor so that the set of
+        permitted constructs is readable in one place, and so that anything new in the grammar
+        is refused by default instead of inherited silently.
+        """
+        if isinstance(node, ast.Constant):
+            # bool is a subclass of int; reject it so True/False cannot stand in for 1/0.
+            if isinstance(node.value, bool) or not isinstance(node.value, (int, float)):
+                raise UnsafeExpressionError(
+                    f"Only numeric literals are allowed, got {type(node.value).__name__}"
+                )
+            return node.value
+
+        if isinstance(node, ast.Name):
+            if node.id not in _ALLOWED_CONSTANTS:
+                raise UnsafeExpressionError(
+                    f"Unknown name '{node.id}'. Allowed constants: "
+                    f"{', '.join(sorted(_ALLOWED_CONSTANTS))}."
+                )
+            return _ALLOWED_CONSTANTS[node.id]
+
+        if isinstance(node, ast.BinOp):
+            operator = _ALLOWED_BINARY_OPERATORS.get(type(node.op))
+            if operator is None:
+                raise UnsafeExpressionError(
+                    f"Operator {type(node.op).__name__} is not allowed"
+                )
+            left = self._eval_node(node.left)
+            right = self._eval_node(node.right)
+            if isinstance(node.op, ast.Pow):
+                self._check_power(right)
+            try:
+                return operator(left, right)
+            except ZeroDivisionError as exc:
+                raise ValueError("Division by zero") from exc
+
+        if isinstance(node, ast.UnaryOp):
+            operator = _ALLOWED_UNARY_OPERATORS.get(type(node.op))
+            if operator is None:
+                raise UnsafeExpressionError(
+                    f"Unary operator {type(node.op).__name__} is not allowed"
+                )
+            return operator(self._eval_node(node.operand))
+
+        if isinstance(node, ast.Call):
+            return self._eval_call(node)
+
+        raise UnsafeExpressionError(
+            f"Expression element {type(node).__name__} is not allowed"
+        )
+
+    def _eval_call(self, node: ast.Call) -> Any:
+        """Evaluate a call to an allow-listed function.
+
+        ``node.func`` must be a bare :class:`ast.Name`. Rejecting :class:`ast.Attribute` here is
+        what keeps ``math.__loader__`` and every other dotted traversal out, without needing to
+        guess at attribute names.
+        """
+        if not isinstance(node.func, ast.Name):
+            raise UnsafeExpressionError(
+                "Only direct calls to named functions are allowed (no attribute access)"
+            )
+        name = node.func.id
+        function = _ALLOWED_FUNCTIONS.get(name)
+        if function is None:
+            raise UnsafeExpressionError(
+                f"Unknown function '{name}'. Allowed: {', '.join(sorted(_ALLOWED_FUNCTIONS))}."
+            )
+        if node.keywords:
+            raise UnsafeExpressionError(f"{name}() does not accept keyword arguments here")
+
+        args = [self._eval_node(arg) for arg in node.args]
+
+        if name == "factorial":
+            self._check_factorial(args)
+        if name == "pow" and len(args) >= 2:
+            self._check_power(args[1])
+
+        try:
+            return function(*args)
+        except ZeroDivisionError as exc:
+            raise ValueError("Division by zero") from exc
+        except (TypeError, OverflowError) as exc:
+            raise ValueError(f"{name}(): {exc}") from exc
+
+    @staticmethod
+    def _check_power(exponent: Any) -> None:
+        """Refuse exponents large enough to hang the interpreter."""
+        if isinstance(exponent, (int, float)) and abs(exponent) > _MAX_POW_EXPONENT:
+            raise UnsafeExpressionError(
+                f"Exponent magnitude exceeds the limit of {_MAX_POW_EXPONENT}"
+            )
+
+    @staticmethod
+    def _check_factorial(args: list) -> None:
+        """factorial() grows fast enough that the input needs a cap, not just a type check."""
+        if len(args) != 1:
+            raise ValueError("factorial() takes exactly one argument")
+        value = args[0]
+        if isinstance(value, float) and not value.is_integer():
+            raise ValueError("factorial() requires an integer")
+        if value < 0:
+            raise ValueError("factorial() requires a non-negative integer")
+        if value > _MAX_FACTORIAL_INPUT:
+            raise UnsafeExpressionError(
+                f"factorial() input exceeds the limit of {_MAX_FACTORIAL_INPUT}"
+            )
+
     def calculate_sigmoid(self, x: float, a: float = 1.0, b: float = 0.0) -> float:
         """
         Calculate sigmoid function: 1 / (1 + exp(-a*(x - b)))
@@ -216,7 +357,7 @@ class ScientificCalculator:
             raise ValueError("Cannot divide by zero")
         return (part / whole) * 100.0
     
-    def parse_calculation_request(self, query: str) -> Optional[Dict[str, Any]]:
+    def parse_calculation_request(self, query: str) -> dict[str, Any] | None:
         """
         Parse calculation request from natural language.
         
@@ -268,9 +409,8 @@ class ScientificCalculator:
         elif 'sigmoid' in query_lower:
             if len(numbers) >= 1:
                 return {'operation': 'sigmoid', 'values': [float(n) for n in numbers[:3]]}
-        elif 'percent' in query_lower or '%' in query:
-            if len(numbers) >= 2:
-                return {'operation': 'percent', 'values': [float(n) for n in numbers[:2]]}
+        elif ('percent' in query_lower or '%' in query) and len(numbers) >= 2:
+            return {'operation': 'percent', 'values': [float(n) for n in numbers[:2]]}
         
         # Try to evaluate as direct expression
         try:
@@ -281,7 +421,10 @@ class ScientificCalculator:
                 result = self.calculate(expr)
                 if result['success']:
                     return {'operation': 'expression', 'result': result['result'], 'expression': expr}
-        except:
+        except (ValueError, TypeError, ArithmeticError):
+            # A query that merely looks like it contains an expression is not an error; fall
+            # through to the caller's other handlers. Narrowed from a bare except, which also
+            # swallowed KeyboardInterrupt.
             pass
         
         return None

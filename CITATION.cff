@@ -11,9 +11,12 @@ authors:
     given-names: Anuj
     orcid: "https://orcid.org/0000-0001-6610-3844"
 title: "rbGyanX: A radiobiology-guided clinical decision support framework"
-version: "1.2.1"
-date-released: 2026-08-15
-doi: "10.5281/zenodo.21757164"
+version: "1.3.0"
+date-released: 2026-09-12
+# Concept DOI: always resolves to the newest version of the record. Cite this rather than
+# a version DOI (10.5281/zenodo.21757164 was the v1.2.1 version DOI) so that a citation
+# harvested from this file does not pin readers to a superseded release.
+doi: "10.5281/zenodo.21757163"
 url: "https://github.com/kalyan2031990/rbGyanX"
 repository-code: "https://github.com/kalyan2031990/rbGyanX"
 license: MIT

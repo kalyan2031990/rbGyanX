@@ -4,11 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rbgyanx"
-version = "1.2.1"
+version = "1.3.0"
 description = "Radiobiology clinical decision support system (TCP/NTCP/UTCP/QUANTEC)"
 readme = "README.md"
 license = { text = "MIT" }
-requires-python = ">=3.10,<3.13"  # the range CI actually tests; see the badge in README
+# Exactly the matrix CI tests (ubuntu + windows x 3.10/3.11/3.12). The upper bound means
+# "not tested", not "known broken": the pinned dependencies do resolve on 3.13, but nothing
+# verifies the numerics there, so support is not claimed. Widening this should mean adding
+# 3.13 to the CI matrix in the same change, never just raising the cap.
+#
+# This is NOT the interpreter the published analysis ran on. analysis/FINAL_ANALYSIS_CODE_MANIFEST.json
+# records Python 3.14.2 with its own package set; that analysis drove the engine directly rather
+# than this installed distribution. Both records are accurate about different environments.
+requires-python = ">=3.10,<3.13"
 authors = [{ name = "Kalyan Mondal" }]
 keywords = ["radiotherapy", "TCP", "NTCP", "DVH", "DICOM", "radiobiology"]
 classifiers = [

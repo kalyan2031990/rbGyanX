@@ -1,4 +1,23 @@
-"""TCP site parameters for all supported cancer sites."""
+"""TCP site parameters for all supported cancer sites.
+
+Resolution rule: a requested site either yields a parameter object whose ``site`` field is the
+site that was asked for, or it raises. It never substitutes. Three defects against that rule
+were fixed in v1.3.0:
+
+* ``PROSTATE_SBRT`` had parameters in ``site_params_default.yaml`` -- materially different from
+  conventional prostate (TCD50 36.25 Gy vs 72.0) -- but was missing from ``_SITE_KEY_MAP``, so
+  it was rejected as an unknown site and those parameters were unreachable;
+* ``PELVIS`` was mapped but had no parameter object anywhere, so it failed with an
+  internal-sounding "not found in SITE_PARAMS" message. It is now declared in
+  ``_SITES_WITHOUT_TCP_PARAMS`` and raises :class:`SiteParamsUnavailable` with the reason;
+* ``LUNG_SBRT`` was mapped to ``LUNG``, so a caller asking for SBRT parameters was handed the
+  conventional-fractionation set with no indication. It now resolves to its own entry. Those
+  values are still the conventional ones -- no SBRT-specific lung set has been adopted -- but
+  the object says so in ``notes`` instead of the substitution being invisible.
+
+Also exposes :func:`SiteParamsUnavailable` so callers can tell "not parameterised" from
+"misspelled".
+"""
 
 from __future__ import annotations
 
@@ -16,7 +35,11 @@ _DEFAULT_YAML = _CONFIG_DIR / "site_params_default.yaml"
 _USER_YAML = _CONFIG_DIR / "site_params_user.yaml"
 
 _SITE_KEY_MAP = {
-    # Anatomical / histology keys (not delivery technique).
+    # Anatomical / histology keys, plus the two technique-specific keys that carry their own
+    # parameter sets. A key may only map to something other than itself when the two are
+    # genuinely the same parameter set (e.g. GBM -> BRAIN_GBM); it must never map a
+    # technique-specific request onto a conventional-fractionation set. See
+    # _SITES_WITHOUT_TCP_PARAMS for recognised sites that have no parameters at all.
     "BRAIN": "BRAIN_GBM",
     "BRAIN_GBM": "BRAIN_GBM",
     "GBM": "BRAIN_GBM",
@@ -25,12 +48,26 @@ _SITE_KEY_MAP = {
     "METS": "BRAIN_METS",
     "HN": "HN",
     "LUNG": "LUNG",
-    "LUNG_SBRT": "LUNG",  # deprecated alias
+    "LUNG_SBRT": "LUNG_SBRT",
     "NSCLC": "LUNG",
     "BREAST": "BREAST",
     "PROSTATE": "PROSTATE",
+    "PROSTATE_SBRT": "PROSTATE_SBRT",
     "PELVIS": "PELVIS",
     "LIVER": "LIVER",
+}
+
+#: Sites the detector and the interface recognise, but for which this project has adopted no
+#: TCP parameter set. Requesting one raises :class:`SiteParamsUnavailable` naming the reason.
+#: Listing them explicitly is the point: a site that is merely absent from SITE_PARAMS fails
+#: with an internal-sounding error, and the previous PELVIS behaviour was exactly that.
+_SITES_WITHOUT_TCP_PARAMS: dict[str, str] = {
+    "PELVIS": (
+        "no single published TCP parameter set applies to a pelvic volume, which is treated as "
+        "a multi-target site (cervix, endometrium, rectum, nodal volumes) with different "
+        "alpha/beta and clonogen assumptions per target. Pelvic plans are supported for DVH, "
+        "NTCP and UTCP scoring; TCP requires you to name the specific target site."
+    ),
 }
 
 
@@ -138,6 +175,34 @@ SITE_PARAMS: dict[str, TCPSiteParams] = {
         notes="Thoracic NSCLC (conventional or hypofractionated). "
         "LQ caution when dose/fraction > lq_valid_max_dpf_gy.",
     ),
+    # Values are exactly those declared for LUNG_SBRT in site_params_default.yaml, which are
+    # the conventional LUNG values. They are NOT an SBRT-specific parameter set: this project
+    # has not adopted one. The key exists so that a caller asking for LUNG_SBRT is answered with
+    # a parameter object that says LUNG_SBRT and carries this caveat, instead of being silently
+    # handed the conventional LUNG object as though it had been validated for SBRT.
+    # lq_valid_max_dpf_gy stays at the conventional 10 Gy precisely so that SBRT fractionation
+    # trips the LQ-validity guard rather than passing unremarked. See docs/KNOWN_LIMITATIONS.md.
+    "LUNG_SBRT": TCPSiteParams(
+        site="LUNG_SBRT",
+        alpha_gy_inv=0.30,
+        beta_gy_inv2=0.034,
+        alpha_beta_gy=8.8,
+        N0_gtv=1e6,
+        N0_ctv=1e4,
+        Tpot_days=7.0,
+        Tk_days=None,
+        TCD50_gy=84.5,
+        gamma50=1.8,
+        geud_a=-10.0,
+        D50_logistic_gy=84.5,
+        k_logistic=1.8,
+        lq_valid_max_dpf_gy=10.0,
+        repopulation_relevant=False,
+        notes="Lung SBRT. WARNING: these are the CONVENTIONAL thoracic NSCLC parameters; no "
+        "SBRT-specific lung TCP parameter set has been adopted in this project. TCD50 is a "
+        "conventional-fractionation value and the LQ validity cap is 10 Gy/fraction, which "
+        "typical SBRT fractionation exceeds. Treat TCP for this site as indicative only.",
+    ),
     "BREAST": TCPSiteParams(
         site="BREAST",
         alpha_gy_inv=0.20,
@@ -175,6 +240,29 @@ SITE_PARAMS: dict[str, TCPSiteParams] = {
         repopulation_relevant=False,
         notes="Prostate adenocarcinoma. Low alpha/beta; repopulation negligible clinically.",
     ),
+    # Values as declared for PROSTATE_SBRT in site_params_default.yaml. Unlike LUNG_SBRT these
+    # differ materially from the conventional set (TCD50 36.25 Gy vs 72.0, gamma50 2.5 vs 2.2),
+    # so the parameters were present and simply unreachable: PROSTATE_SBRT was absent from
+    # _SITE_KEY_MAP, and load_site_params rejected it as an unknown site.
+    "PROSTATE_SBRT": TCPSiteParams(
+        site="PROSTATE_SBRT",
+        alpha_gy_inv=0.15,
+        beta_gy_inv2=0.10,
+        alpha_beta_gy=1.5,
+        N0_gtv=1e8,
+        N0_ctv=1e7,
+        Tpot_days=42.0,
+        Tk_days=21.0,
+        TCD50_gy=36.25,
+        gamma50=2.5,
+        geud_a=-13.0,
+        D50_logistic_gy=36.25,
+        k_logistic=2.5,
+        lq_valid_max_dpf_gy=6.0,
+        repopulation_relevant=False,
+        notes="Prostate SBRT / ultrahypofractionation. TCD50 expressed for the SBRT regime, "
+        "not the conventional 72 Gy value. Low alpha/beta = 1.5.",
+    ),
     "LIVER": TCPSiteParams(
         site="LIVER",
         alpha_gy_inv=0.30,
@@ -196,13 +284,44 @@ SITE_PARAMS: dict[str, TCPSiteParams] = {
 }
 
 
+class SiteParamsUnavailable(ValueError):
+    """A recognised site for which no TCP parameter set has been adopted.
+
+    Distinct from an unknown site: the caller spelled something this project understands, and
+    the answer is "not parameterised", with a reason. Subclasses ValueError so existing callers
+    that catch ValueError keep working.
+    """
+
+
+def _supported_sites() -> str:
+    """The sites that actually load, derived rather than hardcoded.
+
+    The previous message was a hand-maintained list that had gone stale -- it advertised five
+    sites and omitted PROSTATE, LIVER and PELVIS. Deriving it means it cannot drift again.
+    """
+    loadable = sorted(k for k, v in _SITE_KEY_MAP.items() if v in SITE_PARAMS)
+    return ", ".join(loadable)
+
+
 def _resolve_site_key(site: str) -> str:
+    """Resolve a site spelling to a canonical SITE_PARAMS key.
+
+    Raises rather than substituting. A technique-specific key (LUNG_SBRT, PROSTATE_SBRT) resolves
+    to its own parameter set, never to the conventional-fractionation set for the same anatomy:
+    silently answering an SBRT request with conventional parameters is the failure mode this
+    function exists to prevent.
+    """
     key = site.upper().strip()
     resolved = _SITE_KEY_MAP.get(key)
     if resolved is None:
         raise ValueError(
-            f"Unknown site '{site}'. Supported: BRAIN_GBM, BRAIN_METS, "
-            "HN, LUNG, BREAST (or BRAIN/LUNG aliases)."
+            f"Unknown site {site!r}. Supported: {_supported_sites()}."
+        )
+    if resolved in _SITES_WITHOUT_TCP_PARAMS:
+        raise SiteParamsUnavailable(
+            f"No TCP parameter set is defined for site {resolved!r}: "
+            f"{_SITES_WITHOUT_TCP_PARAMS[resolved]} "
+            f"Sites with TCP parameters: {_supported_sites()}."
         )
     return resolved
 
@@ -254,8 +373,14 @@ def load_site_params(site: str, user_config: Path | str | None = None) -> TCPSit
       4. SITE_PARAMS[site] hardcoded dict
     """
     resolved = _resolve_site_key(site)
-    if resolved not in SITE_PARAMS:
-        raise ValueError(f"Site '{resolved}' not found in SITE_PARAMS.")
+    if resolved not in SITE_PARAMS:  # pragma: no cover - guarded by _resolve_site_key
+        # Reachable only if _SITE_KEY_MAP gains a target that is neither in SITE_PARAMS nor in
+        # _SITES_WITHOUT_TCP_PARAMS. test_site_params_routing.py asserts that cannot happen, so
+        # this is a belt-and-braces internal consistency check, not a user-facing path.
+        raise ValueError(
+            f"Internal inconsistency: site key {resolved!r} is mapped but has no parameter "
+            f"object and is not declared in _SITES_WITHOUT_TCP_PARAMS."
+        )
 
     params = SITE_PARAMS[resolved]
     params_source = "hardcoded"

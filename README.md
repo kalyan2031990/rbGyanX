@@ -3,7 +3,7 @@
 [![CI](https://github.com/kalyan2031990/rbGyanX/actions/workflows/ci.yml/badge.svg)](https://github.com/kalyan2031990/rbGyanX/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10--3.12-blue.svg)](pyproject.toml)
-[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21757164-blue.svg)](https://doi.org/10.5281/zenodo.21757164)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21757163-blue.svg)](https://doi.org/10.5281/zenodo.21757163)
 
 **rbGyanX** evaluates radiotherapy treatment plans with transparent, classical radiobiology —
 tumour control (**TCP**), normal-tissue complication (**NTCP**: LKB probit / log-logistic and
@@ -29,12 +29,19 @@ toggle: BASIC cannot reach the experimental code paths.
 
 ## Install
 
-Python **3.10–3.12**. From a clone:
+Python **3.10–3.12** — exactly the matrix CI tests on Linux and Windows. 3.13+ is not
+tested, so it is not supported; the dependencies resolve there, but no one has verified the
+numerics. From a clone:
 
 ```bash
 python -m venv .venv && . .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -e "./engine" -e ".[dev,ml]"          # add ,qt for the desktop GUI
 ```
+
+> The published analysis ran on a different interpreter. `analysis/FINAL_ANALYSIS_CODE_MANIFEST.json`
+> records Python 3.14.2 on Windows with its own package set, because that analysis drove the
+> engine directly rather than this installed distribution. That record is historical provenance
+> for the reported numbers and is deliberately not changed to match the range above.
 
 ## 5-minute example (shipped synthetic data — no patient data)
 
@@ -66,6 +73,12 @@ pytest -q
 The scientific core is pinned by **22 analytic positive controls**
 (`pytest tests/test_ntcp_positive_controls.py`): NTCP = 0.5 at TD50, monotonicity, QUANTEC
 anchors, and UTCP factorisation. No patient data is required or included.
+
+The 22 are collected test *cases*, from 12 test functions: three of them are parametrised, over
+four TD50 values for probit, four for log-logistic and five seriality values for relative
+seriality. Counting `def test_` lines gives 12 and counting controls gives 22 — both describe the
+same file. `tests/test_version_consistency.py` computes the number from the module and fails if
+any document disagrees with it.
 
 ## AI assistant (experimental)
 
@@ -105,7 +118,7 @@ Full design, capability matrix and threat model: [`docs/AI_ASSISTANT_DESIGN.md`]
 Cite the archived release via its DOI — see [`CITATION.cff`](CITATION.cff), or:
 
 > Mondal, K., Mandal, A., & Vijay, A. *rbGyanX: A radiobiology-guided clinical decision support
-> framework* (v1.2.1). Zenodo. https://doi.org/10.5281/zenodo.21757164
+> framework* (v1.3.0). Zenodo. https://doi.org/10.5281/zenodo.21757163
 
 The accompanying manuscript will be added as the preferred citation on acceptance.
 

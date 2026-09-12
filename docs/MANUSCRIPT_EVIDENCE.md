@@ -61,7 +61,7 @@ and ROE (CMPB 2024) do not — stated as code facts, not performance:
 | Multi-model **inverse-variance consensus** (uNTCP/uTCP) | `uncertainty/inverse_variance_consensus.py` | no | no |
 | Out-of-domain flag (robust-MCD Mahalanobis CCS) | `engine/validation/cohort_consistency.py` | no | no |
 | NaN-not-zero degenerate-input contract (tested) | NTCP primitives + `test_nan_safety.py` | no | — |
-| Cohort-independent analytic positive controls (22) | `tests/test_ntcp_positive_controls.py` | no | — |
+| Cohort-independent analytic positive controls (22 collected cases, from 12 parametrised test functions) | `tests/test_ntcp_positive_controls.py` | no | — |
 | DVH-integrity validator (rejects inverted curves) | `engine/dicom_io/dvh_integrity.py` | no | — |
 | Explainable-ML gated to ADVANCED | `rbgyanx/` xAI + `test_ui_policy.py` | no | no |
 

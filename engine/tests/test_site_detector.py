@@ -90,7 +90,20 @@ def test_params_site_key_brain_histology():
     assert params_site_key("BRAIN", "GBM") == "BRAIN_GBM"
     assert params_site_key("BRAIN", "") == "BRAIN_GBM"
     assert params_site_key("LUNG", "") == "LUNG"
-    assert params_site_key("LUNG_SBRT", "") == "LUNG"
+
+
+def test_technique_specific_keys_are_not_folded_into_the_conventional_key():
+    """LUNG_SBRT used to come back as LUNG (v1.3.0 breaking change).
+
+    A caller that explicitly asks for SBRT and is handed conventional-fractionation parameters
+    has been given the wrong answer quietly, which is worse than an error. Both technique keys
+    that own a parameter set now pass through unchanged.
+    """
+    assert params_site_key("LUNG_SBRT", "") == "LUNG_SBRT"
+    assert params_site_key("PROSTATE_SBRT", "") == "PROSTATE_SBRT"
+    # Genuine synonyms for the same tumour type still collapse -- that is not a substitution.
+    assert params_site_key("NSCLC", "") == "LUNG"
+    assert params_site_key("CAP", "") == "PROSTATE"
 
 
 def test_detect_site_from_text_hn_structure():

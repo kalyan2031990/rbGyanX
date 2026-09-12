@@ -13,13 +13,38 @@ Author: TCP_NTCP Pipeline Team
 Version: 2.0.0
 """
 
-import numpy as np
+from contextlib import contextmanager
+
 import matplotlib
+import numpy as np
+
 matplotlib.use("Agg")
+
 import matplotlib.pyplot as plt
 import shap
-from typing import Tuple, Union, List
-from pathlib import Path
+
+
+@contextmanager
+def _figure_scope():
+    """Close every matplotlib figure created inside the block.
+
+    ``plt.close()`` closes only the *current* figure. Both plotting helpers below open a figure
+    with ``plt.figure(...)`` and then call ``shap.summary_plot``, which opens one of its own and
+    makes it current -- so the bare ``plt.close()`` they used to end with closed shap's figure
+    and orphaned theirs. Each call leaked exactly one figure, which over a cohort run (organs x
+    models x two plot types) trips matplotlib's 20-figure warning and grows memory for the rest
+    of the run.
+
+    Closing by difference rather than with ``plt.close("all")`` keeps any figure the caller had
+    open before the call, which matters because these helpers are called from scripts that build
+    other figures of their own.
+    """
+    before = set(plt.get_fignums())
+    try:
+        yield
+    finally:
+        for number in set(plt.get_fignums()) - before:
+            plt.close(number)
 
 
 def safe_shap_values(model, X_train, X_test):
@@ -74,25 +99,48 @@ def safe_shap_values(model, X_train, X_test):
 
 def to_matrix(shap_values):
     """
-    Convert SHAP values to matrix format.
-    
-    Handles binary classification where SHAP returns list of 2 arrays.
-    
+    Convert SHAP values to a 2-D (samples x features) matrix.
+
+    Handles both shapes SHAP uses for binary classification:
+
+    * a list of two arrays, one per class (shap < 0.45, and KernelExplainer);
+    * a single array of shape ``(samples, features, 2)`` (shap >= 0.45 TreeExplainer).
+
+    The positive class is selected in both cases.
+
+    Only the second form was previously handled. Under shap 0.45+ a binary tree model returns the
+    3-D array, which this function passed straight through, so callers received a 3-D array where
+    they expected 2-D and ``generate_shap_caption`` raised
+    ``TypeError: only integer scalar arrays can be converted to a scalar index``. The advertised
+    safe_shap_values -> to_matrix -> generate_shap_caption workflow was therefore broken for
+    XGBoost and RandomForest, which are the models it is mainly used with.
+
+    Multiclass output (more than two classes, in either shape) is returned unreduced: there is no
+    single "positive" class to pick, and silently choosing one would be a wrong answer rather
+    than an error.
+
     Parameters
     ----------
     shap_values : list or np.ndarray
         SHAP values from explainer
-        
+
     Returns
     -------
     np.ndarray
-        SHAP values as matrix
+        SHAP values as a matrix; 2-D for binary input, unchanged for multiclass.
     """
-    # shap may return list for multiclass; here binary -> 2 classes sometimes
-    if isinstance(shap_values, list) and len(shap_values)==2:
+    # shap may return a list, one entry per class.
+    if isinstance(shap_values, list) and len(shap_values) == 2:
         # choose positive class
         return np.array(shap_values[1])
-    return np.array(shap_values)
+
+    values = np.array(shap_values)
+
+    # shap >= 0.45 returns (samples, features, n_classes) for binary tree models.
+    if values.ndim == 3 and values.shape[-1] == 2:
+        return values[:, :, 1]
+
+    return values
 
 
 def plot_summary_bar(shap_values, X, output_path, dpi=1200):
@@ -114,11 +162,11 @@ def plot_summary_bar(shap_values, X, output_path, dpi=1200):
     --------
     >>> plot_summary_bar(shap_values, X_test, "shap_bar.png")
     """
-    plt.figure(figsize=(6,5))
-    shap.summary_plot(shap_values, X, plot_type="bar", show=False)
-    plt.tight_layout()
-    plt.savefig(output_path, dpi=dpi, bbox_inches="tight")
-    plt.close()
+    with _figure_scope():
+        plt.figure(figsize=(6,5))
+        shap.summary_plot(shap_values, X, plot_type="bar", show=False)
+        plt.tight_layout()
+        plt.savefig(output_path, dpi=dpi, bbox_inches="tight")
 
 
 def plot_beeswarm(shap_values, X, output_path, dpi=1200):
@@ -138,11 +186,11 @@ def plot_beeswarm(shap_values, X, output_path, dpi=1200):
     dpi : int, default=1200
         Resolution for publication quality
     """
-    plt.figure(figsize=(7,5))
-    shap.summary_plot(shap_values, X, show=False)
-    plt.tight_layout()
-    plt.savefig(output_path, dpi=dpi, bbox_inches="tight")
-    plt.close()
+    with _figure_scope():
+        plt.figure(figsize=(7,5))
+        shap.summary_plot(shap_values, X, show=False)
+        plt.tight_layout()
+        plt.savefig(output_path, dpi=dpi, bbox_inches="tight")
 
 
 def generate_shap_caption(shap_values, feature_names, model_name, organ_name):
