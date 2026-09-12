@@ -8,8 +8,10 @@ Safety flow (see ``docs/PHASE5_AI_PANEL_DESIGN.md``):
   * gated by :class:`~rbgyanx.services.ui_policy.UiPolicy` — BASIC/clinic never sees it;
   * a persistent on-screen data-safety notice;
   * every send runs the PHI guard and shows what would leave the machine; the user confirms
-    each send (the dialog names the provider and flags remote transmission). The guard WARNS,
-    it does not block (owner policy);
+    each send (the dialog names the provider and flags remote transmission). For a REMOTE
+    provider the guard BLOCKS: a flagged payload is refused and no confirmation is offered,
+    so there is nothing for the user to click past. For a local (loopback) provider it warns,
+    because nothing leaves the machine;
   * nothing is written to disk or logged — the transcript lives in memory for the session only.
 """
 
@@ -45,8 +47,9 @@ __all__ = ["AiPanelScreen"]
 _SAFETY_NOTICE = (
     "⚠ Research assistant (ADVANCED). It explains outputs — it does not make clinical decisions. "
     "Text you send is transmitted to the selected provider; remote providers (Claude, Kimi) send "
-    "it over the internet. Nothing is saved on this machine. Prefer the Local provider for "
-    "anything patient-identifiable."
+    "it over the internet. Nothing is saved on this machine. The PHI guard BLOCKS any send to a "
+    "remote provider when it spots a possible patient identifier — this cannot be overridden. "
+    "Use the Local provider for anything patient-identifiable."
 )
 
 
@@ -219,9 +222,14 @@ class AiPanelScreen(QWidget):
         return messages
 
     def outgoing_preview(self, user_text: str):
-        """What would leave the machine (system prompts excluded) + PHI findings."""
+        """What would leave the machine + PHI findings, scanned exactly as the guard scans it.
+
+        Every role, system messages included. Attached run context is injected as a system
+        message, so a preview that skipped that role could show "no findings" for a payload the
+        client then refuses -- the preview and the block have to agree.
+        """
         messages = self.build_messages(user_text)
-        text = "\n".join(m.content for m in messages if m.role != "system")
+        text = "\n".join(m.content for m in messages)
         return text, scan_for_phi(text)
 
     def run_exchange(self, user_text: str, transport=None):
@@ -256,6 +264,12 @@ class AiPanelScreen(QWidget):
             QMessageBox.warning(self, "Not configured", self.status.text())
             return
         preview, findings = self.outgoing_preview(user_text)
+        if self.is_blocked(cfg, findings):
+            # No confirmation dialog: there is nothing to confirm. The client would refuse this
+            # payload anyway; catching it here means the user is told why instead of seeing a
+            # request fail. Deliberately offers no "send anyway" button.
+            QMessageBox.critical(self, "Blocked — possible patient data", self.block_message(cfg, findings))
+            return
         if not self._confirm_send(cfg, preview, findings):
             return
         self._dispatch(user_text)
@@ -286,11 +300,36 @@ class AiPanelScreen(QWidget):
         warn_text = ""
         if findings:
             cats = ", ".join(sorted({f.category for f in findings}))
+            # Reaching here with findings means the provider is local, since the remote case is
+            # blocked before any dialog is built. Say so rather than implying a waived block.
             warn_text = (
                 f"\n\n⚠ The PHI guard flagged possible identifiers ({cats}). "
-                "Review before sending — this is a warning, not a block."
+                "This endpoint is on your machine, so nothing leaves it — but check that this "
+                "is what you meant to send."
             )
         return bool(remote or findings), f"Send this text to {where}?{warn_text}"
+
+    @staticmethod
+    def is_blocked(cfg: AiConfig, findings) -> bool:
+        """Whether this payload must be refused outright.
+
+        Mirrors the rule enforced in :meth:`rbgyanx.ai.llm_client.LLMClient.complete`. The client
+        is the authority -- this exists so the UI can explain the refusal instead of surfacing a
+        raised exception -- so the condition is deliberately identical and takes no override.
+        """
+        return bool(findings) and bool(cfg.is_remote)
+
+    @staticmethod
+    def block_message(cfg: AiConfig, findings) -> str:
+        """User-facing text for a refused send. Names the categories, never the values."""
+        cats = ", ".join(sorted({f.category for f in findings}))
+        return (
+            f"This message was NOT sent.\n\n"
+            f"The PHI guard flagged possible patient identifiers ({cats}) in text bound for "
+            f"{cfg.preset.label} at {cfg.resolved_base_url}, which is not on this machine.\n\n"
+            f"Sending patient-identifiable data to a remote provider is blocked and cannot be "
+            f"overridden. Remove the identifiers, or switch to the Local provider."
+        )
 
     def _confirm_send(self, cfg: AiConfig, preview: str, findings) -> bool:
         warn, text = self.confirmation_prompt(cfg, findings)
@@ -318,7 +357,11 @@ class AiPanelScreen(QWidget):
         self._history.append(LLMMessage("user", user_text))
         self._history.append(LLMMessage("assistant", response.text))
         if response.had_phi_warning:
-            self._append("System", "(PHI guard warned on the last message — nothing was saved.)")
+            self._append(
+                "System",
+                "(PHI guard flagged the last message; the endpoint is local, so nothing left "
+                "this machine. Nothing was saved.)",
+            )
         self._append("rbGyanX", response.text)
         self.send_btn.setEnabled(True)
 

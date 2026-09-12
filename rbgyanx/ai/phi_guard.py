@@ -2,9 +2,15 @@
 PHI guard for the AI panel (v2 Phase 5 · Slice A).
 
 Scans outgoing text for patterns that look like protected health information and reports what it
-found. Per the owner's explicit, documented decision (2026-07-25, see
-``docs/PHASE5_AI_PANEL_DESIGN.md``), this guard **warns but never blocks** — including for remote
-providers. Its job is to *inform* the user before a send, not to prevent one.
+found.
+
+This module is the detector, not the policy. It never raises and never mutates the text; it
+returns findings. The policy lives in :class:`rbgyanx.ai.llm_client.LLMClient`, which **fails
+closed**: a finding on a payload bound for a remote provider blocks the send outright, with no
+user override. Local (loopback) providers still only warn, because nothing leaves the machine.
+
+(Historical note: through v1.2.1 this guard warned and allowed the send to proceed even for
+remote providers. That behaviour changed in v1.3.0 and is listed as breaking in CHANGELOG.md.)
 
 The guard is deliberately conservative (better a false positive the user waves past than a silent
 leak). It reports categories and locations; it never logs or stores the matched values, and the
@@ -76,7 +82,8 @@ def scan_for_phi(text: str) -> list[PhiFinding]:
     """Return every suspected-PHI finding in ``text`` (possibly empty).
 
     Findings are sorted by position. The guard never mutates the text and never raises on
-    content — callers decide what to do (this project: warn, do not block).
+    content — the caller decides what to do. For remote providers
+    :meth:`rbgyanx.ai.llm_client.LLMClient.complete` treats any finding as a block.
     """
     if not text:
         return []
@@ -95,8 +102,10 @@ def scan_for_phi(text: str) -> list[PhiFinding]:
 def redact(text: str, findings: list[PhiFinding] | None = None) -> str:
     """Return ``text`` with every suspected-PHI span replaced by ``[REDACTED:<category>]``.
 
-    Provided for callers/tests that want a de-identified copy; the live panel does not redact by
-    default (warn-not-block), but the same primitive backs the on-screen preview.
+    Provided for callers/tests that want a de-identified copy, and it backs the on-screen
+    preview. It is not part of the remote send path: a flagged payload is refused outright
+    rather than silently redacted and sent, so the user is never left guessing which parts of
+    their question the model actually received.
     """
     findings = findings if findings is not None else scan_for_phi(text)
     out = text

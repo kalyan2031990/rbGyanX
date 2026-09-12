@@ -1,8 +1,17 @@
-"""Test GUI integration and state management"""
-import pytest
-import tkinter as tk
-from pathlib import Path
+"""Test GUI integration and state management.
+
+Tkinter is an optional dependency in practice: CPython ships it, but the Debian/Ubuntu family
+splits it into a separate ``python3-tk`` package, so a minimal Linux install has a Python that
+cannot import it. This module used to ``import tkinter`` unguarded at module scope, which turned
+that into a *collection* error -- one missing OS package made the whole test suite fail rather
+than skipping one file. Guarded here the same way the PySide6 modules guard theirs.
+"""
 import sys
+from pathlib import Path
+
+import pytest
+
+tk = pytest.importorskip("tkinter", reason="tkinter not available (install python3-tk on Debian/Ubuntu)")
 
 # Add project to path
 sys.path.insert(0, str(Path.cwd()))

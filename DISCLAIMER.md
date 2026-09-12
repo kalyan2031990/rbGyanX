@@ -23,12 +23,19 @@ into the numeric core.
 - Literature comparisons marked **unverified** come from model recall, not a checked source.
   Any comparison intended for publication, QA documentation or clinical use must be performed
   and verified by a human against primary literature.
-- Remote providers (Claude, Kimi, or any hosted endpoint) **never receive patient data**. A
-  provider is treated as remote unless it is both flagged local and resolves to loopback, so a
-  LAN endpoint counts as remote.
+- Sending suspected patient data to a remote provider (Claude, Kimi, or any hosted endpoint) is
+  **blocked in code, with no user override**. The guard scans every outgoing message, attached
+  run context included; a single finding refuses the send before any network call. A provider is
+  treated as remote unless it is both flagged local and resolves to loopback, so a LAN endpoint
+  counts as remote.
+- This is pattern matching, not certainty. It stops what it recognises — DICOM identifiers and
+  UIDs, long digit runs, dates, e-mail addresses, absolute paths, "Last, First" names. It cannot
+  recognise a patient described in prose. **Use the Local provider for anything patient-
+  identifiable**; the block is a backstop, not a licence.
 - Institutions can disable all remote providers with `RBGYANX_AI_DISABLE_REMOTE=1` or
   `ai.disable_remote: true` in a site config file. This cannot be re-enabled from the interface.
-- Text you type yourself is warned about but not blocked. **Do not paste patient identifiers
-  into the assistant.**
+- Text you type yourself is scanned on exactly the same terms as anything else: if the guard
+  flags it and the provider is remote, it is refused. **Do not paste patient identifiers into the
+  assistant** — the guard is conservative, but no pattern set catches everything.
 
 See `docs/AI_ASSISTANT_DESIGN.md` for the capability matrix, threat model and frozen set.

@@ -6,9 +6,16 @@ in Slice B; here the default is :class:`NullTransport`, which makes a live call 
 keeps this slice free of any network code while still exercising the full request-building,
 PHI-warning and self-correction/retry logic (UMLBot pattern, Godwin & Melvin, SoftwareX 102789).
 
-PHI: this layer runs the PHI guard on every outgoing message and attaches the findings to the
-result as a *warning*. Per the owner's documented policy it does not block. It never writes
-prompts or responses to disk or logs.
+PHI: this layer runs the PHI guard on every outgoing message and **fails closed**. If the guard
+flags anything and the configured provider is remote, the request is refused here -- before the
+transport is touched -- and :class:`PhiBlocked` is raised. There is no override: no argument, no
+environment variable and no config field relaxes it, because a privacy guarantee a user can click
+past is not a guarantee. Local (loopback) providers are unaffected; findings are still attached to
+the result as a warning so the user is told what was spotted.
+
+The guard sees every role, system messages included. Run-derived context is injected into the
+conversation as a system message, so excluding that role would have exempted the one part of the
+payload actually derived from patient data. It never writes prompts or responses to disk or logs.
 """
 
 from __future__ import annotations
@@ -28,6 +35,7 @@ __all__ = [
     "NullTransport",
     "LLMError",
     "LLMNotConfigured",
+    "PhiBlocked",
     "LLMClient",
 ]
 
@@ -38,6 +46,25 @@ class LLMError(RuntimeError):
 
 class LLMNotConfigured(LLMError):
     """Raised when no usable transport/endpoint is configured (e.g. the default NullTransport)."""
+
+
+class PhiBlocked(LLMError):
+    """Raised when the PHI guard refused to let a payload reach a remote provider.
+
+    Carries the findings so the caller can tell the user *what* was flagged, and deliberately
+    carries no way to retry the same payload: the caller's only options are to edit the text or
+    to switch to a local provider. Nothing was transmitted when this is raised.
+    """
+
+    def __init__(self, findings: list[PhiFinding], provider: str) -> None:
+        self.findings = list(findings)
+        self.provider = provider
+        categories = ", ".join(sorted({f.category for f in self.findings})) or "unknown"
+        super().__init__(
+            f"Blocked: the PHI guard flagged possible patient identifiers ({categories}) in text "
+            f"bound for the remote provider {provider!r}. Nothing was sent. Remove the "
+            f"identifiers, or switch to a local (loopback) provider, which is not restricted."
+        )
 
 
 @dataclass(frozen=True)
@@ -169,8 +196,14 @@ class LLMClient:
         )
 
     def scan(self, messages: list[LLMMessage]) -> list[PhiFinding]:
-        """PHI findings across everything that would be transmitted (system prompt excluded)."""
-        text = "\n".join(m.content for m in messages if m.role != "system")
+        """PHI findings across everything that would be transmitted, every role included.
+
+        System messages are scanned too. The panel attaches run-derived context as a system
+        message, so skipping that role would exempt precisely the content that comes from
+        patient data. The static system prompt is author-controlled and scans clean; a test
+        pins that, so a future edit to it cannot silently start blocking every remote send.
+        """
+        text = "\n".join(m.content for m in messages)
         return scan_for_phi(text)
 
     # -------------------------------------------------------------------- send
@@ -198,16 +231,45 @@ class LLMClient:
         except Exception:  # pragma: no cover - never break a send over bookkeeping
             pass
 
+    def _audit_refusal(self, findings: list[PhiFinding], capability: str) -> None:
+        """Record that the guard refused to transmit. No payload is passed, so none is hashed.
+
+        Same swallow-on-failure rule as :meth:`_audit`: bookkeeping must not be the thing that
+        turns a refusal into a crash. The refusal itself has already been decided by the caller.
+        """
+        try:
+            from rbgyanx.ai.audit import record_refusal
+            from rbgyanx.ai.capability import detect_install_type
+
+            record_refusal(
+                provider=self.config.provider,
+                remote=self.config.is_remote,
+                install_type=detect_install_type().value,
+                capability=capability,
+                findings_redacted=len(findings),
+            )
+        except Exception:  # pragma: no cover - never turn a block into a different error
+            pass
+
     def complete(
         self, messages: list[LLMMessage], *, capability: str = "chat (panel send)"
     ) -> LLMResponse:
-        """Run one exchange. Warns on PHI (never blocks); retries with self-correction.
+        """Run one exchange. Blocks a flagged payload to a remote provider; retries transport hiccups.
 
-        Raises :class:`LLMNotConfigured` when only the NullTransport is available, and
-        :class:`LLMError` after exhausting retries.
+        Raises :class:`PhiBlocked` when the guard flags content and the provider is remote --
+        before the transport is constructed or called, so nothing leaves the machine. Raises
+        :class:`LLMNotConfigured` when only the NullTransport is available, and :class:`LLMError`
+        after exhausting retries.
         """
         request = self.build_request(messages)
-        findings = self.scan(messages)  # warn, do not block
+        findings = self.scan(messages)
+
+        # Fail closed. This is the only place a request leaves, so it is the only place the
+        # decision has to be made -- and it is made before the transport exists, not as a
+        # confirmation the user can dismiss. Local providers are exempt: nothing leaves the box.
+        if findings and self.config.is_remote:
+            self._audit_refusal(findings, capability)
+            raise PhiBlocked(findings, self.config.provider)
 
         last_exc: Exception | None = None
         for attempt in range(1, self.config.max_retries + 2):  # 1 try + N retries

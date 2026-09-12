@@ -73,8 +73,14 @@ ADVANCED-only, opt-in, **off by default**, and absent entirely in BASIC. It expl
 engine has already produced; it never computes or adjusts a TCP/NTCP/UTCP value.
 
 Capability is granted on two axes enforced in code: whether the provider is **local** (loopback)
-or **remote**, and whether this is a **source** checkout or a **frozen** binary. Remote providers
-never receive patient data. Under CI the assistant is disabled outright.
+or **remote**, and whether this is a **source** checkout or a **frozen** binary. Under CI the
+assistant is disabled outright.
+
+The PHI guard **fails closed**. Every outgoing message is scanned — system messages and attached
+run context included — and if anything is flagged while a **remote** provider is selected, the
+send is refused before the network is touched. There is no override: no button, no environment
+variable, no config field. A local (loopback) provider only warns, because nothing leaves the
+machine. Enforced by `rbgyanx/ai/llm_client.py` and tested in `tests/test_ai_phi_failclosed.py`.
 
 Institutions can remove every remote provider, unrepealably from the interface:
 

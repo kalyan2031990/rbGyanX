@@ -7,6 +7,12 @@ tests cover the wiring rather than the format: that a send produces a record, th
 describes the send accurately, and that it still carries no payload.
 
 The live counterpart is tests/test_ai_live_provider.py, which is opt-in.
+
+Note on the v1.3.0 fail-closed change: sending suspected PHI to a *remote* provider is now
+refused, so these tests send clean text when what they are checking is "a transmission was
+recorded". The PHI-specific cases below use a local provider (where a flagged send still goes
+through, because nothing leaves the machine) or assert the refusal record directly. Using
+PHI-laden text as the generic fixture would now exercise the block instead of the wiring.
 """
 
 from __future__ import annotations
@@ -18,6 +24,9 @@ from rbgyanx.ai.config import AiConfig
 from rbgyanx.ai.llm_client import LLMClient, LLMError, LLMMessage, LLMNotConfigured
 
 DIRTY = "PatientID 004512237 - why is the parotid NTCP high for Doe, Jane?"
+
+#: Nothing the scrubber flags, so a remote send is not blocked. Pinned by a test below.
+CLEAN = "Why is the parotid NTCP higher than the spinal cord NTCP?"
 
 
 class Fake:
@@ -40,7 +49,7 @@ def audit_dir(tmp_path, monkeypatch):
     return tmp_path
 
 
-def _send(text=DIRTY, provider="kimi", transport=None, **kw):
+def _send(text=CLEAN, provider="kimi", transport=None, **kw):
     client = LLMClient(AiConfig(provider=provider, api_key="sk-x"), transport=transport or Fake())
     return client.complete([LLMMessage("user", text)], **kw)
 
@@ -96,16 +105,57 @@ def test_an_off_machine_local_preset_is_recorded_as_remote(audit_dir):
 
 
 def test_phi_findings_are_counted_not_stored(audit_dir):
-    _send(DIRTY)
+    """A local send of flagged text is recorded, with the findings counted and not stored."""
+    _send(DIRTY, provider="local")
     record = read_records(audit_path())[0]
+    assert record["outcome"] == "sent"
     assert record["findings_redacted"] >= 1
+
+
+# --------------------------------------------------- a refusal is recorded as a refusal
+
+
+def test_the_clean_fixture_really_is_clean():
+    """If CLEAN ever started tripping the guard, most tests here would fail confusingly."""
+    from rbgyanx.ai.phi_guard import scan_for_phi
+
+    assert not scan_for_phi(CLEAN)
+
+
+def test_a_blocked_remote_send_is_recorded_as_refused(audit_dir):
+    """The block is an auditable event, distinguishable from a transmission."""
+    from rbgyanx.ai.llm_client import PhiBlocked
+
+    with pytest.raises(PhiBlocked):
+        _send(DIRTY, provider="kimi")
+
+    records = read_records(audit_path())
+    assert len(records) == 1
+    assert records[0]["outcome"] == "refused"
+    assert records[0]["remote"] is True
+    assert records[0]["findings_redacted"] >= 1
+
+
+def test_a_refusal_records_no_payload_at_all(audit_dir):
+    """Nothing was sent, so there is nothing to measure or fingerprint."""
+    from rbgyanx.ai.llm_client import PhiBlocked
+
+    with pytest.raises(PhiBlocked):
+        _send(DIRTY, provider="kimi")
+
+    record = read_records(audit_path())[0]
+    assert record["payload_bytes"] == 0
+    raw = audit_path().read_text(encoding="utf-8")
+    for token in ("004512237", "parotid", "Doe", "Jane", DIRTY):
+        assert token not in raw, f"a refusal record leaked {token!r}"
 
 
 # ------------------------------------------------------------- it still holds no payload
 
 
 def test_the_payload_never_reaches_the_log(audit_dir):
-    _send(DIRTY)
+    """Local provider, so the flagged text really is transmitted and really is recorded."""
+    _send(DIRTY, provider="local")
     raw = audit_path().read_text(encoding="utf-8")
     for token in ("004512237", "parotid", "Doe", "Jane", DIRTY):
         assert token not in raw, f"the audit log leaked {token!r}"

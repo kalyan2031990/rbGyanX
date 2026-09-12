@@ -280,31 +280,6 @@ def run_analysis_pipeline(
     if mode_controller is None:
         mode_controller = ModeController(RunMode.BASIC)
     
-    # Phase 4: Apply conservative defaults for BASIC mode
-    if mode_controller.is_basic():
-        conservative_defaults = mode_controller.get_conservative_defaults()
-        # Apply defaults to config if not already set
-        if inputs.config is None:
-            inputs.config = {}
-        for key, default_value in conservative_defaults.items():
-            if key not in inputs.config:
-                inputs.config[key] = default_value
-                if structured_logger:
-                    structured_logger.debug(
-                        f"Applied conservative default: {key}={default_value}",
-                        metadata={'mode': 'BASIC', 'default_key': key}
-                    )
-        
-        # Phase 4: Track explicit intent
-        explicit_intent = mode_controller.get_explicit_intent()
-        if provenance_tracker:
-            provenance_tracker.track_metadata('explicit_intent', explicit_intent)
-        if structured_logger:
-            structured_logger.info(
-                f"Explicit intent: {explicit_intent['intent']}",
-                metadata={'intent': explicit_intent}
-            )
-    
     # Phase 2: Initialize deterministic execution
     if random_seed is not None:
         random.seed(random_seed)
@@ -337,7 +312,7 @@ def run_analysis_pipeline(
         structured_logger = StructuredLogger(
             session_id=provenance_tracker.session_id if provenance_tracker else None
         )
-    # Phase 4: Log mode and contract message
+        # Phase 4: Log mode and contract message
         structured_logger.info(
             f"Pipeline execution started in {mode_controller.mode.value.upper()} mode",
             metadata={
@@ -346,6 +321,32 @@ def run_analysis_pipeline(
                 'contract': mode_controller.get_contract_message()
             }
         )
+
+    # Phase 4: Apply conservative defaults for BASIC mode
+    if mode_controller.is_basic():
+        conservative_defaults = mode_controller.get_conservative_defaults()
+        # Apply defaults to config if not already set
+        if inputs.config is None:
+            inputs.config = {}
+        for key, default_value in conservative_defaults.items():
+            if key not in inputs.config:
+                inputs.config[key] = default_value
+                if structured_logger:
+                    structured_logger.debug(
+                        f"Applied conservative default: {key}={default_value}",
+                        metadata={'mode': 'BASIC', 'default_key': key}
+                    )
+        
+        # Phase 4: Track explicit intent
+        explicit_intent = mode_controller.get_explicit_intent()
+        if provenance_tracker:
+            provenance_tracker.track_metadata('explicit_intent', explicit_intent)
+        if structured_logger:
+            structured_logger.info(
+                f"Explicit intent: {explicit_intent['intent']}",
+                metadata={'intent': explicit_intent}
+            )
+
     output.logs.append(f"rbGyanX running in {mode_controller.mode.value.upper()} mode")
     output.logs.append(mode_controller.get_contract_message())
     
@@ -504,7 +505,10 @@ def run_analysis_pipeline(
             'decision_support_only': mode_controller.enforce_decision_support_only()
         })
         
-        # Add warnings to output
+    # Add warnings to output. Guarded because the applicability check only runs when
+    # ``inputs.treatment_info`` is supplied, and de-indented because surfacing these warnings
+    # to the user must not depend on whether provenance tracking happens to be enabled.
+    if applicability_result is not None:
         for warning in applicability_result.warnings:
             output.warnings.append(f"[Applicability] {warning.message}")
     
