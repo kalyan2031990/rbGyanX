@@ -6,14 +6,34 @@
 
 param(
     [switch]$BuildApp,
-    [string]$EngineRoot = ""
+    [string]$EngineRoot = "",
+    # Defaults to the version in engine\rbgyanx_engine\_version.py, which is the single source
+    # of truth. Pass this only to build a differently-labelled installer deliberately.
+    [string]$AppVersion = ""
 )
 
 $ErrorActionPreference = "Stop"
 $PackagingDir = $PSScriptRoot
 $DualRoot = (Resolve-Path (Join-Path $PackagingDir "..")).Path
 $AppDir = Join-Path $DualRoot "dist\rbGyanX"
-$AppVersion = "1.0.0"
+
+# This was hardcoded to "1.0.0", so every installer this script produced was named after a
+# version it was not -- which is how a v1.2.1 release came to carry an asset labelled 1.1.0.
+# The version is now read from the same file pyproject, CITATION.cff and VERSION.txt agree with,
+# and the build stops rather than guessing if it cannot be found.
+if (-not $AppVersion) {
+    $VersionFile = Join-Path $DualRoot "engine\rbgyanx_engine\_version.py"
+    if (-not (Test-Path $VersionFile)) {
+        throw "Cannot determine the version: $VersionFile is missing. Pass -AppVersion explicitly."
+    }
+    $match = Select-String -Path $VersionFile -Pattern '__version__\s*=\s*"([^"]+)"' |
+        Select-Object -First 1
+    if (-not $match) {
+        throw "Could not parse __version__ from $VersionFile. Pass -AppVersion explicitly."
+    }
+    $AppVersion = $match.Matches[0].Groups[1].Value
+}
+Write-Host "Building installer for version $AppVersion"
 
 if ($BuildApp) {
     & (Join-Path $PackagingDir "build_rbGyanX.ps1") @PSBoundParameters

@@ -121,3 +121,35 @@ def test_documents_quote_the_real_analytic_control_count(relative_path: str):
     assert counts == {expected}, (
         f"{relative_path} states {sorted(counts)} analytic controls; the suite collects {expected}"
     )
+
+
+# ------------------------------------------------- the release version gate
+
+
+def test_release_version_script_agrees_with_the_code():
+    """scripts/check_release_version.py is what the release workflow trusts.
+
+    It gates every release artefact, so if it cannot read the version files it silently stops
+    protecting anything. Exercised here so a change to any of those file formats fails in the
+    test suite rather than at tag time.
+    """
+    import sys
+
+    sys.path.insert(0, str(ROOT / "scripts"))
+    try:
+        import check_release_version as crv
+    finally:
+        sys.path.pop(0)
+
+    declared = crv.collect()
+    assert len(set(declared.values())) == 1, f"version sources disagree: {declared}"
+
+    from rbgyanx_engine import __version__ as engine_ver
+
+    assert set(declared.values()) == {engine_ver}
+
+    # The gate must accept the real version, with or without the tag's leading "v" ...
+    assert crv.main(["check_release_version.py", engine_ver]) == 0
+    assert crv.main(["check_release_version.py", f"v{engine_ver}"]) == 0
+    # ... and reject anything else.
+    assert crv.main(["check_release_version.py", "0.0.1"]) == 1

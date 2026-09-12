@@ -38,12 +38,27 @@ python -m venv .venv && . .venv/bin/activate      # Windows: .venv\Scripts\activ
 pip install -e "./engine" -e ".[dev,ml]"          # add ,qt for the desktop GUI
 ```
 
+Or from the release assets, **both wheels together** — `rbgyanx` imports `rbgyanx_engine` at
+module scope, so it is a hard requirement rather than an extra, and the engine is published as a
+release asset rather than on PyPI:
+
+```bash
+pip install rbgyanx_engine-1.3.0-py3-none-any.whl rbgyanx-1.3.0-py3-none-any.whl
+```
+
+Installing only `rbgyanx-1.3.0-py3-none-any.whl` fails at install time with an unresolved
+`rbgyanx-engine` requirement. That is deliberate: through v1.2.1 the dependency was undeclared,
+so the wheel installed cleanly and then raised `ModuleNotFoundError` on `import rbgyanx`.
+
 > The published analysis ran on a different interpreter. `analysis/FINAL_ANALYSIS_CODE_MANIFEST.json`
 > records Python 3.14.2 on Windows with its own package set, because that analysis drove the
 > engine directly rather than this installed distribution. That record is historical provenance
 > for the reported numbers and is deliberately not changed to match the range above.
 
 ## 5-minute example (shipped synthetic data — no patient data)
+
+Run this **from the root of a clone**. It reads the synthetic DVH set in `examples/data/dvh_txt`,
+which ships in the repository rather than inside the wheel.
 
 ```bash
 python - <<'PY'
@@ -55,6 +70,13 @@ req = RunRequest(analysis_mode="NTCP", input_path=Path("examples/data/dvh_txt"),
                  output_dir=Path("."), input_source="dvh_txt")
 res = RunController().run_dvh_text(
     req, ntcp_models={"LKB": {"model": "lkb_probit", "params": {"TD50_gy": 39.9, "m": 0.40}}})
+
+# Check res.ok before reading results. A run that could not start returns ok=False with the
+# reason in res.errors and an empty res.structures, so a snippet that iterates straight into
+# res.structures prints nothing at all and is indistinguishable from success.
+if not res.ok:
+    raise SystemExit("run failed: " + "; ".join(res.errors))
+
 for s in res.structures:
     tag = "target — NTCP n/a" if getattr(s, "is_target", False) else f"NTCP={s.ntcp}"
     print(f"{s.patient_id} {s.label:12s} Dmean={s.mean_dose_gy:5.1f} Gy  {tag}")
@@ -64,11 +86,18 @@ PY
 Desktop GUIs: `python -m rbgyanx.qtapp` (Qt6, needs the `qt` extra) or `python rbgyanx_gui.py`
 (Tkinter).
 
-## Verify (1326 tests, synthetic data only)
+## Verify (synthetic data only)
 
 ```bash
 pytest -q
 ```
+
+On a full `.[dev,ml]` install plus the engine, on Linux without PySide6, torch or tkinter, this
+reports **1351 passed, 24 skipped**. Your numbers will differ: whole modules skip when an
+optional dependency is absent (PySide6 for the Qt app, torch for the PINN comparators, tkinter
+for the legacy GUI), the live-provider tests are opt-in behind `RBGYANX_LIVE_LLM_TEST=1`, and
+`tests/test_with_real_data.py` skips unless a real cohort is present. Run `pytest -rs` to see
+exactly what skipped and why. **No test requires patient data**, and none is expected to fail.
 
 The scientific core is pinned by **22 analytic positive controls**
 (`pytest tests/test_ntcp_positive_controls.py`): NTCP = 0.5 at TD50, monotonicity, QUANTEC

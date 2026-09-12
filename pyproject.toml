@@ -31,6 +31,12 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
+    # The engine is a hard runtime requirement, not an optional extra: rbgyanx/__init__.py
+    # imports rbgyanx_engine at module scope, so without it `import rbgyanx` fails outright.
+    # It was previously undeclared, which made the built wheel unimportable on a clean machine.
+    # It is distributed as a release asset alongside this package rather than from PyPI, so
+    # install both wheels together (see README).
+    "rbgyanx-engine>=1.3.0",
     "numpy>=1.24",
     "pandas>=2.0",
     "scipy>=1.10",

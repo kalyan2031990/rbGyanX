@@ -1,12 +1,30 @@
 name: Release
 
+# Builds and publishes the actual release artefacts. Until v1.3.0 this workflow built NOTHING:
+# the installer step printed "skipping in CI unless secrets configured" and the only uploaded
+# artifact was CHANGELOG.md under the name "rbgyanx-release-notes". That is how the v1.2.1
+# release came to carry a screenshot archive named 1.1.0 as its asset — every real artefact was
+# attached by hand, so nothing checked that its name matched the tag.
+#
+# Every job below therefore asserts that what it built carries the tag's version, and fails if
+# it does not. Do not add `|| true` or `continue-on-error` to these steps.
+
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build (without the leading v), for a dry run"
+        required: true
+
+permissions:
+  contents: write
 
 jobs:
   validate-citation:
+    name: Validate CITATION.cff
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,22 +34,211 @@ jobs:
       - run: pip install cffconvert
       - run: cffconvert --validate -i CITATION.cff
 
-  build-windows:
-    runs-on: windows-latest
+  version-agreement:
+    name: Tag matches the declared version
+    runs-on: ubuntu-latest
     needs: validate-citation
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
-      - name: Build installer (if script present)
+          python-version: "3.12"
+
+      # scripts/check_release_version.py compares the tag against the engine's _version.py
+      # (the single source of truth), pyproject.toml, CITATION.cff and VERSION.txt, and fails if
+      # any disagree. It runs before anything is built, because a release whose artefacts are
+      # named after a version the code does not claim is the defect this guards against.
+      # It lives in a script rather than inline here: the inline form needed several layers of
+      # shell and YAML quoting to read a value out of a Python file, and was wrong when written.
+      - id: resolve
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG_VERSION="${{ github.event.inputs.version }}"
+          else
+            TAG_VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          python scripts/check_release_version.py "$TAG_VERSION"
+          echo "version=$TAG_VERSION" >> "$GITHUB_OUTPUT"
+
+  build-wheels:
+    name: Wheels and sdist
+    runs-on: ubuntu-latest
+    needs: version-agreement
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # setuptools >= 83 closes PYSEC-2026-3447; see SECURITY.md.
+      - run: python -m pip install --upgrade pip "setuptools>=83" build
+
+      # Both distributions are published. rbgyanx declares rbgyanx-engine as a hard requirement
+      # and the engine is not on PyPI, so a release that shipped only the rbgyanx wheel would be
+      # uninstallable — which is exactly what happened before the dependency was declared.
+      - name: Build rbgyanx (wheel + sdist)
+        run: python -m build --outdir dist/
+
+      - name: Build rbgyanx-engine (wheel + sdist)
+        run: python -m build --outdir dist/ engine/
+
+      - name: Assert every artefact carries the release version
+        env:
+          VERSION: ${{ needs.version-agreement.outputs.version }}
+        run: |
+          set -euo pipefail
+          ls -l dist/
+          expected=(
+            "rbgyanx-${VERSION}-py3-none-any.whl"
+            "rbgyanx-${VERSION}.tar.gz"
+            "rbgyanx_engine-${VERSION}-py3-none-any.whl"
+            "rbgyanx_engine-${VERSION}.tar.gz"
+          )
+          for f in "${expected[@]}"; do
+            if [ ! -f "dist/$f" ]; then
+              echo "::error::expected release artefact dist/$f was not built"
+              exit 1
+            fi
+            echo "ok: $f"
+          done
+          # Nothing may be published whose name does not carry this version.
+          for f in dist/*; do
+            case "$(basename "$f")" in
+              *"${VERSION}"*) ;;
+              *) echo "::error::artefact $(basename "$f") does not carry version ${VERSION}"; exit 1 ;;
+            esac
+          done
+
+      # A wheel that cannot be installed and imported is not a release artefact. This installs
+      # both wheels into a clean venv and runs the README quickstart, which is the same check a
+      # reviewer would perform.
+      - name: Clean-install smoke test
+        env:
+          VERSION: ${{ needs.version-agreement.outputs.version }}
+        run: |
+          set -euo pipefail
+          python -m venv /tmp/clean
+          /tmp/clean/bin/python -m pip install --quiet --upgrade pip "setuptools>=83"
+          /tmp/clean/bin/python -m pip install --quiet \
+            "dist/rbgyanx_engine-${VERSION}-py3-none-any.whl" \
+            "dist/rbgyanx-${VERSION}-py3-none-any.whl"
+          /tmp/clean/bin/python -c "import rbgyanx, rbgyanx_engine; assert rbgyanx.__version__ == '${VERSION}'; assert rbgyanx_engine.__version__ == '${VERSION}'; print('import ok', rbgyanx.__version__)"
+          /tmp/clean/bin/python - <<'SMOKE'
+          from pathlib import Path
+          from rbgyanx.services.run_controller import RunController
+          from rbgyanx.services.run_request import RunRequest
+
+          req = RunRequest(analysis_mode="NTCP", input_path=Path("examples/data/dvh_txt"),
+                           output_dir=Path("."), input_source="dvh_txt")
+          res = RunController().run_dvh_text(
+              req, ntcp_models={"LKB": {"model": "lkb_probit",
+                                        "params": {"TD50_gy": 39.9, "m": 0.40}}})
+          if not res.ok:
+              raise SystemExit("README quickstart failed: " + "; ".join(res.errors))
+          if not res.structures:
+              raise SystemExit("README quickstart produced no structures")
+          print(f"quickstart ok: {len(res.structures)} structures")
+          SMOKE
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rbgyanx-dist-${{ needs.version-agreement.outputs.version }}
+          path: dist/
+          if-no-files-found: error
+
+  build-windows-installer:
+    name: Windows installer
+    runs-on: windows-latest
+    needs: version-agreement
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip "setuptools>=83"
+          python -m pip install -e "./engine" -e ".[qt]" pyinstaller
+
+      # rbGyanX-qt.iss defaults MyAppSource to ..\build_qt\dist\rbGyanX-Qt, so the freeze has
+      # to land there rather than in PyInstaller's default dist/.
+      - name: Freeze the Qt application
+        shell: bash
+        run: |
+          pyinstaller --noconfirm --clean \
+            --distpath build_qt/dist --workpath build_qt/build \
+            packaging/rbGyanX-qt.spec
+          test -d "build_qt/dist/rbGyanX-Qt" || { echo "::error::freeze produced no build_qt/dist/rbGyanX-Qt"; exit 1; }
+
+      # Inno Setup ships on the windows-latest image. Both defines are passed explicitly: the
+      # .iss falls back to MyAppVersion "1.0.0" when none is given, which is precisely how a
+      # release came to carry an asset named after the wrong version.
+      - name: Build the installer
         shell: pwsh
         run: |
-          if (Test-Path packaging/build_rbGyanX.ps1) {
-            Write-Host "Installer build requires local TF bundle; skipping in CI unless secrets configured."
-          }
-      - name: Upload placeholder artifact
-        uses: actions/upload-artifact@v4
+          $iscc = @(
+            "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+            "$env:ProgramFiles\Inno Setup 6\ISCC.exe",
+            "${env:LocalAppData}\Programs\Inno Setup 6\ISCC.exe"
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $iscc) { throw "Inno Setup 6 not found on this runner" }
+          $src = (Resolve-Path "build_qt\dist\rbGyanX-Qt").Path
+          & $iscc "/DMyAppSource=$src" "/DMyAppVersion=${{ needs.version-agreement.outputs.version }}" "packaging\rbGyanX-qt.iss"
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed with exit code $LASTEXITCODE" }
+
+      # rbGyanX-qt.iss writes to ..\build_qt\dist with OutputBaseFilename
+      # rbGyanX-{version}-Qt-Setup, so the expected path is fully determined. Asserting the exact
+      # filename -- rather than "some .exe exists" -- is what makes a mislabelled asset impossible.
+      - name: Assert the installer carries the release version
+        shell: bash
+        env:
+          VERSION: ${{ needs.version-agreement.outputs.version }}
+        run: |
+          set -euo pipefail
+          expected="build_qt/dist/rbGyanX-${VERSION}-Qt-Setup.exe"
+          ls -l build_qt/dist/ || true
+          if [ ! -f "$expected" ]; then
+            echo "::error::expected installer $expected was not produced"
+            find . -name "rbGyanX*Setup*.exe" -printf '  found instead: %p\n' 2>/dev/null || true
+            exit 1
+          fi
+          echo "ok: $expected"
+
+      - uses: actions/upload-artifact@v4
         with:
-          name: rbgyanx-release-notes
-          path: CHANGELOG.md
+          name: rbgyanx-installer-${{ needs.version-agreement.outputs.version }}
+          path: build_qt/dist/rbGyanX-${{ needs.version-agreement.outputs.version }}-Qt-Setup.exe
+          if-no-files-found: error
+
+  publish:
+    name: Attach assets to the release
+    runs-on: ubuntu-latest
+    needs: [version-agreement, build-wheels, build-windows-installer]
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets/
+
+      - name: List what will be attached
+        run: find assets -type f | sort
+
+      - name: Attach to the GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: assets/**/*
+          fail_on_unmatched_files: true
+          body: |
+            See `CHANGELOG.md` for the full entry, including the Changed / Breaking section.
+
+            **Install (both wheels — the engine is a hard requirement and is not on PyPI):**
+
+            ```bash
+            pip install rbgyanx_engine-${{ needs.version-agreement.outputs.version }}-py3-none-any.whl \
+                        rbgyanx-${{ needs.version-agreement.outputs.version }}-py3-none-any.whl
+            ```
