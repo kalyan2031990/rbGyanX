@@ -1,0 +1,4 @@
+# Optional deep-learning / experiment extras (Python 3.10–3.12 only; not used by rbGyanX 1.0 installer).
+tensorflow>=2.15.0; python_version < "3.13"
+torch>=2.1.0; python_version < "3.13"
+captum>=0.7.0; python_version < "3.13"
