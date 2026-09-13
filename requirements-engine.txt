@@ -1,0 +1,10 @@
+# The open-source CDSS core (rbgyanx-engine), installed from this repository.
+#
+# Was an absolute path into the author's home directory pointing at a tree that no longer exists,
+# so the file both leaked a local path and could not be installed. Now relative to the repo root:
+#
+#   pip install -r requirements-engine.txt
+#
+# Or set RBGYANX_ENGINE_PATH to the repo root and install from there.
+
+-e ./engine

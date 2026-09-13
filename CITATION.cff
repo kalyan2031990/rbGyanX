@@ -1,0 +1,48 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Mondal
+    given-names: Kalyan
+    orcid: "https://orcid.org/0000-0001-7685-7391"
+  - family-names: Mandal
+    given-names: Abhijit
+    orcid: "https://orcid.org/0000-0001-5626-1072"
+  - family-names: Vijay
+    given-names: Anuj
+    orcid: "https://orcid.org/0000-0001-6610-3844"
+title: "rbGyanX: A radiobiology-guided clinical decision support framework"
+version: "1.3.0"
+date-released: 2026-09-12
+# Concept DOI: always resolves to the newest version of the record. Cite this rather than
+# a version DOI (10.5281/zenodo.21757164 was the v1.2.1 version DOI) so that a citation
+# harvested from this file does not pin readers to a superseded release.
+doi: "10.5281/zenodo.21757163"
+url: "https://github.com/kalyan2031990/rbGyanX"
+repository-code: "https://github.com/kalyan2031990/rbGyanX"
+license: MIT
+keywords:
+  - radiobiology
+  - clinical decision support
+  - TCP
+  - NTCP
+  - radiotherapy
+  - medical physics
+abstract: "rbGyanX is a radiobiology-guided clinical decision support framework designed to integrate physical dosimetry, radiobiological modeling, and explainable machine learning for treatment plan evaluation in radiation oncology."
+# This file cites THE SOFTWARE, and deliberately sets no `preferred-citation`.
+#
+# `preferred-citation` tells citation tools to cite something else *instead of* this software.
+# Pointing it at a journal article would mean that anyone who used rbGyanX and reached for the
+# citation file would credit a paper rather than the tool they ran — which misattributes the
+# software and breaks the link between a result and the version that produced it. rbGyanX is
+# released independently of any single publication.
+#
+# To credit a related publication, add it under `references:` (which is what that field is for)
+# rather than under `preferred-citation:`, e.g.
+#
+# references:
+#   - type: article
+#     title: "<title>"
+#     authors: [{family-names: Mondal, given-names: Kalyan}]
+#     journal: "<journal>"
+#     year: 2026
+#     doi: "<article DOI>"

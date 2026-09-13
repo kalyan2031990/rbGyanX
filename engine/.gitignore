@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# Tests / tools
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.hypothesis/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Project outputs (always use --output-dir)
+py_tcpx_output/
+rbgyanx_output/
+output/
+outputs_run/
+
+# Local cohort spreadsheets (not part of engine package)
+cohort_registry.xlsx
+archive/
+quantification/
+src/
+
+# User overrides (keep example in repo)
+config/site_params_user.yaml
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Data (not part of package; users supply paths via CLI)
+*.dcm
