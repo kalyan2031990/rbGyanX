@@ -28,6 +28,10 @@ output/
 *_smoke*/
 rbgyanx_smoke_dicom/
 
+# pytest-xdist writes pytest-cache-files-* on parallel runs; the one category of build
+# litter this file did not already cover (.pytest_cache/ is handled above).
+pytest-cache-files-*
+
 # Outputs
 reports/
 plots/

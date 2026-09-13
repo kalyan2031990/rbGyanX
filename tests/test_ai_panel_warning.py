@@ -108,14 +108,81 @@ def test_declared_remote_provider_gets_the_warning_icon(panel):
 
 
 def test_findings_alone_raise_the_warning_on_a_local_endpoint(panel):
+    """A local endpoint still warns -- and must explain that the data is not leaving.
+
+    This previously asserted the dialog said "warning, not a block". That wording was correct
+    when the guard warned and sent anyway; since v1.3.0 the remote case never reaches a dialog at
+    all, so describing a waived block would be misleading. Reaching this branch with findings now
+    implies the endpoint is local.
+    """
     from rbgyanx.ai.phi_guard import scan_for_phi
 
     findings = scan_for_phi("PatientID 004512237")
     assert findings
-    warn, text = panel.confirmation_prompt(AiConfig(provider="local"), findings)
+    cfg = AiConfig(provider="local")
+    assert not cfg.is_remote
+
+    warn, text = panel.confirmation_prompt(cfg, findings)
     assert warn is True
     assert "PHI guard flagged" in text
-    assert "warning, not a block" in text
+    assert "on your machine" in text
+    assert "not a block" not in text, "the dialog must not describe a waived block"
+
+
+# ------------------------------------------------------- the remote case is blocked, not warned
+
+
+def test_a_flagged_remote_send_is_blocked_outright(panel):
+    """The v1.3.0 contract at the UI layer: no dialog, no choice.
+
+    ``is_blocked`` mirrors the rule enforced in ``LLMClient.complete``; the panel consults it
+    before building any confirmation dialog, so there is nothing for the user to click past.
+    """
+    from rbgyanx.ai.phi_guard import scan_for_phi
+
+    findings = scan_for_phi("PatientID 004512237")
+    cfg = AiConfig(provider="claude", api_key="k")
+
+    assert panel.is_blocked(cfg, findings) is True
+
+
+def test_a_clean_remote_send_is_not_blocked(panel):
+    """Fail-closed must not mean fail-always."""
+    cfg = AiConfig(provider="claude", api_key="k")
+    assert panel.is_blocked(cfg, []) is False
+
+
+def test_a_flagged_local_send_is_not_blocked(panel):
+    """Local providers are exempt: nothing leaves the machine."""
+    from rbgyanx.ai.phi_guard import scan_for_phi
+
+    findings = scan_for_phi("PatientID 004512237")
+    assert panel.is_blocked(AiConfig(provider="local"), findings) is False
+
+
+def test_an_off_machine_local_preset_is_blocked(panel):
+    """The loopback-aware rule applies to the block, not just to the wording."""
+    from rbgyanx.ai.phi_guard import scan_for_phi
+
+    findings = scan_for_phi("PatientID 004512237")
+    cfg = AiConfig(provider="local", base_url=OFF_MACHINE)
+    assert cfg.is_remote
+    assert panel.is_blocked(cfg, findings) is True
+
+
+def test_the_block_message_names_categories_but_not_values(panel):
+    """The refusal has to be actionable without echoing the identifier it found."""
+    from rbgyanx.ai.phi_guard import scan_for_phi
+
+    findings = scan_for_phi("PatientID 004512237")
+    cfg = AiConfig(provider="claude", api_key="k")
+
+    message = panel.block_message(cfg, findings)
+
+    assert "NOT sent" in message
+    assert "004512237" not in message, "the block message echoed the flagged value"
+    assert "cannot be overridden" in message
+    assert "Local" in message, "the message must say what the user can do instead"
 
 
 def test_a_clean_local_send_raises_nothing(panel):

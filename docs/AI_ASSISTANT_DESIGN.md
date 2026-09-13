@@ -91,13 +91,27 @@ IT departments can enforce this without editing code, and it cannot be re-enable
 
 ## 2. PHI handling
 
-Two guards with deliberately different contracts, both retained:
+Two guards, both retained. Since v1.3.0 they share the same failure direction:
 
 | | `phi_guard.py` | `scrubber.py` |
 |---|---|---|
 | Governs | text the **user** typed and chose to send | text the assistant **forwards on the user's behalf** |
-| On detection | warns, never blocks (2026-07-25 decision, unchanged) | **fails closed** |
-| Rationale | a human is reading every byte before it goes | no human is |
+| On detection, remote provider | **fails closed** — refused, no override | **fails closed** |
+| On detection, local provider | warns; nothing leaves the machine | warns |
+| Where enforced | `LLMClient.complete`, before the transport exists | `scrub_for_transmission` |
+
+**This changed in v1.3.0 and the change is breaking.** Through v1.2.1 `phi_guard` warned and
+transmitted anyway, on the reasoning that a human reads every byte before it goes. That reasoning
+does not survive contact with the failure mode it permits: the human who pastes an identifier by
+accident is exactly the human who will click past a warning, and README.md and DISCLAIMER.md
+simultaneously told readers that remote providers "never receive patient data". The documentation
+described the behaviour the guard should have had, so the guard was changed rather than the
+sentence. There is now no override — no parameter, no environment variable, no config field, and
+no "send anyway" button in the panel.
+
+The guard also now scans **every role, system messages included**. Run-derived context is attached
+to the conversation as a system message, and the old scan filtered that role out, exempting the one
+part of the payload actually derived from patient data.
 
 ### Why `confident` exists
 
@@ -399,8 +413,12 @@ A provider with no key is **skipped, not failed** — a missing key is a configu
 
 ### What this does *not* defend against
 
-- **A user pasting patient data into the chat box on a remote provider.** `phi_guard` warns; per
-  the documented 2026-07-25 decision it does not block text the user typed themselves.
+- **Patient data the guard cannot recognise.** Since v1.3.0 a flagged paste into the chat box is
+  refused outright for a remote provider, so the obvious cases are covered. What remains is what
+  pattern matching cannot see: a patient described in prose, a nickname, an unusual institutional
+  identifier format, a structure-label convention nobody anticipated. A false positive costs a
+  refused send; a false negative is a leak, and no deny-list can demonstrate that none remain. The
+  Local provider is the answer for anything patient-identifiable.
 - **A malicious local operator.** Someone who can edit the installed source can remove any of
   this. The frozen set constrains the *assistant*, not a determined human with write access.
 - **The correctness of model output.** Nothing here makes an explanation true. That is what the
@@ -433,4 +451,4 @@ Anyone extending this component should read it and reconcile.
 | `rbgyanx/ai/tools/edit.py` | edit_code and the verification loop |
 | `rbgyanx/ai/tools/literature.py` | provenance tiers and the export gate |
 | `rbgyanx/ai/reference_packs/` | versioned reference packs, site-extensible |
-| `rbgyanx/ai/phi_guard.py` | warn-not-block guard for user-typed text |
+| `rbgyanx/ai/phi_guard.py` | PHI detector for user-typed text; the block is enforced by `llm_client.py` |

@@ -7,7 +7,7 @@ tree. Each item is a real constraint on the current release, not a placeholder.
 
 ## Code structure
 
-### `rbgyanx_gui.py` is a 9,093-line monolith
+### `rbgyanx_gui.py` is a 9,100-line monolith
 
 The original Tkinter desktop application is a single module of roughly 9,100 lines (~396 KB). It
 works, it is exercised by the GUI integration tests, and the service layer beneath it is properly
@@ -32,6 +32,24 @@ identical service-layer results and should stay green throughout.
 
 Contributors: please do not add new features to `rbgyanx_gui.py`. Add them to the service layer
 and surface them in `rbgyanx.qtapp`.
+
+### `run_analysis_pipeline` cannot execute its subprocess steps
+
+`rbgyanx.logic.pipeline.run_analysis_pipeline` orchestrates the analysis by invoking the `code1`
+through `code7` scripts as subprocesses. Those scripts live in `legacy/`, which is quarantined and
+never imported, while the pipeline resolves them against the application root. Every step
+therefore reports `Script not found` and the function returns `status='partial'` with four errors
+rather than performing any analysis.
+
+Until v1.3.0 this was masked by a worse defect: the function raised `UnboundLocalError` on its
+first call in the default BASIC configuration, so nobody reached the subprocess stage. It now runs
+to completion and degrades honestly, which is an improvement but not a working pipeline.
+
+**Use the service layer instead.** `rbgyanx.services.run_controller.RunController` is the
+supported entry point, is what both GUIs call, and is what the README quickstart demonstrates.
+Reconnecting or retiring the subprocess pipeline is deferred work; it is an architectural change,
+not a defect fix, and doing it properly means deciding whether the `code1`–`code7` lineage should
+be revived at all.
 
 ---
 
@@ -80,6 +98,29 @@ ordering artefact. The manuscript-facing name is `Parotid_unspecified` and affec
 The 0.5 decision threshold is not an established boundary. CCS verdicts are directional signals,
 not calibrated judgements.
 
+### No SBRT-specific lung TCP parameter set has been adopted
+
+`LUNG_SBRT` resolves to its own parameter object, but the values in it are the **conventional**
+thoracic NSCLC parameters: TCD50 84.5 Gy, derived for conventional fractionation. Before v1.3.0
+the key silently resolved to the `LUNG` entry, so a caller asking for SBRT parameters received
+conventional ones with nothing saying so. The substitution is gone and the object now declares
+what it carries, but the underlying gap is unchanged — no validated lung-SBRT parameter set has
+been adopted, and none was invented to fill the hole.
+
+`lq_valid_max_dpf_gy` is deliberately left at 10 Gy for this site so that typical SBRT
+fractionation trips the LQ-validity guard rather than passing unremarked. Treat TCP for
+`LUNG_SBRT` as indicative only. By contrast `PROSTATE_SBRT` does carry a genuinely distinct set
+(TCD50 36.25 Gy vs 72.0 conventional); those values existed all along and were simply unreachable.
+
+### `PELVIS` has no TCP parameters at all
+
+A pelvic volume is treated as multi-target — cervix, endometrium, rectum, nodal volumes, with
+different alpha/beta and clonogen assumptions per target — and no single published parameter set
+applies. Requesting TCP for `PELVIS` raises `SiteParamsUnavailable` naming the reason; it does not
+fall back to a nearby site. DVH, NTCP and UTCP scoring are unaffected. This is reachable from real
+data: the DICOM site detector maps `PELVIS`, `CERVIX` and `ENDOMETRIUM` onto that key, so a pelvic
+plan will be refused TCP rather than given a number of uncertain provenance.
+
 ---
 
 ## Reproducibility
@@ -97,16 +138,47 @@ values accompany the associated publications.
 release tag. This is deliberate and should not be reconciled: which code produced a number and
 which version was distributed are different questions.
 
+### Eight analysis scripts no longer match their recorded SHA-256
+
+`analysis/FINAL_ANALYSIS_CODE_MANIFEST.json` records a SHA-256 for each script that produced a
+reported result — that mapping is the whole point of the manifest, and it closed audit blocker B1.
+Recomputing those digests against the current files, **15 of 23 match and 8 do not**:
+
+```
+analysis/radiomics/p14_ct_radiomics.py          analysis/pinn/v2_pinn.py
+analysis/radiomics/p14_assemble_radiomics.py    analysis/cohort/t2_resolve_linkage.py
+analysis/ibsi/v3_ibsi_benchmark.py              analysis/cohort/build_patient_features.py
+analysis/dosiomics/real_dosiomics.py            analysis/bayesian/v3_bayesian_pymc.py
+```
+
+The drift predates v1.3.0 — the files are byte-identical to their state at the v1.2.1 tag, so it
+was introduced earlier and has not been reconciled. For those eight, the manifest no longer
+identifies the exact bytes that produced the reported numbers, and the provenance claim is weaker
+than the manifest's own wording implies. The digests of the remaining fifteen are intact.
+
+This is recorded rather than repaired because there are only two honest repairs and both are
+decisions for the authors, not a cleanup: re-run those analyses and re-stamp the manifest, or
+restore the exact script versions the digests refer to. Silently re-stamping the manifest against
+the current files would make the hashes agree while destroying the evidence that anything changed.
+
+`analysis/` is excluded from linting and formatting for this reason — it is a frozen provenance
+artefact, not maintained code.
+
 ### The AI assistant is explanation-only, and its guards are not a proof
 
 The assistant added in this release is experimental, ADVANCED-only and off by default. Three
 limits are worth stating plainly.
 
-**The PHI scrubber cannot prove a negative.** It redacts what it recognises and then refuses to
-transmit anything it cannot account for, which is the right failure direction, but a deny-list
-can never demonstrate that no identifier remains. An unusual structure label or an unfamiliar
-path shape may be refused when it was harmless, and the reverse cannot be ruled out. Text the
-user types themselves is warned about, not blocked.
+**The PHI guard fails closed, and still cannot prove a negative.** As of v1.3.0 a finding on
+anything bound for a remote provider refuses the send outright, with no user override — text the
+user typed themselves included. That is the right failure direction, and it is a real change from
+v1.2.1, where the guard warned and transmitted anyway. What it is *not* is a guarantee. The guard
+is a pattern matcher over an allow-list of shapes it recognises: DICOM field labels and UIDs, long
+digit runs, dates, e-mail addresses, absolute paths, "Last, First" names. It cannot recognise a
+patient described in prose, a nickname, an unusual institutional identifier format, or a rare
+structure-label convention. A false positive costs a refused send; a false negative is a leak, and
+no deny-list can demonstrate that none remain. **Use the Local provider for anything
+patient-identifiable.** The block is a backstop for mistakes, not a licence to paste real data.
 
 **The frozen set constrains the assistant, not a human.** Anyone with write access to the
 installed source can remove any of it. It closes the path where an agent edits the numeric core
@@ -117,6 +189,26 @@ determined operator.
 constraints under conventional fractionation; they do not compose, they do not apply to SBRT,
 re-irradiation or paediatric cases, and they are not a plan-acceptance standard. Sites should
 ship their own pack rather than treat the shipped one as authoritative.
+
+---
+
+## Dependencies
+
+### pydicom is pinned to a version with a known path-traversal advisory
+
+`pydicom` is pinned `>=2.4,<3.0` because `dicompyler-core` 0.5.6 — the latest release — imports
+`pydicom.pixel_data_handlers`, which pydicom 3.0 removed. Installing pydicom 3.0.2 makes
+`import dicompylercore.dicomparser` fail outright; this was verified directly, not inferred.
+
+pydicom 2.4.5 therefore carries **PYSEC-2026-2266**, a path traversal in the `FileSet` /
+DICOMDIR API, fixed in 3.0.2. This codebase does not use that API — `FileSet`, `fileset`,
+`DICOMDIR` and `ReferencedFileID` appear nowhere in it, and DICOM is read as individual files
+through `DicomParser` and `dcmread` — so the exposure is nil rather than merely unlikely. The
+advisory is accepted as a documented `pip-audit` exception. `SECURITY.md` states the full
+justification and, importantly, what would invalidate it.
+
+Lifting the pin requires replacing or vendoring `dicompyler-core`, which changes the DVH
+ingestion path rather than a dependency version.
 
 ---
 
