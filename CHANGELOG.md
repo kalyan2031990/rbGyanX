@@ -5,6 +5,200 @@ All notable changes to this project are documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-09-13 — minor: three documented behaviours changed
+
+A **minor** release, not a patch. Three behaviours that the documentation described are now
+different, and code written against the old ones will break. No scientific result changed, no
+analysis was rerun, and the release identifier stays FINAL_V3.2.
+
+This release is independent of any publication. It is a software release: the defects below were
+found by auditing the tool on its own terms, and the fixes stand on their own. A paper may cite
+rbGyanX; rbGyanX does not exist to serve one. `CITATION.cff` accordingly sets no
+`preferred-citation`, so a citation of this tool credits the tool.
+
+### Changed / Breaking
+
+- **Suspected PHI bound for a remote AI provider is now BLOCKED, not warned about.**
+  `LLMClient.complete` scanned every outgoing message, attached the findings to the response as a
+  warning, and then transmitted anyway — the code was annotated `# warn, do not block`. Meanwhile
+  `README.md` and `DISCLAIMER.md` told the reader that remote providers "never receive patient
+  data". The documentation described the behaviour the guard should have had, so the guard changed
+  rather than the sentence.
+
+  A finding on a payload bound for a remote provider now raises
+  `rbgyanx.ai.llm_client.PhiBlocked` **before the transport is constructed**. There is no
+  override: no parameter, no environment variable, no config field, and no "send anyway" button in
+  the Qt panel. Local (loopback) providers are unaffected and still only warn, because nothing
+  leaves the machine. Refusals are recorded in the audit log with `outcome="refused"` and no
+  payload digest.
+
+  *Migration:* a caller that relied on a warn-and-send remote path must now catch `PhiBlocked`,
+  remove the identifiers, or select a local provider. `LLMResponse.had_phi_warning` still reports
+  findings for local sends.
+
+  The guard also now scans **every role, system messages included**. Run-derived context is
+  attached to the conversation as a system message, and the old scan filtered that role out —
+  exempting precisely the part of the payload derived from patient data. `rbgyanx/ai/context.py`
+  claimed "the PHI guard still runs on the final text"; for that path it did not.
+
+- **A site whose TCP parameters are missing or technique-specific now raises instead of silently
+  substituting a near match.** `load_site_params("LUNG_SBRT")` returned the conventional `LUNG`
+  parameter object, so a caller asking for SBRT parameters received conventional-fractionation
+  ones with nothing saying so. It now resolves to its own entry, and
+  `dicom_io.site_detector.params_site_key` no longer folds the key into `LUNG` either.
+
+  `PELVIS` is declared as having no TCP parameter set and raises the new
+  `SiteParamsUnavailable` (a `ValueError` subclass) explaining that a pelvic volume is
+  multi-target and needs a named target site. It previously failed with
+  `Site 'PELVIS' not found in SITE_PARAMS` — an internal detail rather than an answer, and
+  reachable from real data, since the detector maps `PELVIS`, `CERVIX` and `ENDOMETRIUM` onto it.
+
+  *Migration:* callers that passed `LUNG_SBRT` and expected `LUNG` values now get an object whose
+  `site` field says `LUNG_SBRT`. Those values are still the conventional numbers — no
+  SBRT-specific lung parameter set has been adopted and none was invented — but the object now
+  declares that in `notes`. Callers that passed `PELVIS` must handle `SiteParamsUnavailable`.
+
+- **The expression calculator no longer evaluates user input with `eval()`.**
+  `ask_rbgyanx/calculator.py` called `eval(expression, {"__builtins__": {}}, {"math": math})`
+  behind a blocklist of six substrings, and its accompanying character check was inert — every
+  branch of that loop ended in `continue`, so it rejected nothing. Replaced with an `ast` walk
+  over an explicit allow-list of node types, operators, functions and constants, plus caps on
+  exponent magnitude, factorial input and expression length. Anything not on the list is refused
+  by name.
+
+  *Migration:* expressions outside the allow-list now fail with
+  `UnsafeExpressionError` (a `ValueError` subclass) reported through the existing
+  `{'success': False, 'error': ...}` contract. Attribute access, comprehensions, lambdas and
+  non-numeric literals were never intended to work and now say so.
+
+### Fixed
+
+- **The documented pipeline entry point raised on its first call.**
+  `rbgyanx.logic.pipeline.run_analysis_pipeline` raised `UnboundLocalError` in its default BASIC
+  configuration: the BASIC block logged each conservative default through `structured_logger`, but
+  the provenance tracker and structured logger were both initialised *after* that block. BASIC is
+  the default, so the very first call failed. Initialisation now precedes use.
+
+  A second defect sat on the same path. The loop copying applicability warnings onto the output
+  dereferenced `applicability_result` unconditionally — that object is only built when
+  `inputs.treatment_info` is supplied — and had been indented into the preceding
+  `if provenance_tracker:` block, so disabling provenance silently discarded user-facing
+  applicability warnings. Now guarded and de-indented.
+
+  Note that this function still cannot execute its subprocess steps, because `code1`–`code7` live
+  in quarantined `legacy/`. It returns `status='partial'` rather than raising. Use
+  `rbgyanx.services.run_controller.RunController`, which is the supported entry point and what
+  both GUIs call. See `docs/KNOWN_LIMITATIONS.md`.
+
+- **`PROSTATE_SBRT` parameters were unreachable.** They existed in
+  `engine/config/site_params_default.yaml` and differ materially from conventional prostate
+  (TCD50 36.25 Gy vs 72.0), but the key was absent from `_SITE_KEY_MAP` and so was rejected as an
+  unknown site. It now loads.
+
+- **Two error handlers crashed instead of reporting.** In `rbgyanx_gui.py`, handlers for the
+  assistant and the self-test closed over `e` from `except Exception as e:` and were invoked later
+  through Tk's `after()`/`lambda`. Python deletes the exception name when the block ends, so both
+  raised `NameError` at the moment they were meant to report a failure — losing the original error
+  and replacing it with a confusing one. The message is now bound at raise time.
+
+- **`CITATION.cff` and `README.md` cited a version DOI.** Both now cite the concept DOI
+  `10.5281/zenodo.21757163`, which always resolves to the newest release, instead of
+  `10.5281/zenodo.21757164`, which pinned readers to v1.2.1.
+
+- **The published wheel could not be imported.** `rbgyanx/__init__.py` imports `rbgyanx_engine` at
+  module scope, but `rbgyanx-engine` was not declared as a dependency — so
+  `pip install rbgyanx-1.2.1-py3-none-any.whl` succeeded and `import rbgyanx` then raised
+  `ModuleNotFoundError`. The dependency is now declared, which turns that into an install-time
+  resolution error with a clear message, and the engine wheel ships alongside.
+
+- **`utils/shap_utils.py`: the advertised workflow was broken and leaked figures.** `to_matrix`
+  only handled the pre-0.45 list-of-two-arrays form, so under shap 0.45+ a binary tree model
+  returned a 3-D array unreduced and `generate_shap_caption` raised `TypeError` — breaking the
+  documented `safe_shap_values -> to_matrix -> generate_shap_caption` chain for XGBoost and
+  RandomForest. Separately, both plotting helpers leaked exactly one matplotlib figure per call.
+
+- **Bare `except:` in 22 places** swallowed `KeyboardInterrupt` and `SystemExit`; now
+  `except Exception:`. **Ten re-raises** inside except blocks lost their cause; now chained.
+  **Seven `zip()` call sites** that must pair equal-length sequences — including
+  `zip(feature_names, feature_importances)`, where truncation would mislabel importances — now
+  pass `strict=True` and raise rather than truncating silently.
+
+- **A missing optional dependency no longer fails the whole test suite.**
+  `tests/test_gui_integration.py` imported `tkinter` unguarded at module scope, and
+  `rbgyanx.qtapp.is_available()` checked only that the PySide6 *package* was findable rather than
+  that Qt could load. Either combination turned a should-be-skipped module into a *collection*
+  error. Both now guard on the real import.
+
+### Security
+
+- **`HttpTransport` passed a user-configurable `base_url` straight to `urllib.request.urlopen`,**
+  which also honours `file:`, `ftp:` and `data:`. A preset pointed at `file:///etc/passwd` would
+  have turned the AI panel into a local-file reader. The scheme is now checked against an
+  http/https allow-list before any request is built.
+
+- **`setuptools>=83`** is now the build floor, closing PYSEC-2026-3447.
+
+- `pydicom` remains pinned `>=2.4,<3.0` and so carries **PYSEC-2026-2266**, a path traversal in
+  the `FileSet`/DICOMDIR API. The pin cannot be lifted: `dicompyler-core` 0.5.6 — the latest
+  release — imports `pydicom.pixel_data_handlers`, removed in pydicom 3.0, and installing 3.0.2
+  makes `import dicompylercore.dicomparser` fail outright. This codebase never touches the
+  vulnerable API, so exposure is nil rather than merely unlikely. Accepted as a documented
+  `pip-audit` exception; `SECURITY.md` states the justification and what would invalidate it.
+
+### Infrastructure
+
+- **Bandit and pip-audit are blocking gates.** Both previously ended in `|| true`, so the build
+  went green whether or not they passed — and both were in fact failing when that mask was
+  removed. Every finding is now fixed or recorded in `SECURITY.md` with a reason. `B602`
+  (`shell=True`) is deliberately not skipped.
+
+- **Ruff lints the whole maintained tree.** It previously ran over nine named paths, so a green
+  check said nothing about the other ~140 files — which is where the two undefined-name bugs
+  above were hiding. 1,561 findings went to zero; remaining exclusions are policy with stated
+  reasons in `pyproject.toml`, not backlog.
+
+- **The release workflow builds real artefacts.** It previously built nothing: the installer step
+  printed "skipping in CI unless secrets configured" and the only uploaded artifact was
+  `CHANGELOG.md`. It now builds wheels and sdists for both distributions, freezes and compiles the
+  Windows installer, and **asserts that every artefact filename carries the tag's version**.
+  `packaging/build_installer.ps1` had `$AppVersion` hardcoded to `"1.0.0"`, which is why a release
+  could ship an asset named after the wrong version; it now reads the version from the single
+  source of truth. A clean-install smoke test installs both wheels into a fresh venv and runs the
+  README quickstart.
+
+- **`analysis/` is excluded from linting and formatting.** Its scripts are pinned by SHA-256 in
+  `FINAL_ANALYSIS_CODE_MANIFEST.json`, so reformatting them breaks the mapping between a reported
+  number and the bytes that produced it. It is a frozen provenance artefact, not maintained code.
+
+### Added
+
+- `tests/test_ai_phi_failclosed.py` — asserts against a transport that records every call that a
+  flagged payload never reaches it. The exception alone would pass even if the request had already
+  gone out.
+- `engine/tests/test_site_params_routing.py` — pins the invariant that every mapped site either
+  loads as itself or raises, which is what makes all three routing defects unreintroducible.
+- `tests/test_ask_rbgyanx_calculator.py` — correctness for the advertised functions, and 18
+  refusal payloads.
+- `tests/test_shap_workflow.py` — previously a zero-byte file. Populated rather than deleted,
+  because `utils/shap_utils.py` ships in the wheel and had no tests; writing them found the two
+  bugs above.
+- `tests/test_pipeline_entry_point.py` — calls `run_analysis_pipeline` with default arguments.
+- `scripts/check_release_version.py` — gates a release on tag/code version agreement.
+
+### Documentation
+
+- `README.md` rewritten for a first-time reader, with an explicit **What this is not for**
+  section. Its example output is now the captured output of a real run rather than illustrative
+  figures.
+- `docs/KNOWN_LIMITATIONS.md` gains five entries and corrects one that had become false. Among
+  them: **eight of the 23 scripts recorded in `FINAL_ANALYSIS_CODE_MANIFEST.json` no longer match
+  their recorded SHA-256.** The drift predates this release — the files are byte-identical to
+  their state at the v1.2.1 tag — and is recorded rather than repaired, because the honest
+  repairs are authorial decisions, not cleanup.
+- `docs/AI_ASSISTANT_DESIGN.md` no longer describes the PHI guard as "warns, never blocks".
+
+---
+
 ## [1.2.1] - 2026-08-22 — patch: the write tool did not run on any supported Python
 
 A patch over 1.2.0. **Anyone on 1.2.0 who enables the assistant's tools should update.** No

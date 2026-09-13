@@ -249,13 +249,18 @@ synthetic mirror only.
 
 ## How to cite
 
-Cite the archived release via its **concept DOI**, which always resolves to the newest version —
-see [`CITATION.cff`](CITATION.cff), or:
+rbGyanX is citable in its own right. Cite the archived release via its **concept DOI**, which
+always resolves to the newest version — see [`CITATION.cff`](CITATION.cff), or:
 
 > Mondal, K., Mandal, A., & Vijay, A. *rbGyanX: A radiobiology-guided clinical decision support
 > framework* (v1.3.0). Zenodo. https://doi.org/10.5281/zenodo.21757163
 
-The accompanying manuscript will be added as the preferred citation on acceptance.
+Where reproducibility matters, cite the **version** DOI of the release you actually ran rather
+than the concept DOI, so a reported number stays tied to the code that produced it.
+
+`CITATION.cff` deliberately sets no `preferred-citation`: that field redirects citation tools to
+credit something else instead of this software, and rbGyanX is released independently of any
+single publication. Related papers belong under `references:`.
 
 ---
 

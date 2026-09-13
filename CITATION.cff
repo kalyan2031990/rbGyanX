@@ -28,11 +28,21 @@ keywords:
   - radiotherapy
   - medical physics
 abstract: "rbGyanX is a radiobiology-guided clinical decision support framework designed to integrate physical dosimetry, radiobiological modeling, and explainable machine learning for treatment plan evaluation in radiation oncology."
-# TODO(on manuscript acceptance): add the paper as the preferred citation, e.g.
-# preferred-citation:
-#   type: article
-#   title: "<manuscript title>"
-#   authors: [{family-names: Mondal, given-names: Kalyan}, {family-names: Mandal, given-names: Abhijit}, {family-names: Vijay, given-names: Anuj}]
-#   journal: "Computer Methods and Programs in Biomedicine"
-#   year: 2026
-#   doi: "<article DOI>"
+# This file cites THE SOFTWARE, and deliberately sets no `preferred-citation`.
+#
+# `preferred-citation` tells citation tools to cite something else *instead of* this software.
+# Pointing it at a journal article would mean that anyone who used rbGyanX and reached for the
+# citation file would credit a paper rather than the tool they ran — which misattributes the
+# software and breaks the link between a result and the version that produced it. rbGyanX is
+# released independently of any single publication.
+#
+# To credit a related publication, add it under `references:` (which is what that field is for)
+# rather than under `preferred-citation:`, e.g.
+#
+# references:
+#   - type: article
+#     title: "<title>"
+#     authors: [{family-names: Mondal, given-names: Kalyan}]
+#     journal: "<journal>"
+#     year: 2026
+#     doi: "<article DOI>"
