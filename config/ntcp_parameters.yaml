@@ -1,0 +1,52 @@
+# rbGyanX - NTCP parameter overrides
+#
+# This file was previously zero bytes. It is referenced by qa/self_test_engine.py, which only checked
+# that it existed, so an empty file reported PASS while containing nothing.
+#
+# WHERE THE AUTHORITATIVE PARAMETERS LIVE
+# ---------------------------------------
+# The NTCP parameters the engine actually uses are shipped per treatment site in:
+#
+#     engine/config/site_params_ntcp_default.yaml
+#
+# organised as  <SITE> -> organs -> <ORGAN> -> {geud_a, alpha_beta_gy, LKB_loglogit, LKB_probit, RS}.
+# Site keys currently provided: HN, LUNG, BREAST, BRAIN_GBM, BRAIN_METS, PROSTATE, LIVER.
+#
+# Deliberately, no parameter value is duplicated here. A second copy of the numbers would drift from
+# the defaults the engine loads, and a silently stale override is worse than no override.
+#
+# HOW TO OVERRIDE
+# ---------------
+# Copy the block you want to change from site_params_ntcp_default.yaml into `overrides` below, keeping
+# the same nesting, and point the engine at a user file:
+#
+#     engine/config/site_params_ntcp_user.yaml     (preferred - loaded by the engine's config layer)
+#
+# Anything under `overrides` here is documentation of intent for a local deployment; the engine reads
+# the site_params files, not this one. Keep the two consistent or leave `overrides` empty.
+#
+# WORKED EXAMPLE (commented out - uncomment and edit to use)
+# ---------------------------------------------------------
+# overrides:
+#   HN:
+#     organs:
+#       Parotid_L:
+#         # QUANTEC/Deasy 2010 parallel mean-dose endpoint; geud_a = 1 reduces gEUD to the mean dose
+#         geud_a: 1.0
+#         alpha_beta_gy: 3.0
+#         LKB_loglogit: {TD50_gy: 28.4, gamma50: 0.6}
+
+schema_version: 1
+authoritative_source: engine/config/site_params_ntcp_default.yaml
+user_override_file: engine/config/site_params_ntcp_user.yaml
+
+# Empty by default: the engine defaults are used unchanged.
+overrides: {}
+
+# Provenance of the shipped defaults, for citation in reports.
+references:
+  parotid_xerostomia: "QUANTEC / Deasy et al. 2010 - parallel mean-dose endpoint"
+  spinal_cord: "Emami / QUANTEC serial-organ defaults; note the configured 45 Gy is a planning
+    constraint, NOT a fitted TD50, and the resulting NTCP is not a calibrated risk estimate"
+  relative_seriality: "Kallman et al. 1992 parametrisation"
+  general: "See docs/RS_PARAMETRISATION.md and the study's RADIOBIOLOGY_ANALYSIS_REPORT.md"
