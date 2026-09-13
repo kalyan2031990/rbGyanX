@@ -1,0 +1,441 @@
+"""
+Qt shell smoke tests (v2 Phase 4 · Slice 3).
+
+Runs the real window under the ``offscreen`` platform plugin, so it exercises actual Qt
+widgets in CI without a display. Skips cleanly when PySide6 is absent — the Tkinter app and
+the engine must stay testable on machines without Qt.
+
+Covers: construction with branding, BASIC/ADVANCED gating, widgets -> RunRequest, a full
+headless run rendered into the results table, and the embedded interactive DVH HTML.
+"""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+import pytest
+from rbgyanx.qtapp import is_available
+
+pytestmark = pytest.mark.unit
+
+if not is_available():  # pragma: no cover - environment dependent
+    pytest.skip("PySide6 not installed", allow_module_level=True)
+
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
+from rbgyanx.qtapp.main_window import (  # noqa: E402 - must follow the platform setting
+    AppMode,
+    MainWindow,
+)
+from rbgyanx.services.run_controller import RunController  # noqa: E402
+from rbgyanx.services.run_request import RunRequest  # noqa: E402
+from rbgyanx.services.ui_policy import (  # noqa: E402
+    ADVANCED_MODELS,
+    BASIC_MODELS,
+)
+
+EXAMPLES = Path(__file__).resolve().parents[1] / "examples" / "data" / "dvh_txt"
+
+
+@pytest.fixture(scope="module")
+def qapp():
+    from PySide6.QtWidgets import QApplication
+
+    app = QApplication.instance() or QApplication([])
+    yield app
+
+
+@pytest.fixture
+def window(qapp):
+    w = MainWindow()
+    yield w
+    w.close()
+
+
+# ------------------------------------------------------------------ construction
+
+
+def test_window_constructs_with_branding(window):
+    assert window.windowTitle().startswith("rbGyanX")
+    tabs = [window.tabs.tabText(i) for i in range(window.tabs.count())]
+    assert tabs[:3] == ["Workflow", "Run", "Results"]
+    # The existing rbGyanX icon is reused, not replaced.
+    from rbgyanx.qtapp.branding import icon_path
+
+    if icon_path() is not None:
+        assert not window.windowIcon().isNull()
+
+
+def test_existing_branding_assets_are_used():
+    from rbgyanx.qtapp.branding import asset_dir, icon_path, splash_path
+
+    assert asset_dir().name == "assets"
+    assert icon_path() is not None and icon_path().name == "icon.png"
+    assert splash_path() is not None and splash_path().name == "splash.png"
+
+
+# -------------------------------------------------------------- BASIC / ADVANCED
+
+
+def test_basic_mode_hides_research_controls(window):
+    window.set_mode(AppMode.BASIC)
+    assert window.mode == AppMode.BASIC
+    assert not window.ml_check.isVisible()
+    assert window.source_combo.currentText() == "dvh_txt"
+    assert window.models == BASIC_MODELS
+    assert len(window.models) == 1  # clinic sees one well-understood model
+
+
+def test_advanced_mode_exposes_research_controls(window):
+    window.set_mode(AppMode.ADVANCED)
+    assert window.models == ADVANCED_MODELS
+    assert len(window.models) > len(BASIC_MODELS)
+    assert window.source_combo.isEnabled()
+
+
+def test_mode_banner_reflects_mode(window):
+    window.set_mode(AppMode.ADVANCED)
+    assert "ADVANCED" in window.mode_banner.text()
+    window.set_mode(AppMode.BASIC)
+    assert "BASIC" in window.mode_banner.text()
+
+
+# ------------------------------------------------------------ view -> model seam
+
+
+def test_build_request_maps_widgets_to_headless_request(window):
+    window.input_edit.setText(str(EXAMPLES))
+    window.mode_combo.setCurrentText("NTCP")
+    req = window.build_request()
+    assert isinstance(req, RunRequest)
+    assert req.analysis_mode == "NTCP"
+    assert Path(req.input_path) == EXAMPLES
+
+
+def test_invalid_request_is_rejected_before_running(window):
+    window.input_edit.setText("")
+    result = RunController().validate(window.build_request())
+    assert not result.ok
+    assert any("Input folder not selected" in e for e in result.errors)
+
+
+# --------------------------------------------------------------- full run + plot
+
+
+@pytest.fixture(scope="module")
+def run_result():
+    req = RunRequest(
+        analysis_mode="NTCP",
+        input_path=EXAMPLES,
+        output_dir=Path.cwd(),
+        input_source="dvh_txt",
+    )
+    return RunController().run_dvh_text(req, ntcp_models=BASIC_MODELS)
+
+
+def test_headless_run_on_shipped_synthetic_data(run_result):
+    assert run_result.ok
+    assert run_result.n_files > 0
+    assert len(run_result.structures) == run_result.n_files
+    assert all(s.mean_dose_gy == s.mean_dose_gy for s in run_result.structures)  # not NaN
+
+
+def test_results_table_is_populated(window, run_result):
+    window.populate_results(run_result)
+    assert window.table.rowCount() == len(run_result.structures)
+    assert window.table.item(0, 0).text()  # structure name
+    assert window.table.item(0, 2).text()  # mean dose
+
+
+def test_embedded_dvh_html_is_interactive_plotly(window, run_result):
+    html = window.dvh_html(run_result)
+    assert "plotly" in html.lower()
+    assert len(html) > 1000
+    assert "<script" in html.lower()  # interactive, not a static image
+
+
+def test_dvh_html_handles_empty_result(window):
+    from rbgyanx.services.run_controller import RunResult
+
+    html = window.dvh_html(RunResult(ok=True, structures=[]))
+    assert "No plottable DVH" in html
+
+
+def test_qtwebengine_is_available_for_embedding():
+    """The interactive view needs QtWebEngine; flag early if the wheel lacks it."""
+    pytest.importorskip("PySide6.QtWebEngineWidgets")
+
+
+def test_selftest_renders_plotly_in_a_live_webengine(qapp):
+    """Drives the same headless path the packaged exe runs (RBGYANX_QT_SELFTEST=1):
+
+    a real run -> interactive DVH -> loaded into a live QWebEngineView -> the rendered DOM is
+    queried for a Plotly graph. Returns 0 only when the plot actually drew, so this guards the
+    blank-plot packaging bug at the source level too.
+    """
+    pytest.importorskip("PySide6.QtWebEngineWidgets")
+    from rbgyanx.qtapp.main_window import _selftest
+
+    assert _selftest() == 0
+
+
+# ------------------------------------------------------------------------ PHI
+
+
+def test_window_writes_nothing_on_run(window, run_result, tmp_path, monkeypatch):
+    """Rendering results must not persist anything (export is explicit + user-chosen)."""
+    monkeypatch.chdir(tmp_path)
+    window.populate_results(run_result)
+    assert not list(tmp_path.iterdir()), "the results view wrote files without being asked"
+
+
+# --------------------------------------------------- Workflow screen (Slice 4)
+
+
+def test_workflow_tab_is_present(window):
+    assert window.tabs.tabText(0) == "Workflow"
+    assert window.tabs.count() >= 3
+
+
+def test_workflow_lists_every_pipeline_step(window):
+    from rbgyanx.qtapp.screens.workflow import STEPS
+
+    assert len(STEPS) == 7  # 6 numbered steps, TCP and NTCP split at step 3
+    for _label, attr in STEPS:
+        assert attr in window.workflow._step_labels
+
+
+def test_workflow_step_status_tracks_shared_pipeline_state(window):
+    wf = window.workflow
+    wf.state.step1_complete = True
+    wf.refresh_status()
+    assert wf._step_labels["step1_complete"].text() == "complete"
+    assert wf._step_labels["step2_complete"].text() == "not started"
+
+
+def test_step6_is_blocked_until_both_arms_complete(window):
+    """Mirrors PipelineExecutionState.can_run_step6 — the same rule the Tkinter app uses."""
+    wf = window.workflow
+    wf.state.reset()
+    wf.refresh_status()
+    assert "blocked" in wf._step_labels["step6_complete"].text()
+
+    wf.state.tcp_step3_complete = True
+    wf.state.ntcp_step3_complete = True
+    wf.refresh_status()
+    assert wf._step_labels["step6_complete"].text() == "not started"
+
+
+def test_workflow_values_convert_to_request_kwargs(window, tmp_path):
+    wf = window.workflow
+    wf.input_edit.setText(str(EXAMPLES))
+    wf.output_edit.setText(str(tmp_path))
+    wf.mode_combo.setCurrentText("BOTH")
+    kwargs = wf.to_request_kwargs()
+    assert kwargs["analysis_mode"] == "BOTH"
+    assert Path(kwargs["input_path"]) == EXAMPLES
+    # Plain data only: no Qt objects leak into the headless layer.
+    assert all(not type(v).__module__.startswith("PySide6") for v in kwargs.values())
+    RunRequest(**kwargs)  # must be constructible
+
+
+def test_workflow_respects_central_policy(window):
+    from rbgyanx.services.ui_policy import UiPolicy
+
+    window.set_mode(AppMode.BASIC)
+    assert not window.workflow.ml_check.isVisible()
+    assert not window.workflow.source_combo.isEnabled()
+    assert window.workflow.source_combo.currentText() == "dvh_txt"
+
+    window.set_mode(AppMode.ADVANCED)
+    assert window.workflow.source_combo.isEnabled()
+    assert window.workflow.policy.is_advanced
+    assert window.models == UiPolicy.advanced().models()
+
+
+# ---------------------------------------------- Visualisation screen (Slice 6)
+
+
+def test_visualisation_tab_present(window):
+    tabs = [window.tabs.tabText(i) for i in range(window.tabs.count())]
+    assert tabs[:4] == ["Workflow", "Run", "Results", "Visualisation"]
+
+
+def test_visualisation_views_are_policy_gated(window):
+    from rbgyanx.services.ui_policy import UiFeature, UiPolicy
+
+    window.set_mode(AppMode.BASIC)
+    basic_views = set(window.visualisation.available_views)
+    window.set_mode(AppMode.ADVANCED)
+    adv_views = set(window.visualisation.available_views)
+
+    assert basic_views <= adv_views
+    # Sankey and cohort flow are explanatory -> available to the clinic too.
+    assert {"sankey", "cohort_flow"} <= basic_views
+    assert UiPolicy.basic().allows(UiFeature.SANKEY_VIEW)
+
+
+def test_visualisation_placeholder_before_a_run(window):
+    assert window.visualisation._result is None
+    assert "Run an analysis" in window.visualisation.placeholder.text()
+
+
+def test_visualisation_builds_specs_from_a_real_run(window, run_result):
+    vis = window.visualisation
+    vis.set_result(run_result)
+
+    dvh = vis.build_spec("dvh")
+    assert dvh is not None and dvh.curves
+
+    sankey = vis.build_spec("sankey")
+    assert sankey is not None
+    assert sankey.nodes[0].label == "Delivered dose"
+    assert sankey.nodes[-1].label.startswith("Uncomplicated control")
+
+    flow = vis.build_spec("cohort_flow")
+    assert flow is not None
+    assert flow.stages[0].n == run_result.n_files
+
+
+def test_sankey_flow_never_exceeds_what_entered(window, run_result):
+    """P+ inflow must be <= OAR inflow: complications can only subtract."""
+    vis = window.visualisation
+    vis.set_result(run_result)
+    spec = vis.build_spec("sankey")
+    p_index = len(spec.nodes) - 1
+    into_oars = sum(link.value for link in spec.links if link.source == 0)
+    into_pplus = sum(link.value for link in spec.links if link.target == p_index)
+    assert into_pplus <= into_oars + 1e-9
+
+
+def test_visualisation_renders_interactive_html(window, run_result):
+    vis = window.visualisation
+    vis.set_result(run_result)
+    for key in vis.available_views:
+        idx = vis.view_combo.findData(key)
+        vis.view_combo.setCurrentIndex(idx)
+        html = vis.current_html()
+        assert len(html) > 500, f"{key} produced no figure"
+
+
+def test_visualisation_writes_nothing_without_export(window, run_result, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    window.visualisation.set_result(run_result)
+    window.visualisation.render_current()
+    assert not list(tmp_path.iterdir())
+
+
+# ------------------------------------------------------ SHAP / xAI view (Slice 7)
+
+
+def test_shap_view_is_advanced_only(window):
+    window.set_mode(AppMode.BASIC)
+    assert "shap" not in window.visualisation.available_views  # clinic never sees xAI
+    window.set_mode(AppMode.ADVANCED)
+    assert "shap" in window.visualisation.available_views
+
+
+def test_shap_view_shows_honest_placeholder_without_a_model(window):
+    """No trained model -> no fabricated attributions, just a clear message."""
+    window.set_mode(AppMode.ADVANCED)
+    vis = window.visualisation
+    assert vis._ml_result is None
+    assert vis.build_spec("shap") is None
+
+
+def test_shap_view_populates_from_a_trained_model(window):
+    """Attaching a model with real SHAP values makes the view render a figure."""
+    shap = pytest.importorskip("shap")
+    import numpy as np
+    from sklearn.ensemble import RandomForestClassifier
+
+    window.set_mode(AppMode.ADVANCED)
+    rng = np.random.default_rng(1)
+    x = rng.normal(size=(60, 3))
+    y = (x[:, 0] > 0).astype(int)
+    rf = RandomForestClassifier(n_estimators=20, random_state=0).fit(x, y)
+    sv = shap.TreeExplainer(rf).shap_values(x)
+    if isinstance(sv, list):
+        sv = sv[1]
+    sv = np.asarray(sv)
+    if sv.ndim == 3:
+        sv = sv[:, :, 1]
+
+    class _ML:
+        feature_names = ["dose", "volume", "age"]
+        shap_values = sv
+        shap_expected_value = 0.5
+
+    vis = window.visualisation
+    vis.set_ml_result(_ML())
+    spec = vis.build_spec("shap")
+    assert spec is not None and len(spec.features) == 3
+    idx = vis.view_combo.findData("shap")
+    vis.view_combo.setCurrentIndex(idx)
+    assert len(vis.current_html()) > 500
+
+
+# ------------------------------------------------------ AI panel (Phase 5 · B)
+
+
+def test_assistant_tab_present(window):
+    tabs = [window.tabs.tabText(i) for i in range(window.tabs.count())]
+    assert "Assistant" in tabs
+
+
+def test_ai_panel_disabled_in_basic_enabled_in_advanced(window):
+    window.set_mode(AppMode.BASIC)
+    assert not window.ai_panel.is_enabled
+    assert not window.ai_panel.send_btn.isEnabled()
+    window.set_mode(AppMode.ADVANCED)
+    assert window.ai_panel.is_enabled
+    assert window.ai_panel.send_btn.isEnabled()
+
+
+def test_ai_panel_builds_messages_with_system_prompt(window):
+    window.set_mode(AppMode.ADVANCED)
+    msgs = window.ai_panel.build_messages("why is the parotid NTCP high?")
+    assert msgs[0].role == "system"
+    assert msgs[-1].content == "why is the parotid NTCP high?"
+
+
+def test_ai_panel_context_is_aggregate_not_per_patient(window, run_result):
+    window.set_mode(AppMode.ADVANCED)
+    window.ai_panel.set_result(run_result)
+    msgs = window.ai_panel.build_messages("summarise")
+    joined = "\n".join(m.content for m in msgs)
+    # The attached context is the aggregate summary; no patient id leaks in.
+    for s in run_result.structures:
+        assert s.patient_id not in joined
+
+
+def test_ai_panel_preview_flags_phi(window):
+    window.set_mode(AppMode.ADVANCED)
+    _text, findings = window.ai_panel.outgoing_preview("PatientID 12345678 please explain")
+    assert findings  # warned, not blocked
+
+
+def test_ai_panel_run_exchange_with_fake_transport_records_history(window):
+    window.set_mode(AppMode.ADVANCED)
+
+    class _FakeTransport:
+        def complete(self, request, *, base_url, api_key):
+            return "Because mean dose exceeded tolerance."
+
+    resp = window.ai_panel.run_exchange("explain", transport=_FakeTransport())
+    assert resp.text.startswith("Because")
+    # in-memory history holds the turn; nothing is persisted
+    assert window.ai_panel._history[-1].content == resp.text
+
+
+def test_ai_panel_writes_nothing(window, tmp_path, monkeypatch):
+    window.set_mode(AppMode.ADVANCED)
+    monkeypatch.chdir(tmp_path)
+
+    class _FakeTransport:
+        def complete(self, request, *, base_url, api_key):
+            return "ok"
+
+    window.ai_panel.run_exchange("hello", transport=_FakeTransport())
+    assert not list(tmp_path.iterdir())
