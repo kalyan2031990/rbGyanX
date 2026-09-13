@@ -1,0 +1,43 @@
+{
+  "generated": "2026-08-10",
+  "phantom": {
+    "source": "theibsi/data_sets - ibsi_1_digital_phantom/nifti",
+    "licence": "CC-BY-4.0",
+    "shape": [
+      5,
+      4,
+      4
+    ],
+    "spacing_mm": 2.0,
+    "voxels_in_mask": 74,
+    "intensity_levels_in_mask": [
+      1,
+      3,
+      4,
+      6
+    ]
+  },
+  "reference_values": {
+    "source": "theibsi/ibsi_1_data_analysis/data - benchmark_value and tolerance columns",
+    "teams_read": [
+      "20181005_pyradiomics.xlsx",
+      "20181120_oncoray.xlsx",
+      "20181008_mcgill.xlsx"
+    ],
+    "cross_team_agreement_checked": true,
+    "max_disagreement_between_teams": 70.0
+  },
+  "configuration": {
+    "interpolation": "none (IBSI digital-phantom configuration)",
+    "resegmentation": "none",
+    "discretisation": "fixed bin size 1 - integer intensities unchanged",
+    "grey_levels_used": 6,
+    "tolerance_rule": "IBSI published tolerance, or half the last significant digit of the published value (3 s.f.) where IBSI reports an exact value"
+  },
+  "engine": "rbGyanX in-house IBSI-aligned implementation (p14_ct_radiomics.py)",
+  "summary": {
+    "compared": 63,
+    "passed": 56,
+    "failed": 7
+  }
+}

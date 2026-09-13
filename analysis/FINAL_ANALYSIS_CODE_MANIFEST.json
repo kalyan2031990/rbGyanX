@@ -1,0 +1,766 @@
+{
+  "manifest_name": "FINAL_ANALYSIS_CODE_MANIFEST",
+  "purpose": "Maps every final headline result to the exact versioned script, configuration, input manifest, seed and package set that produced it. Closes audit blocker B1: the analysis code was previously unversioned, so no commit described how the reported numbers were computed.",
+  "generated": "2026-08-15",
+  "source_commit_at_manifest_time": "882fef064574c5ed071ab90e533b9449399a482b",
+  "repository": "project_rbGyanx_latest",
+  "results_workspace": "rbGyanX_Manuscript_Workspace (held outside the repository: contains cohort-derived tables and pseudonym maps)",
+  "reruns_performed": "NONE - the outputs referenced here were produced before this manifest and independently verified; hashes record them, they were not regenerated",
+  "platform": {
+    "system": "Windows",
+    "release": "11",
+    "python": "3.14.2",
+    "python_build": "tags/v3.14.2:df79316 Dec  5 2025 17:18:21"
+  },
+  "environment_note": "pyradiomics is unavailable on Python 3.14, so CT radiomics and dosiomics use the in-house IBSI-aligned engine, benchmarked at 56/63 against the IBSI-1 digital phantom.",
+  "analyses": [
+    {
+      "analysis_name": "ct_radiomics_extraction",
+      "headline_results": [
+        "1515 QC-passed CT radiomics features on 219 multimodal patients",
+        "radiomics standalone AUC 0.546",
+        "0 features surviving Benjamini-Hochberg (min q = 0.637)"
+      ],
+      "script": [
+        {
+          "path": "analysis/radiomics/p14_ct_radiomics.py",
+          "sha256": "978bf6ab7d6dd9d9dd300eca6e1ad4070f16af50caa97f75bd0ec789c8bbbc98",
+          "lines": 704,
+          "present": true
+        },
+        {
+          "path": "analysis/radiomics/p14_assemble_radiomics.py",
+          "sha256": "690b194741971e17a5f5efb12d51fb2ce78b43f5d764079c4265801901cb4a08",
+          "lines": 140,
+          "present": true
+        },
+        {
+          "path": "analysis/radiomics/v3_compare_radiomics.py",
+          "sha256": "5148b270f79c4122aec5419076458134ca5eee7747bde761fa184860ef92e401",
+          "lines": 103,
+          "present": true
+        }
+      ],
+      "config": {
+        "voxel_mm": 2.0,
+        "bin_width_HU": 25.0,
+        "hu_clip": [
+          -1000.0,
+          3000.0
+        ],
+        "min_voxels": 64,
+        "resampling": "trilinear (image) / nearest (mask)",
+        "discretisation": "fixed bin width, inside mask",
+        "shards": 4,
+        "config_recorded_in": "03_RADIOMICS/radiomics/radiomics_manifest.json"
+      },
+      "input_manifest": "03_Statistical_Analysis/results_v3_multimodal/T1_manifest.json",
+      "output_manifest": "03_RADIOMICS/radiomics/radiomics_manifest.json",
+      "software_version": "rbGyanX 1.1.0",
+      "release_identifier": "FINAL_V3.2",
+      "python_version": "3.14.2",
+      "package_versions": {
+        "numpy": "2.4.0",
+        "scipy": "1.16.3",
+        "pandas": "2.3.3",
+        "skimage": "0.26.0",
+        "pydicom": "2.4.5"
+      },
+      "random_seed": "not applicable - deterministic feature extraction, no stochastic component",
+      "source_commit": "882fef064574c5ed071ab90e533b9449399a482b",
+      "result_files": [
+        {
+          "path": "03_RADIOMICS/radiomics/radiomics_features_qc.csv",
+          "sha256": "fdf3a6841560332d8ccfdc8426aadbba75bf05d58dcd2603867c95a244755bcb",
+          "present": true,
+          "bytes": 5855187
+        },
+        {
+          "path": "03_RADIOMICS/radiomics/radiomics_manifest.json",
+          "sha256": "86da267f3c8e4ad17269329e9a6cd30b47c7d3d29b39a90685df5ec60a604a2e",
+          "present": true,
+          "bytes": 1350
+        },
+        {
+          "path": "03_RADIOMICS/radiomics/RADIOMICS_ANALYSIS_REPORT.md",
+          "sha256": "91fe70ca5cecbbca59332bb7605c5a83f963b425bf044770d6160223124571dc",
+          "present": true,
+          "bytes": 7304
+        }
+      ],
+      "sha256": {
+        "analysis/radiomics/p14_ct_radiomics.py": "978bf6ab7d6dd9d9dd300eca6e1ad4070f16af50caa97f75bd0ec789c8bbbc98",
+        "analysis/radiomics/p14_assemble_radiomics.py": "690b194741971e17a5f5efb12d51fb2ce78b43f5d764079c4265801901cb4a08",
+        "analysis/radiomics/v3_compare_radiomics.py": "5148b270f79c4122aec5419076458134ca5eee7747bde761fa184860ef92e401"
+      }
+    },
+    {
+      "analysis_name": "ibsi_phantom_benchmark",
+      "headline_results": [
+        "56 of 63 IBSI-1 digital phantom features pass",
+        "first-order / GLCM / GLRLM / GLSZM / NGTDM verified; GLDM 3/7 and shape 1/4 partial"
+      ],
+      "script": [
+        {
+          "path": "analysis/ibsi/v3_ibsi_benchmark.py",
+          "sha256": "f3d13884b4e5d2c451ac96aa6d0f24c05b0391f25a20582a80d27a6307cbe5dc",
+          "lines": 321,
+          "present": true
+        }
+      ],
+      "config": {
+        "config_file": "analysis/ibsi/IBSI_CONFIG.json"
+      },
+      "input_manifest": "03_RADIOMICS/IBSI/IBSI_CONFIG.json",
+      "output_manifest": "03_RADIOMICS/IBSI/IBSI_COMPLIANCE_MATRIX.csv",
+      "software_version": "rbGyanX 1.1.0",
+      "release_identifier": "FINAL_V3.2",
+      "python_version": "3.14.2",
+      "package_versions": {
+        "numpy": "2.4.0",
+        "scipy": "1.16.3",
+        "pandas": "2.3.3"
+      },
+      "random_seed": "not applicable - deterministic benchmark against fixed reference values",
+      "source_commit": "882fef064574c5ed071ab90e533b9449399a482b",
+      "result_files": [
+        {
+          "path": "03_RADIOMICS/IBSI/IBSI_COMPLIANCE_MATRIX.csv",
+          "sha256": "d5d3f18c8d6e6deae78968e327110e940b5d639aebc3986f677eef47e14a2e86",
+          "present": true,
+          "bytes": 344
+        },
+        {
+          "path": "03_RADIOMICS/IBSI/IBSI_FEATURE_COMPARISON.csv",
+          "sha256": "869984c64eb5796bbad9d8b33a21d6970077e10336be735ece547c8355f2b630",
+          "present": true,
+          "bytes": 9495
+        },
+        {
+          "path": "03_RADIOMICS/IBSI/IBSI_BENCHMARK_REPORT.md",
+          "sha256": "4b156822c4543cc354898e548fa13274be82a3951dae09cd707d31b3123e6e6e",
+          "present": true,
+          "bytes": 6586
+        }
+      ],
+      "sha256": {
+        "analysis/ibsi/v3_ibsi_benchmark.py": "f3d13884b4e5d2c451ac96aa6d0f24c05b0391f25a20582a80d27a6307cbe5dc"
+      }
+    },
+    {
+      "analysis_name": "real_3d_dosiomics",
+      "headline_results": [
+        "735 real 3-D dosiomics features on TCIA-HN n=186 (first-order 300, GLCM 180, GLRLM 120, GLSZM 135)",
+        "dosiomics arm AUC 0.682"
+      ],
+      "script": [
+        {
+          "path": "analysis/dosiomics/real_dosiomics.py",
+          "sha256": "2f08b8ba073f353eb1fba6ee7371f1c84400c256de40e661bee5dbd777a53b49",
+          "lines": 326,
+          "present": true
+        }
+      ],
+      "config": {
+        "n_bins": 32,
+        "discretisation": "fixed bin count",
+        "min_voxels": 64,
+        "dose_source": "real RTDOSE grids only - no synthetic voxels"
+      },
+      "input_manifest": "03_Statistical_Analysis/results_v3_multimodal/T1_manifest.json",
+      "output_manifest": "04_DOSIOMICS/real_dosiomics_manifest.json",
+      "software_version": "rbGyanX 1.1.0",
+      "release_identifier": "FINAL_V3.2",
+      "python_version": "3.14.2",
+      "package_versions": {
+        "numpy": "2.4.0",
+        "scipy": "1.16.3",
+        "pandas": "2.3.3",
+        "pydicom": "2.4.5"
+      },
+      "random_seed": "not applicable - deterministic feature extraction",
+      "source_commit": "882fef064574c5ed071ab90e533b9449399a482b",
+      "result_files": [
+        {
+          "path": "04_DOSIOMICS/real_dosiomics_TCIA_HN_wide.csv",
+          "sha256": "fe7f5b9d8aeb3df66396049552ab7d7585c8d213ca600c9ea685ddc085f877d2",
+          "present": true,
+          "bytes": 2342921
+        },
+        {
+          "path": "04_DOSIOMICS/real_dosiomics_manifest.json",
+          "sha256": "864115d659e5b75a682b44c51b1b7bcf3372d1e0e51dfe06c54c887ef64dcaaf",
+          "present": true,
+          "bytes": 455
+        }
+      ],
+      "sha256": {
+        "analysis/dosiomics/real_dosiomics.py": "2f08b8ba073f353eb1fba6ee7371f1c84400c256de40e661bee5dbd777a53b49"
+      }
+    },
+    {
+      "analysis_name": "bayesian_ntcp_pymc",
+      "headline_results": [
+        "TD50 posterior median 21.10 Gy [9.90-36.53] (95% HDI)",
+        "gamma50 0.175 [0.079-0.299]",
+        "max R-hat 1.0012, 0 divergences, posterior predictive p = 0.276",
+        "min ESS bulk 4385 (reference prior); 3237 across all four priors",
+        "prior sensitivity: TD50 median spans 14.25-30.65 Gy"
+      ],
+      "script": [
+        {
+          "path": "analysis/bayesian/v3_bayesian_pymc.py",
+          "sha256": "c36cecdfd5cd9a638e3882c816b6191d0edf0650fb5fc5aecb3d0ab8a1170dc4",
+          "lines": 326,
+          "present": true
+        }
+      ],
+      "config": {
+        "sampler": "NUTS (PyMC default)",
+        "chains": 4,
+        "draws": 2000,
+        "tune": 2000,
+        "target_accept": 0.95,
+        "priors": [
+          "reference",
+          "vague",
+          "quantec",
+          "sceptical"
+        ]
+      },
+      "input_manifest": "03_Statistical_Analysis/feature_tables/build_manifest.json",
+      "output_manifest": "05_STATISTICS/BAYESIAN/BAYESIAN_RUN_MANIFEST.json",
+      "software_version": "rbGyanX 1.1.0",
+      "release_identifier": "FINAL_V3.2",
+      "python_version": "3.14.2",
+      "package_versions": {
+        "numpy": "2.4.0",
+        "scipy": "1.16.3",
+        "pandas": "2.3.3",
+        "pymc": "6.2.0",
+        "arviz": "1.2.0",
+        "pytensor": "3.2.4",
+        "numba": "0.66.0"
+      },
+      "random_seed": 0,
+      "source_commit": "882fef064574c5ed071ab90e533b9449399a482b",
+      "result_files": [
+        {
+          "path": "05_STATISTICS/BAYESIAN/BAYESIAN_FINAL_RESULTS.csv",
+          "sha256": "11dad55d4eb0df860f154f7c50b1899449be2e6fcfc4876971e089ea0c607911",
+          "present": true,
+          "bytes": 2004
+        },
+        {
+          "path": "05_STATISTICS/BAYESIAN/BAYESIAN_DIAGNOSTICS.csv",
+          "sha256": "f90e03ab7300e1ce18be9d87c23032fd0782faba0b221ff8fcccfd799cb47743",
+          "present": true,
+          "bytes": 927
+        },
+        {
+          "path": "05_STATISTICS/BAYESIAN/BAYESIAN_PRIOR_SENSITIVITY.csv",
+          "sha256": "fc7a3076f273ff1dab4ddc2deb10ccea321e849e3a9f242abd215b8dd283928f",
+          "present": true,
+          "bytes": 870
+        },
+        {
+          "path": "05_STATISTICS/BAYESIAN/BAYESIAN_POSTERIOR_SUMMARY.csv",
+          "sha256": "fa9bc123c0456a94edc2ce97bab250ada1ef239e68b80161ac447f69f881e399",
+          "present": true,
+          "bytes": 4630
+        },
+        {
+          "path": "05_STATISTICS/BAYESIAN/BAYESIAN_RUN_MANIFEST.json",
+          "sha256": "f5dbce5ec5ff5a7ec2bb4bc8ed9f77851834e00e29d964eb65e3b1989dec0993",
+          "present": true,
+          "bytes": 5151
+        }
+      ],
+      "sha256": {
+        "analysis/bayesian/v3_bayesian_pymc.py": "c36cecdfd5cd9a638e3882c816b6191d0edf0650fb5fc5aecb3d0ab8a1170dc4"
+      }
+    },
+    {
+      "analysis_name": "hybrid_physics_residual_pinn",
+      "headline_results": [
+        "PINN v2c AUC 0.648 [0.492-0.796], Brier 0.134",
+        "best-calibrated model in the study; second-best discriminator"
+      ],
+      "script": [
+        {
+          "path": "analysis/pinn/v2_pinn.py",
+          "sha256": "e3f968bbaaa96e4eee68c9256b681ea9bda7f263182b3d205857f4fd8e251e20",
+          "lines": 549,
+          "present": true
+        },
+        {
+          "path": "analysis/pinn/v2_pinn_comparators.py",
+          "sha256": "ee630d8c9602b49aadadc25212801a71434a1922fd31bb20d3b99bad21279831",
+          "lines": 89,
+          "present": true
+        }
+      ],
+      "config": {
+        "epochs": 400,
+        "repeats": 5,
+        "folds": 5,
+        "model_inits_per_fold": 3,
+        "architecture": "logit(p) = w*logit(TCP_LQ-Poisson) + f_residual(x)"
+      },
+      "input_manifest": "03_Statistical_Analysis/feature_tables/build_manifest.json",
+      "output_manifest": "05_STATISTICS/pinn_v2/V2_PINN_RESULTS.json",
+      "software_version": "rbGyanX 1.1.0",
+      "release_identifier": "FINAL_V3.2",
+      "python_version": "3.14.2",
+      "package_versions": {
+        "numpy": "2.4.0",
+        "scipy": "1.16.3",
+        "pandas": "2.3.3",
+        "torch": "2.12.0+cpu",
+        "sklearn": "1.8.0"
+      },
+      "random_seed": 0,
+      "source_commit": "882fef064574c5ed071ab90e533b9449399a482b",
+      "result_files": [
+        {
+          "path": "05_STATISTICS/pinn_v2/V2_PINN_RESULTS.json",
+          "sha256": "d23d300c1e875a8c68d48552d15c6532f4e2643945fbd6a3c1147c63881efab2",
+          "present": true,
+          "bytes": 24919
+        },
+        {
+          "path": "05_STATISTICS/FINAL_MODEL_PERFORMANCE.csv",
+          "sha256": "ff1557ca6bca5d1c0c27e1de90647e9211364466a1e6ad9a95dd77a019a74ed6",
+          "present": true,
+          "bytes": 22076
+        }
+      ],
+      "sha256": {
+        "analysis/pinn/v2_pinn.py": "e3f968bbaaa96e4eee68c9256b681ea9bda7f263182b3d205857f4fd8e251e20",
+        "analysis/pinn/v2_pinn_comparators.py": "ee630d8c9602b49aadadc25212801a71434a1922fd31bb20d3b99bad21279831"
+      }
+    },
+    {
+      "analysis_name": "xai_and_ablation",
+      "headline_results": [
+        "fold-stable feature importance on the corrected feature set",
+        "ablation reproduces at three seeds"
+      ],
+      "script": [
+        {
+          "path": "analysis/pinn/v2_xai.py",
+          "sha256": "3c130f067076fead5e0b2dc0fa4933352e8d6f1574bb1407f72f833aed91d877",
+          "lines": 156,
+          "present": true
+        },
+        {
+          "path": "analysis/pinn/v2_ablation.py",
+          "sha256": "37f5bb5f315f1bd2d03299944245469f1194cc766cad834754bb1f0e25a96f8b",
+          "lines": 118,
+          "present": true
+        }
+      ],
+      "config": {
+        "folds": 5,
+        "repeats": 5,
+        "estimator": "RandomForest (class_weight=balanced_subsample)"
+      },
+      "input_manifest": "03_Statistical_Analysis/feature_tables/build_manifest.json",
+      "output_manifest": "05_STATISTICS/xai_v2/V2_XAI_manifest.json",
+      "software_version": "rbGyanX 1.1.0",
+      "release_identifier": "FINAL_V3.2",
+      "python_version": "3.14.2",
+      "package_versions": {
+        "numpy": "2.4.0",
+        "scipy": "1.16.3",
+        "pandas": "2.3.3",
+        "sklearn": "1.8.0"
+      },
+      "random_seed": 0,
+      "source_commit": "882fef064574c5ed071ab90e533b9449399a482b",
+      "result_files": [
+        {
+          "path": "05_STATISTICS/xai_v2/V2_XAI_manifest.json",
+          "sha256": "d71aa7b43856997c4c56acf7b54fe229f5739af7f30008fa0ee91ef9c0e3d656",
+          "present": true,
+          "bytes": 1471
+        }
+      ],
+      "sha256": {
+        "analysis/pinn/v2_xai.py": "3c130f067076fead5e0b2dc0fa4933352e8d6f1574bb1407f72f833aed91d877",
+        "analysis/pinn/v2_ablation.py": "37f5bb5f315f1bd2d03299944245469f1194cc766cad834754bb1f0e25a96f8b"
+      }
+    },
+    {
+      "analysis_name": "cohort_consistency_score",
+      "headline_results": [
+        "CCS-A computed for Parotid and TCIA-HN; NOT COMPUTABLE for SPARK",
+        "CCS-B places 100% of SPARK outside the TCIA-HN distribution",
+        "thresholds explicitly UNCALIBRATED"
+      ],
+      "script": [
+        {
+          "path": "analysis/ccs/p12_ccs.py",
+          "sha256": "1a11a34f4032013059d1b0ad1f9f2912477d35b1ccdfa57bd5f20c9975c00986",
+          "lines": 198,
+          "present": true
+        }
+      ],
+      "config": {
+        "ccs_a": "mean of 3 Spearman correlations",
+        "ccs_b": "MCD Mahalanobis -> chi-square CDF"
+      },
+      "input_manifest": "03_Statistical_Analysis/feature_tables/build_manifest.json",
+      "output_manifest": "05_STATISTICS/statistical_summary.json",
+      "software_version": "rbGyanX 1.1.0",
+      "release_identifier": "FINAL_V3.2",
+      "python_version": "3.14.2",
+      "package_versions": {
+        "numpy": "2.4.0",
+        "scipy": "1.16.3",
+        "pandas": "2.3.3",
+        "sklearn": "1.8.0"
+      },
+      "random_seed": 0,
+      "source_commit": "882fef064574c5ed071ab90e533b9449399a482b",
+      "result_files": [
+        {
+          "path": "05_STATISTICS/statistical_results.csv",
+          "sha256": "95a5121aaf9bdf31282eafc572cce5c263f368fdb9435e26190b862eb6597afb",
+          "present": true,
+          "bytes": 46921
+        }
+      ],
+      "sha256": {
+        "analysis/ccs/p12_ccs.py": "1a11a34f4032013059d1b0ad1f9f2912477d35b1ccdfa57bd5f20c9975c00986"
+      }
+    },
+    {
+      "analysis_name": "feature_family_model_comparison",
+      "headline_results": [
+        "clinical+radiomics+dosiomics combined AUC 0.716",
+        "radiomics 0.546, dosiomics 0.682",
+        "nested ML AUC 0.699 [0.567-0.826]"
+      ],
+      "script": [
+        {
+          "path": "analysis/statistics/p15_feature_family_comparison.py",
+          "sha256": "9b8c1ffe59aeaf150d5cf68dc4fb9fe2f6e70dcecbe45866a4bd6e6d897851eb",
+          "lines": 200,
+          "present": true
+        },
+        {
+          "path": "analysis/statistics/p4_final_model_performance.py",
+          "sha256": "2cb944dc44c0a451a43481c8b5caa616a6bc0554fb24ade58a584d213bbb7db5",
+          "lines": 153,
+          "present": true
+        }
+      ],
+      "config": {
+        "cv": "nested, 5-fold x 5-repeat, in-fold feature selection",
+        "leakage_controls": "selection inside training folds; train-fold-only standardisation"
+      },
+      "input_manifest": "03_Statistical_Analysis/feature_tables/build_manifest.json",
+      "output_manifest": "03_Statistical_Analysis/results_v3_multimodal/p15/P15_manifest.json",
+      "software_version": "rbGyanX 1.1.0",
+      "release_identifier": "FINAL_V3.2",
+      "python_version": "3.14.2",
+      "package_versions": {
+        "numpy": "2.4.0",
+        "scipy": "1.16.3",
+        "pandas": "2.3.3",
+        "sklearn": "1.8.0"
+      },
+      "random_seed": 0,
+      "source_commit": "882fef064574c5ed071ab90e533b9449399a482b",
+      "result_files": [
+        {
+          "path": "05_STATISTICS/FINAL_MODEL_PERFORMANCE.csv",
+          "sha256": "ff1557ca6bca5d1c0c27e1de90647e9211364466a1e6ad9a95dd77a019a74ed6",
+          "present": true,
+          "bytes": 22076
+        },
+        {
+          "path": "05_STATISTICS/FINAL_RADIOMICS_STATISTICS.csv",
+          "sha256": "17d7eb2ef6b462625a3dd0bf0deaba685943a612201bf15d46e905648d271d0f",
+          "present": true,
+          "bytes": 272918
+        }
+      ],
+      "sha256": {
+        "analysis/statistics/p15_feature_family_comparison.py": "9b8c1ffe59aeaf150d5cf68dc4fb9fe2f6e70dcecbe45866a4bd6e6d897851eb",
+        "analysis/statistics/p4_final_model_performance.py": "2cb944dc44c0a451a43481c8b5caa616a6bc0554fb24ade58a584d213bbb7db5"
+      }
+    },
+    {
+      "analysis_name": "statistical_analysis",
+      "headline_results": [
+        "222 tests in 3 pre-specified families, Benjamini-Hochberg within family",
+        "only the cross-cohort dose comparison survives correction",
+        "5948 uNTCP rows"
+      ],
+      "script": [
+        {
+          "path": "analysis/statistics/p17_statistics.py",
+          "sha256": "76200c9f950504016ae440f466916aba71e003a68bd4980705fac13aa599f668",
+          "lines": 202,
+          "present": true
+        },
+        {
+          "path": "analysis/statistics/p24_machine_readable.py",
+          "sha256": "3fcfe9b9717824db02b0781820c67aba3b9b5caa6ef79f7a0791985e0091ac7b",
+          "lines": 201,
+          "present": true
+        }
+      ],
+      "config": {
+        "fdr": "Benjamini-Hochberg within family",
+        "bootstrap_auc_n": 2000,
+        "tests": "Mann-Whitney U / Kruskal-Wallis / Fisher exact / Spearman"
+      },
+      "input_manifest": "03_Statistical_Analysis/feature_tables/build_manifest.json",
+      "output_manifest": "03_Statistical_Analysis/results/statistics_manifest.json",
+      "software_version": "rbGyanX 1.1.0",
+      "release_identifier": "FINAL_V3.2",
+      "python_version": "3.14.2",
+      "package_versions": {
+        "numpy": "2.4.0",
+        "scipy": "1.16.3",
+        "pandas": "2.3.3",
+        "statsmodels": "0.14.6",
+        "sklearn": "1.8.0"
+      },
+      "random_seed": 0,
+      "source_commit": "882fef064574c5ed071ab90e533b9449399a482b",
+      "result_files": [
+        {
+          "path": "05_STATISTICS/statistical_results.csv",
+          "sha256": "95a5121aaf9bdf31282eafc572cce5c263f368fdb9435e26190b862eb6597afb",
+          "present": true,
+          "bytes": 46921
+        },
+        {
+          "path": "05_STATISTICS/machine_readable/OUTPUTS_MANIFEST.json",
+          "sha256": "bccc3da2ec52f5de773d346eee834d936cb851feec97535faa5ad041aed36cda",
+          "present": true,
+          "bytes": 945
+        }
+      ],
+      "sha256": {
+        "analysis/statistics/p17_statistics.py": "76200c9f950504016ae440f466916aba71e003a68bd4980705fac13aa599f668",
+        "analysis/statistics/p24_machine_readable.py": "3fcfe9b9717824db02b0781820c67aba3b9b5caa6ef79f7a0791985e0091ac7b"
+      }
+    },
+    {
+      "analysis_name": "cohort_construction_and_linkage",
+      "headline_results": [
+        "validation cohort 283 = Parotid 54 + SPARK 43 + TCIA-HN 186",
+        "TCIA multimodal eligibility 219 -> outcome-linked 127 -> modelling frame 114",
+        "TCIA-Lung 70 patients excluded entirely"
+      ],
+      "script": [
+        {
+          "path": "analysis/cohort/t1_index_dicom_zips.py",
+          "sha256": "2f7927d62ced4d119012c0a619b1c568e1b28bbcdd23002a62d03fbddab4d162",
+          "lines": 220,
+          "present": true
+        },
+        {
+          "path": "analysis/cohort/t2_resolve_linkage.py",
+          "sha256": "740bcfc42a30f13abff370b3774f70607fd3de4558b70759e32d0308ea8a9142",
+          "lines": 206,
+          "present": true
+        },
+        {
+          "path": "analysis/cohort/t3_clinical_linkage.py",
+          "sha256": "6aa5990c978c8cdb1fa8b9de52a3adf62bdeb12df5f79a39961ad1bc573bb744",
+          "lines": 181,
+          "present": true
+        },
+        {
+          "path": "analysis/cohort/t4_eligibility_waterfall.py",
+          "sha256": "6b10d62a371002f4897a988ad3222655fad31152a5dbafd7bc087b9bb9930b9f",
+          "lines": 155,
+          "present": true
+        },
+        {
+          "path": "analysis/cohort/build_patient_features.py",
+          "sha256": "b384ab681eebf6cb544d1f434aea7df4089ff5ddb41bd7c65cde0ad959f57837",
+          "lines": 264,
+          "present": true
+        }
+      ],
+      "config": {
+        "ct_gate": "max z-gap <= 6 mm",
+        "linkage": "RTSTRUCT->CT, RTPLAN->RTSTRUCT, RTDOSE->RTPLAN, FrameOfReferenceUID"
+      },
+      "input_manifest": "03_Statistical_Analysis/results_v3_multimodal/T1_manifest.json",
+      "output_manifest": "03_Statistical_Analysis/feature_tables/build_manifest.json",
+      "software_version": "rbGyanX 1.1.0",
+      "release_identifier": "FINAL_V3.2",
+      "python_version": "3.14.2",
+      "package_versions": {
+        "numpy": "2.4.0",
+        "scipy": "1.16.3",
+        "pandas": "2.3.3",
+        "pydicom": "2.4.5"
+      },
+      "random_seed": "not applicable - deterministic",
+      "source_commit": "882fef064574c5ed071ab90e533b9449399a482b",
+      "result_files": [
+        {
+          "path": "03_Statistical_Analysis/feature_tables/build_manifest.json",
+          "sha256": "9884f7c6e078866653c7c59d899b191dbe0839cb144255f8c87be3c48b8a6b2d",
+          "present": true,
+          "bytes": 858
+        }
+      ],
+      "sha256": {
+        "analysis/cohort/t1_index_dicom_zips.py": "2f7927d62ced4d119012c0a619b1c568e1b28bbcdd23002a62d03fbddab4d162",
+        "analysis/cohort/t2_resolve_linkage.py": "740bcfc42a30f13abff370b3774f70607fd3de4558b70759e32d0308ea8a9142",
+        "analysis/cohort/t3_clinical_linkage.py": "6aa5990c978c8cdb1fa8b9de52a3adf62bdeb12df5f79a39961ad1bc573bb744",
+        "analysis/cohort/t4_eligibility_waterfall.py": "6b10d62a371002f4897a988ad3222655fad31152a5dbafd7bc087b9bb9930b9f",
+        "analysis/cohort/build_patient_features.py": "b384ab681eebf6cb544d1f434aea7df4089ff5ddb41bd7c65cde0ad959f57837"
+      }
+    },
+    {
+      "analysis_name": "provenance_and_consistency",
+      "headline_results": [
+        "16/16 outputs byte-identical on repeat (determinism)",
+        "manuscript numerical consistency 19 MATCH / 0 MISMATCH"
+      ],
+      "script": [
+        {
+          "path": "analysis/provenance/v3_baseline.py",
+          "sha256": "cc09207ec90475dfdc5a5eb3950d14e05d24817af8c4c81045a24569eb3c95c8",
+          "lines": 164,
+          "present": true
+        },
+        {
+          "path": "analysis/provenance/v3_final_deliverables.py",
+          "sha256": "b9927e1bd4b90ca856282eb2257b1381a764f01e4e96c0efdbeba8ca29f9834a",
+          "lines": 319,
+          "present": true
+        },
+        {
+          "path": "analysis/statistics/p6_numerical_consistency.py",
+          "sha256": "f4a961a49906a374483003df08278e86c274e442b4cc5f2a00000a82371345d0",
+          "lines": 165,
+          "present": true
+        }
+      ],
+      "config": {
+        "baseline": "00_FINAL_AUDIT/PRE_BAYESIAN_IBSI_BASELINE.json"
+      },
+      "input_manifest": "00_FINAL_AUDIT/PRE_BAYESIAN_IBSI_BASELINE.json",
+      "output_manifest": "00_FINAL_AUDIT/FINAL_V3_FILE_MANIFEST.json",
+      "software_version": "rbGyanX 1.1.0",
+      "release_identifier": "FINAL_V3.2",
+      "python_version": "3.14.2",
+      "package_versions": {
+        "numpy": "2.4.0",
+        "scipy": "1.16.3",
+        "pandas": "2.3.3"
+      },
+      "random_seed": "not applicable",
+      "source_commit": "882fef064574c5ed071ab90e533b9449399a482b",
+      "result_files": [
+        {
+          "path": "00_FINAL_AUDIT/FINAL_V3_FILE_MANIFEST.json",
+          "sha256": "c35682a9943b15c5290ea81cd350f9dcc2c70f60ad2a50ed253337375b16b405",
+          "present": true,
+          "bytes": 5657
+        }
+      ],
+      "sha256": {
+        "analysis/provenance/v3_baseline.py": "cc09207ec90475dfdc5a5eb3950d14e05d24817af8c4c81045a24569eb3c95c8",
+        "analysis/provenance/v3_final_deliverables.py": "b9927e1bd4b90ca856282eb2257b1381a764f01e4e96c0efdbeba8ca29f9834a",
+        "analysis/statistics/p6_numerical_consistency.py": "f4a961a49906a374483003df08278e86c274e442b4cc5f2a00000a82371345d0"
+      }
+    }
+  ],
+  "unversioned_at_time_of_run": {
+    "purpose": "These nine scripts were untracked when the frozen V3.2 analyses ran and carried no entry in this manifest, yet they built the derived cohort tables behind the Manuscript B numbers. They are recorded here for provenance completeness.",
+    "recorded": "2026-08-15",
+    "committed_at": "4b7bfc91db67852e52355de33657418bbfe004f8",
+    "committed_retrospectively": true,
+    "rerun_performed": false,
+    "rerun_note": "None of these scripts was executed as part of this consolidation. Their outputs are frozen and hashed; the hashes below are of the committed source, not of a new run.",
+    "edits_made": "De-localisation only. Thirteen path literals resolved from one absolute root in the author's home directory; they now read RBGYANX_WORKSPACE, defaulting to the first rbGyanX_Manuscript_Workspace found walking up from the file. No computation, constant, parameter or threshold was changed. The hashes below are therefore of the de-localised source, which differs from the source as it ran only in those path expressions.",
+    "phi_scan": "clean - no patient identifier, MRN, name or date of birth in any of the nine files",
+    "scripts": [
+      {
+        "path": "scripts/build_parotid_cohort_workspace.py",
+        "sha256": "1abae00897b0968db1e1356dac8307b7685ef2029fb0d607b16bdb84ff95400e",
+        "lines": 100,
+        "role": "built parotid_cohort.csv - the de-identified Parotid NTCP cohort table (n=54)",
+        "committed_retrospectively": true,
+        "rerun": false
+      },
+      {
+        "path": "scripts/run_ntcp_benchmark_workspace.py",
+        "sha256": "ea15b65da544205a32d0117cff8ce43713b16f5b5d6561beb951e656eb794317",
+        "lines": 193,
+        "role": "ran the four-tier NTCP benchmark over the derived cohort tables",
+        "committed_retrospectively": true,
+        "rerun": false
+      },
+      {
+        "path": "scripts/audit_spark_dataset.py",
+        "sha256": "dbed1a2e776fb2323d5cb96c4776dc16e28faaab9129c2524971ba3f51743615",
+        "lines": 140,
+        "role": "audited the SPARK source archive before cohort construction",
+        "committed_retrospectively": true,
+        "rerun": false
+      },
+      {
+        "path": "scripts/cohort_builder/build_spark_cohort.py",
+        "sha256": "15a9fad829b1b7b9c6a74872ed18990782c26c2cbe1906887b153f9497031b5a",
+        "lines": 206,
+        "role": "built spark_cohort.csv - the SPARK cohort table (n=43)",
+        "committed_retrospectively": true,
+        "rerun": false
+      },
+      {
+        "path": "scripts/cohort_builder/match_spark_patients.py",
+        "sha256": "7896e339a575bd9cbe4541b92fb43b6b275ddba2130615d30be53809813de095",
+        "lines": 172,
+        "role": "matched SPARK patients to their outcome records",
+        "committed_retrospectively": true,
+        "rerun": false
+      },
+      {
+        "path": "scripts/cohort_builder/temp_discovery.py",
+        "sha256": "710fe4ece8490e178d14b389093dcea5177a24619f08410b104a5d157824dc9e",
+        "lines": 29,
+        "role": "one-off listing of SPARK Center 1 outcome files; discovery only, produces no result file",
+        "committed_retrospectively": true,
+        "rerun": false
+      },
+      {
+        "path": "scripts/dvh_builder/audit_structures.py",
+        "sha256": "b28404b659b365877865f1945cd32997f8f06f5af2970e90215ba3684be58745",
+        "lines": 58,
+        "role": "audited RTSTRUCT structure names during DVH construction",
+        "committed_retrospectively": true,
+        "rerun": false
+      },
+      {
+        "path": "scripts/dvh_builder/inspect_dose.py",
+        "sha256": "cd81c7e616e4d43682c9ef78687035c56e5ebd301ef0e984e4a38eaef2133b1f",
+        "lines": 45,
+        "role": "inspected RTDOSE headers during DVH construction",
+        "committed_retrospectively": true,
+        "rerun": false
+      },
+      {
+        "path": "scripts/dvh_builder/inspect_patient.py",
+        "sha256": "606724e9bd9347c7cf0ae50d1b6dcb09f5311b8b703461f3f33ec60d9e46eaa5",
+        "lines": 56,
+        "role": "inspected per-patient DICOM during DVH construction",
+        "committed_retrospectively": true,
+        "rerun": false
+      }
+    ]
+  }
+}
