@@ -1,0 +1,205 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Clinical data schema for rbGyanX_basic - defines supported input structure",
+  "last_updated": "2025-12-30",
+  
+  "sheets": {
+    "patient_core": {
+      "description": "Core patient demographics and baseline information",
+      "required": true,
+      "fields": {
+        "patient_id": {
+          "data_type": "string",
+          "required": true,
+          "used_by": ["TCP", "NTCP", "ML", "QA"],
+          "description": "Unique patient identifier (must match DVH file naming)",
+          "aliases": ["PatientID", "Patient_ID", "PatientId", "Patient_AnoID", "ID", "patientid"]
+        },
+        "age": {
+          "data_type": "numeric",
+          "required": true,
+          "used_by": ["ML", "QA"],
+          "description": "Patient age at treatment start (years)",
+          "aliases": ["Age", "AGE", "age_years"]
+        },
+        "sex": {
+          "data_type": "categorical",
+          "required": true,
+          "used_by": ["ML", "QA"],
+          "description": "Patient sex/gender",
+          "allowed_values": ["M", "F", "Male", "Female", "m", "f", 0, 1],
+          "aliases": ["Sex", "Gender", "SEX", "GENDER"]
+        },
+        "diagnosis": {
+          "data_type": "categorical",
+          "required": false,
+          "used_by": ["QA"],
+          "description": "Primary diagnosis/tumor site",
+          "aliases": ["Diagnosis", "Site", "TumorSite", "PrimarySite"]
+        },
+        "stage": {
+          "data_type": "categorical",
+          "required": false,
+          "used_by": ["ML", "QA"],
+          "description": "Tumor stage (TNM or other staging system)",
+          "aliases": ["Stage", "T_Stage", "Stage_T", "TNM_Stage"]
+        },
+        "comorbidity_index": {
+          "data_type": "numeric",
+          "required": false,
+          "used_by": ["ML"],
+          "description": "Comorbidity index score (e.g., CCI, ACE-27)",
+          "aliases": ["CCI", "ACE27", "Comorbidity", "ComorbidityScore"]
+        }
+      }
+    },
+    
+    "treatment": {
+      "description": "Treatment parameters and delivery details",
+      "required": false,
+      "fields": {
+        "patient_id": {
+          "data_type": "string",
+          "required": true,
+          "used_by": ["TCP", "NTCP", "ML", "QA"],
+          "description": "Patient identifier for merging with patient_core",
+          "aliases": ["PatientID", "Patient_ID", "PatientId", "ID"]
+        },
+        "total_dose": {
+          "data_type": "numeric",
+          "required": true,
+          "used_by": ["TCP", "NTCP", "ML", "QA"],
+          "description": "Total prescription dose (Gy)",
+          "aliases": ["TotalDose", "Total_Dose", "TotalDose_Gy", "PrescriptionDose", "Dose"]
+        },
+        "dose_per_fraction": {
+          "data_type": "numeric",
+          "required": true,
+          "used_by": ["TCP", "NTCP", "ML", "QA"],
+          "description": "Dose per fraction (Gy)",
+          "aliases": ["DosePerFraction", "Dose_per_Fraction", "dose_per_frac_Gy", "FractionDose"]
+        },
+        "fractions": {
+          "data_type": "integer",
+          "required": true,
+          "used_by": ["TCP", "NTCP", "ML", "QA"],
+          "description": "Number of treatment fractions",
+          "aliases": ["Fractions", "n_frac", "n_fractions", "NumFractions", "FractionCount"]
+        },
+        "technique": {
+          "data_type": "categorical",
+          "required": false,
+          "used_by": ["ML", "QA"],
+          "description": "Radiation therapy technique",
+          "allowed_values": ["IMRT", "VMAT", "3DCRT", "SBRT", "Proton", "Other"],
+          "aliases": ["Technique", "RT_Technique", "TreatmentTechnique", "Modality"]
+        },
+        "boost_type": {
+          "data_type": "categorical",
+          "required": false,
+          "used_by": ["ML"],
+          "description": "Type of boost treatment (if applicable)",
+          "aliases": ["Boost", "BoostType", "Boost_Type"]
+        },
+        "treatment_duration": {
+          "data_type": "numeric",
+          "required": false,
+          "used_by": ["ML", "QA"],
+          "description": "Total treatment duration (days)",
+          "aliases": ["Duration", "TreatmentDuration", "TxDuration", "Days"]
+        }
+      }
+    },
+    
+    "tcp_outcome": {
+      "description": "Tumor control probability outcome data",
+      "required": false,
+      "fields": {
+        "patient_id": {
+          "data_type": "string",
+          "required": true,
+          "used_by": ["TCP", "ML", "QA"],
+          "description": "Patient identifier for merging with patient_core",
+          "aliases": ["PatientID", "Patient_ID", "PatientId", "ID"]
+        },
+        "tcp_event": {
+          "data_type": "binary",
+          "required": true,
+          "used_by": ["TCP", "ML", "QA"],
+          "description": "Tumor control event (1=control, 0=recurrence/failure)",
+          "allowed_values": [0, 1, "Yes", "No", "Y", "N"],
+          "aliases": ["TCP_Event", "TumorControl", "TumorOutcome", "Control", "Recurrence", "Failure"]
+        },
+        "time_to_event": {
+          "data_type": "numeric",
+          "required": false,
+          "used_by": ["ML", "QA"],
+          "description": "Time to event or last follow-up (months)",
+          "aliases": ["TimeToEvent", "FollowUp", "FollowUpMonths", "SurvivalTime"]
+        }
+      }
+    },
+    
+    "ntcp_outcome": {
+      "description": "Normal tissue complication probability outcome data",
+      "required": false,
+      "fields": {
+        "patient_id": {
+          "data_type": "string",
+          "required": true,
+          "used_by": ["NTCP", "ML", "QA"],
+          "description": "Patient identifier for merging with patient_core",
+          "aliases": ["PatientID", "Patient_ID", "PatientId", "ID"]
+        },
+        "toxicity_grade": {
+          "data_type": "numeric",
+          "required": true,
+          "used_by": ["NTCP", "ML", "QA"],
+          "description": "Toxicity grade (0-5, CTCAE or RTOG scale)",
+          "allowed_values": [0, 1, 2, 3, 4, 5],
+          "aliases": ["Toxicity", "Grade", "ToxicityGrade", "ComplicationGrade", "Observed_Toxicity"]
+        },
+        "toxicity_endpoint": {
+          "data_type": "categorical",
+          "required": false,
+          "used_by": ["NTCP", "ML", "QA"],
+          "description": "Specific toxicity endpoint name",
+          "aliases": ["Endpoint", "ToxicityType", "ComplicationType", "ToxicityName"]
+        },
+        "followup_time": {
+          "data_type": "numeric",
+          "required": false,
+          "used_by": ["ML", "QA"],
+          "description": "Follow-up time for toxicity assessment (months)",
+          "aliases": ["FollowUp", "FollowUpMonths", "FollowUpTime", "TimeToToxicity"]
+        }
+      }
+    }
+  },
+  
+  "usage_notes": {
+    "patient_core": "Required for all analysis modes. Must contain patient_id for matching with DVH files.",
+    "treatment": "Optional but recommended. Used for dose-response modeling and ML feature engineering.",
+    "tcp_outcome": "Required for TCP analysis and TCP+NTCP combined mode. Required for ML model training.",
+    "ntcp_outcome": "Required for NTCP analysis and TCP+NTCP combined mode. Required for ML model training."
+  },
+  
+  "validation_rules": {
+    "patient_id_format": "Must be consistent across all sheets and match DVH file naming convention",
+    "binary_fields": "Binary fields (tcp_event, toxicity_grade when used as binary) should be 0/1 or Yes/No",
+    "numeric_ranges": {
+      "age": "Typically 18-100 years",
+      "total_dose": "Typically 20-100 Gy",
+      "dose_per_fraction": "Typically 1.8-3.0 Gy (conventional) or 5-20 Gy (SBRT)",
+      "fractions": "Typically 1-50",
+      "toxicity_grade": "0-5 (CTCAE/RTOG scale)"
+    },
+    "ml_requirements": {
+      "minimum_patients": 10,
+      "minimum_positive_events": 5,
+      "recommended_patients": 30,
+      "recommended_positive_events": 10
+    }
+  }
+}
+
