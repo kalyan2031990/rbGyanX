@@ -20,6 +20,12 @@ class NTCPUncertaintyConfig:
     gamma_rs_cv: float = 0.20
     s_rs_cv: float = 0.25
     n_samples: int = 1000
+    # This seed governs the actual MC draws. It is independent of RunnerConfig.seed
+    # (engine/rbgyanx_engine/cohort_runner.py), which is recorded in run_manifest.json for
+    # provenance but is never passed down to this config — cohort_runner always constructs
+    # NTCPUncertaintyConfig(n_samples=n_mc) and leaves this field at its default. A manifest's
+    # "seed" value does not describe the randomness in that same run's uncertainty bands.
+    # See docs/KNOWN_LIMITATIONS.md ("Two seeds, one manifest field") — unifying them is v1.4 work.
     seed: int = 42
     # Consensus combiner: "median" (default, robust — Analysis B), "inverse_variance"
     # (historical), or "disagreement" (inverse-variance + between-model penalty).
@@ -35,6 +41,11 @@ def _truncated_normal(mean: float, cv: float, n: int, rng: np.random.Generator) 
 
 
 def _agg(arr: np.ndarray) -> dict:
+    """p5/p95 is a 90% interval, not 95% — do not relabel without checking every caller.
+    utils/uncertainty_models.py reports a genuine, parametric 95% CI (p2.5/p97.5, configurable
+    via confidence_level) for a different code path; the two are not the same convention and a
+    band from one must not be compared against a band from the other without noting which is
+    which. See docs/KNOWN_LIMITATIONS.md ("Two interval conventions, one word: 'band'")."""
     v = arr[np.isfinite(arr)]
     if len(v) == 0:
         return {"mean": math.nan, "sd": math.nan, "p5": math.nan, "p95": math.nan, "n_valid": 0}

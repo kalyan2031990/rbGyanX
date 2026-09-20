@@ -78,9 +78,16 @@ DVH-constraint ranking (synthetic or de-identified).
 follow-up strata, age-vs-dose DeLong, cutoff sensitivity. Likely the headline.
 
 ## Step 7 — uncertainty quantification (Part I) 📐
-`uncertainty_study.py`: MC-band coverage at 50/80/95%; parameter (MC) vs sampling (bootstrap)
-variance decomposition per cohort; **decision instability** — fraction of patients whose 95% band
-crosses a clinical threshold (xerostomia NTCP=20% and a second), per model and for the consensus.
+`uncertainty_study.py`: MC-band coverage at nominal 50/80/95% levels; parameter (MC) vs sampling
+(bootstrap) variance decomposition per cohort; **decision instability** — fraction of patients
+whose band crosses a clinical threshold (xerostomia NTCP=20% and a second), per model and for the
+consensus.
+
+**Not yet written — flag before implementing.** The engine's own cohort-run NTCP/TCP bands
+(`engine/uncertainty/ntcp_mc.py`) are p5/p95, a **90%** interval, not 95%; `utils/uncertainty_models.py`
+separately offers a genuine, parametric 95% CI (`confidence_level=0.95` by default, p2.5/p97.5).
+Whichever this script draws on, state the level it is actually reporting rather than "95% band" as
+a generic label — the two modules do not share a convention. See `docs/KNOWN_LIMITATIONS.md`.
 
 ## Step 8 — dosiomics / PINN / xAI methodology (Parts J, K, L) 📐
 Feature ICC under DVH perturbation + redundancy + selection-stability (Jaccard) across folds (J);

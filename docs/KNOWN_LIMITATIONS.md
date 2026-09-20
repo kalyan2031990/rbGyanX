@@ -79,6 +79,32 @@ tested, but were not propagated into the published cohort analyses because the a
 per-patient setup data. Reported uncertainty spreads are **parameter uncertainty only** and
 understate total uncertainty.
 
+### Two seeds, one manifest field
+
+Every `run_manifest.json` written by `scripts/run_cohort.py` records a `seed` value (default
+`0`, from `RunnerConfig.seed`). That field is provenance metadata only — it is never passed to
+the Monte-Carlo uncertainty module. The actual randomness behind every `uNTCP_*`/`uTCP_*` band
+comes from a separately hardcoded `seed=42` in
+`engine/uncertainty/ntcp_mc.py::NTCPUncertaintyConfig`, freshly instantiated (and therefore
+reset) on every call via `pipeline.py`'s `NTCPUncertaintyConfig(n_samples=n_mc)`, which does not
+override the seed. Results are deterministic and reproducible run to run — both seeds are fixed
+constants — but a manifest asserting a seed that governs nothing is a false provenance claim if
+read as "this is the seed that produced these bands." Neither seed is currently exposed on the
+`rbgyanx-cohort` CLI. Unifying the two into one, CLI-settable seed is v1.4 work; this release
+still ships with them separate, and this is the authoritative statement of that fact.
+
+### Two interval conventions, one word: "band"
+
+`engine/uncertainty/ntcp_mc.py::_agg` — the source of every cohort-run `uNTCP_*`/`uTCP_*`
+band — reports **p5/p95, a 90% interval**. `utils/uncertainty_models.py::UncertaintyAwareTCP`
+reports a genuine, parametric confidence interval via `confidence_level` (default `0.95`,
+p2.5/p97.5 — a real 95% CI). Both are computed correctly for what they claim to be; neither
+documented, until now, that the other exists or that they differ. A user comparing a
+cohort-run NTCP band against a UTCP figure from the uncertainty-aware TCP path is comparing a
+90% interval to a 95% one with nothing in either output saying so. State which convention is in
+use wherever a band is reported downstream (tables, figures, manuscript text); do not assume
+"the band" means the same coverage level across both modules.
+
 ### Dosiomics require a real 3-D dose grid
 
 Spatial dose texture is computed only where an RTDOSE grid exists. Planning-system DVH text
@@ -108,9 +134,16 @@ what it carries, but the underlying gap is unchanged — no validated lung-SBRT 
 been adopted, and none was invented to fill the hole.
 
 `lq_valid_max_dpf_gy` is deliberately left at 10 Gy for this site so that typical SBRT
-fractionation trips the LQ-validity guard rather than passing unremarked. Treat TCP for
-`LUNG_SBRT` as indicative only. By contrast `PROSTATE_SBRT` does carry a genuinely distinct set
-(TCD50 36.25 Gy vs 72.0 conventional); those values existed all along and were simply unreachable.
+fractionation trips the LQ-validity guard — but tripping that guard switches the calculation to a
+USC-corrected EQD2/BED (`lq_caution=True`, recorded per-row) and the engine **still returns a
+TCP number**; it does not refuse. Confirmed directly, not just implied by the parameter table:
+`engine/tests/test_radiobiology.py::test_poisson_usc_lowers_tcp_vs_lq` runs 54 Gy in 3 fractions
+(18 Gy/fraction, SBRT-range) through `SITE_PARAMS["LUNG"]` and receives a finite TCP, not an
+exception. Treat TCP for `LUNG_SBRT` as indicative only. By contrast `PROSTATE_SBRT` does carry a
+genuinely distinct set (TCD50 36.25 Gy vs 72.0 conventional); those values existed all along and
+were simply unreachable. Turning the LUNG_SBRT case into a refusal (matching how `PELVIS` behaves
+below) would be a breaking behaviour change and is deferred to v1.4 with its own tests, not done
+in this release.
 
 ### `PELVIS` has no TCP parameters at all
 

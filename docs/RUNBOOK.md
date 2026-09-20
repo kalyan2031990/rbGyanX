@@ -27,6 +27,13 @@ Outputs\<InternalValidation|ExternalValidation>\<Cohort>\
     run_manifest.json           versions, git commit, config hash, seed, per-patient status
 ```
 
+> **The `seed` in `run_manifest.json` is provenance metadata, not the Monte-Carlo seed.** It
+> records `RunnerConfig.seed` (default `0`), which is never passed to the uncertainty module.
+> The actual MC draws behind every `uNTCP_*`/`uTCP_*` band use a separately hardcoded `seed=42`
+> in `engine/uncertainty/ntcp_mc.py::NTCPUncertaintyConfig`, not exposed on this CLI. Results are
+> deterministic run to run, but do not read the manifest's `seed` field as controlling the bands
+> in that same output — see `docs/KNOWN_LIMITATIONS.md`.
+
 16 cohort CSVs (always written, even when empty): `patient_features, physical_metrics, tcp_results,
 ntcp_results, plan_quality, site_detection, structure_mapping, dvh_summary, benchmark, ML_features,
 ML_predictions, XAI_attributions, PINN_predictions, QA, cohort_summary, failures`.
