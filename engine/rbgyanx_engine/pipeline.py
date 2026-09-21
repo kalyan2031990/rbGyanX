@@ -60,6 +60,12 @@ def _attach_site_metadata(row: dict, site_info: dict) -> None:
     row["site_evidence"] = "; ".join(site_info.get("evidence", []))
 
 
+def _attach_fractionation_sources(row: dict, plan_metadata: dict) -> None:
+    """Record, beside the fractionation values, whether each was parsed from the file or assumed."""
+    for key in ("total_dose_source", "n_fractions_source", "dose_per_fraction_source"):
+        row[key] = plan_metadata.get(key, "")
+
+
 def _dominant_params_site(results: list[dict]) -> str:
     keys = [r.get("site_params_key") for r in results if r.get("site_params_key")]
     if not keys:
@@ -220,6 +226,7 @@ def collect_txt_tcp(
             )
             row["AnonPatientID"] = txt.patient_id
             row["raw_name"] = txt.raw_name
+            _attach_fractionation_sources(row, txt.plan_metadata)
             row["total_volume_cc"] = txt.total_volume_cc
             row["site"] = params_key
             _attach_site_metadata(row, site_info)
@@ -297,6 +304,7 @@ def collect_txt_ntcp(
             # that the structure definition matches what the model's published parameters assume (a
             # side-less "Parotid" canonicalised to Parotid_R is not a verified single gland).
             row["raw_name"] = txt.raw_name
+            _attach_fractionation_sources(row, txt.plan_metadata)
             _attach_site_metadata(row, site_info)
             results.append(row)
     return results

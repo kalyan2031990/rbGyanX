@@ -231,8 +231,33 @@ def _parse_dvh_text(
     rx_gy = float(meta.get("tpd", d_gy.max()))
     if rx_gy <= 0:
         rx_gy = float(d_gy.max())
+        tpd_parsed = False
+    else:
+        tpd_parsed = "tpd" in meta
     dpf = float(meta.get("dpf", default_dose_per_fraction_gy))
     n_frac = int(meta.get("n_frac", max(int(round(rx_gy / dpf)), 1)))
+
+    # "parsed" only when every input to the value was stated in the file; any default makes it "assumed".
+    dpf_parsed, nfrac_parsed = "dpf" in meta, "n_frac" in meta
+    total_dose_source = "parsed" if tpd_parsed else "assumed"
+    n_fractions_source = "parsed" if (nfrac_parsed or (tpd_parsed and dpf_parsed)) else "assumed"
+    dose_per_fraction_source = "parsed" if (dpf_parsed or (tpd_parsed and nfrac_parsed)) else "assumed"
+    assumed = [
+        f"{name}={val}"
+        for name, src, val in (
+            ("total_dose_gy", total_dose_source, f"{rx_gy:g}"),
+            ("n_fractions", n_fractions_source, n_frac),
+            ("dose_per_fraction_gy", dose_per_fraction_source, f"{rx_gy / n_frac:g}"),
+        )
+        if src == "assumed"
+    ]
+    if assumed:
+        logger.warning(
+            "%s: fractionation not stated in the file; ASSUMED %s (total dose falls back to the DVH "
+            "maximum, dose per fraction to the configured default). Results depend on these values.",
+            source_name,
+            ", ".join(assumed),
+        )
 
     if preserve_canonical:
         # Keep the ROI's true canonical (Rectum, Bladder, PTV, …) for multi-structure files.
@@ -247,6 +272,9 @@ def _parse_dvh_text(
         "prescription_dose_gy": rx_gy,
         "n_fractions": n_frac,
         "dose_per_fraction_gy": rx_gy / n_frac,
+        "total_dose_source": total_dose_source,
+        "n_fractions_source": n_fractions_source,
+        "dose_per_fraction_source": dose_per_fraction_source,
         "plan_label": organ_raw,
     }
 
