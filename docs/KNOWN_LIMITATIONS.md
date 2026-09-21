@@ -105,6 +105,42 @@ cohort-run NTCP band against a UTCP figure from the uncertainty-aware TCP path i
 use wherever a band is reported downstream (tables, figures, manuscript text); do not assume
 "the band" means the same coverage level across both modules.
 
+### An unparameterised OAR is dropped silently, not refused
+
+`get_oar_structures()` (`engine/dicom_io/structure_mapper.py`) excludes any ROI whose canonical
+name isn't in the requested site's configured organ set with a bare `continue` — no warning, no
+QA reason code, no row in `failures.csv`. The organ is indistinguishable in the output from that
+patient simply never having had the structure. This was the mechanism behind a real defect (seven
+organ keys in `site_params_ntcp_default.yaml` didn't string-match what `canon_target()` produces
+for that organ — see below — so BrainStem NTCP silently never computed for any patient, in any
+cohort, in any release before this fix); the keys are fixed, but the *mechanism* that let a fixed
+config error hide with zero trace is unchanged. A structure a user has every reason to expect NTCP
+for (it's a real ROI, the site has SOME organs parameterised) can still vanish without a mark if a
+future config error, a new site, or a differently-named ROI hits the same silent-`continue` path.
+
+Recording this as a proper refusal (an organ-level reason code, surfaced the same way a
+patient-level refusal already is) requires changing what `get_oar_structures()` and
+`get_target_structures()` return — a structural change to a shared discovery path, not a
+parameter or a config fix, and not something to do in a release week alongside everything else
+already changing in v1.3.0. Deferred to v1.4. The reachability guard added in v1.3.0 (see below)
+prevents the *specific* class of defect that caused this from shipping silently again; it does not
+make a silently-dropped OAR visible in a given run's output.
+
+### Every shipped NTCP organ key is validated against `canon_target()` at import time
+
+Added in v1.3.0 after the defect above was found: `config/site_ntcp_params.py` asserts, once at
+module import, that every organ key in every site block of `site_params_ntcp_default.yaml`
+resolves through `canon_target()` to itself as a recognised OAR. A mismatch now raises
+`RuntimeError` immediately rather than silently dropping that organ's NTCP for every patient.
+Covered by `engine/tests/test_ntcp_organ_key_reachability.py`, which also pins the three fixes
+this found: `BrainStem` (was mis-cased `Brainstem` in HN/BRAIN_GBM/BRAIN_METS), `LungTotal` (was
+two separate, both-unreachable keys `Lung_Ipsi`/`Lung_Contra` in BREAST — already parameterised
+identically, so merging changed no computed value), and `FemoralHead_L`/`FemoralHead_R` (missing
+a self-matching alias in `config/structure_aliases.py`, so `canon_target()` didn't recognise them
+as OARs at all). This guard only covers the shipped default file — a user-supplied
+`site_params_ntcp_user.yaml` is not validated, and can reintroduce the same class of defect for
+whatever it overrides.
+
 ### Dosiomics require a real 3-D dose grid
 
 Spatial dose texture is computed only where an RTDOSE grid exists. Planning-system DVH text
@@ -196,6 +232,19 @@ the current files would make the hashes agree while destroying the evidence that
 
 `analysis/` is excluded from linting and formatting for this reason — it is a frozen provenance
 artefact, not maintained code.
+
+### The AI literature pack claims a generator that doesn't exist
+
+`rbgyanx/ai/reference_packs/rbgyanx_lkb_defaults.json` declares
+`"generated_from": "engine/config/site_params_ntcp_default.yaml"`, but no generator script exists
+anywhere in the repository — it is a hand-maintained mirror of the yaml, guarded only by
+`tests/test_ai_literature.py::test_the_lkb_pack_agrees_with_the_engine_yaml`. It drifted the
+moment the yaml's organ keys were corrected in this release (see "Every shipped NTCP organ key is
+validated..." above) and had to be hand-edited back into agreement. The test catches drift after
+the fact; it does not make the `generated_from` claim true. This is the same defect class as the
+stale analysis-manifest hashes above: a provenance statement the repository does not actually
+back. **v1.4 work, not done here:** either write the generator the field claims exists, or remove
+the `generated_from` field and say plainly that the pack is hand-maintained.
 
 ### The AI assistant is explanation-only, and its guards are not a proof
 

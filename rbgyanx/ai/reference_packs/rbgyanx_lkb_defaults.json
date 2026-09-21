@@ -1,6 +1,6 @@
 {
   "pack_id": "rbgyanx-lkb-defaults",
-  "pack_version": "1.1.0",
+  "pack_version": "1.1.1",
   "title": "rbGyanX shipped NTCP model parameters",
   "description": "The LKB / relative-seriality parameter values rbGyanX itself uses, exposed so a comparison against them is arithmetic rather than recalled. Generated from engine/config/site_params_ntcp_default.yaml; a test asserts the two stay in step.",
   "applicability": "These are the tool's own defaults, not a clinical standard. A site that overrides them in site_params_ntcp_user.yaml should ship its own pack.",
@@ -8,7 +8,7 @@
   "generated_from": "engine/config/site_params_ntcp_default.yaml",
   "entries": [
     {
-      "organ": "Brainstem",
+      "organ": "BrainStem",
       "site": "BRAIN_GBM",
       "endpoint": "LKB_probit parameter",
       "metric": "TD50_gy",
@@ -19,7 +19,7 @@
       "citation": "rbGyanX shipped default, engine/config/site_params_ntcp_default.yaml (see docs/TECHNICAL_DEVELOPMENT_NOTE.md for the provenance of each value)"
     },
     {
-      "organ": "Brainstem",
+      "organ": "BrainStem",
       "site": "BRAIN_GBM",
       "endpoint": "LKB_probit parameter",
       "metric": "m",
@@ -30,7 +30,7 @@
       "citation": "rbGyanX shipped default, engine/config/site_params_ntcp_default.yaml (see docs/TECHNICAL_DEVELOPMENT_NOTE.md for the provenance of each value)"
     },
     {
-      "organ": "Brainstem",
+      "organ": "BrainStem",
       "site": "BRAIN_GBM",
       "endpoint": "LKB_probit parameter",
       "metric": "n",
@@ -272,7 +272,7 @@
       "citation": "rbGyanX shipped default, engine/config/site_params_ntcp_default.yaml (see docs/TECHNICAL_DEVELOPMENT_NOTE.md for the provenance of each value)"
     },
     {
-      "organ": "Brainstem",
+      "organ": "BrainStem",
       "site": "BRAIN_METS",
       "endpoint": "LKB_probit parameter",
       "metric": "TD50_gy",
@@ -283,7 +283,7 @@
       "citation": "rbGyanX shipped default, engine/config/site_params_ntcp_default.yaml (see docs/TECHNICAL_DEVELOPMENT_NOTE.md for the provenance of each value)"
     },
     {
-      "organ": "Brainstem",
+      "organ": "BrainStem",
       "site": "BRAIN_METS",
       "endpoint": "LKB_probit parameter",
       "metric": "m",
@@ -294,7 +294,7 @@
       "citation": "rbGyanX shipped default, engine/config/site_params_ntcp_default.yaml (see docs/TECHNICAL_DEVELOPMENT_NOTE.md for the provenance of each value)"
     },
     {
-      "organ": "Brainstem",
+      "organ": "BrainStem",
       "site": "BRAIN_METS",
       "endpoint": "LKB_probit parameter",
       "metric": "n",
@@ -591,7 +591,7 @@
       "citation": "rbGyanX shipped default, engine/config/site_params_ntcp_default.yaml (see docs/TECHNICAL_DEVELOPMENT_NOTE.md for the provenance of each value)"
     },
     {
-      "organ": "Lung_Contra",
+      "organ": "LungTotal",
       "site": "BREAST",
       "endpoint": "LKB_loglogit parameter",
       "metric": "TD50_gy",
@@ -602,29 +602,7 @@
       "citation": "rbGyanX shipped default, engine/config/site_params_ntcp_default.yaml (see docs/TECHNICAL_DEVELOPMENT_NOTE.md for the provenance of each value)"
     },
     {
-      "organ": "Lung_Contra",
-      "site": "BREAST",
-      "endpoint": "LKB_loglogit parameter",
-      "metric": "gamma50",
-      "comparator": "=",
-      "value": 0.7,
-      "units": "dimensionless",
-      "risk_pct": null,
-      "citation": "rbGyanX shipped default, engine/config/site_params_ntcp_default.yaml (see docs/TECHNICAL_DEVELOPMENT_NOTE.md for the provenance of each value)"
-    },
-    {
-      "organ": "Lung_Ipsi",
-      "site": "BREAST",
-      "endpoint": "LKB_loglogit parameter",
-      "metric": "TD50_gy",
-      "comparator": "=",
-      "value": 24.5,
-      "units": "Gy",
-      "risk_pct": null,
-      "citation": "rbGyanX shipped default, engine/config/site_params_ntcp_default.yaml (see docs/TECHNICAL_DEVELOPMENT_NOTE.md for the provenance of each value)"
-    },
-    {
-      "organ": "Lung_Ipsi",
+      "organ": "LungTotal",
       "site": "BREAST",
       "endpoint": "LKB_loglogit parameter",
       "metric": "gamma50",
@@ -690,7 +668,7 @@
       "citation": "rbGyanX shipped default, engine/config/site_params_ntcp_default.yaml (see docs/TECHNICAL_DEVELOPMENT_NOTE.md for the provenance of each value)"
     },
     {
-      "organ": "Brainstem",
+      "organ": "BrainStem",
       "site": "HN",
       "endpoint": "LKB_probit parameter",
       "metric": "TD50_gy",
@@ -701,7 +679,7 @@
       "citation": "rbGyanX shipped default, engine/config/site_params_ntcp_default.yaml (see docs/TECHNICAL_DEVELOPMENT_NOTE.md for the provenance of each value)"
     },
     {
-      "organ": "Brainstem",
+      "organ": "BrainStem",
       "site": "HN",
       "endpoint": "LKB_probit parameter",
       "metric": "m",
@@ -712,7 +690,7 @@
       "citation": "rbGyanX shipped default, engine/config/site_params_ntcp_default.yaml (see docs/TECHNICAL_DEVELOPMENT_NOTE.md for the provenance of each value)"
     },
     {
-      "organ": "Brainstem",
+      "organ": "BrainStem",
       "site": "HN",
       "endpoint": "LKB_probit parameter",
       "metric": "n",

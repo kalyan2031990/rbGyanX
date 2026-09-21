@@ -20,7 +20,11 @@ HN:
       alpha_beta_gy: 3.0
       LKB_probit: {TD50_gy: 45.0, m: 0.18, n: 0.05}
       RS: {D50_gy: 45.0, gamma: 2.0, s: 1.0}
-    Brainstem:
+    BrainStem:
+      # Was "Brainstem" (lowercase "s") -- canon_target() produces "BrainStem" (camelCase) for
+      # this organ, and the NTCP lookup is an exact-string dict match with no warning on a miss,
+      # so the mismatched key made this organ's NTCP silently vanish for every patient with a
+      # BrainStem ROI. See docs/KNOWN_LIMITATIONS.md.
       geud_a: 20.0
       alpha_beta_gy: 2.0
       LKB_probit: {TD50_gy: 53.0, m: 0.18, n: 0.05}
@@ -95,7 +99,12 @@ BREAST:
       geud_a: 3.0
       alpha_beta_gy: 3.0
       LKB_loglogit: {TD50_gy: 48.0, gamma50: 0.5}
-    Lung_Ipsi:
+    LungTotal:
+      # Was two separate keys, "Lung_Ipsi" and "Lung_Contra" -- canon_target() has no way to tell
+      # ipsilateral from contralateral lung apart (both canonicalise to "LungTotal"), so neither
+      # key ever matched and this organ's NTCP silently never computed for BREAST. Merged into the
+      # one key canon_target() actually produces. Both original blocks carried identical values
+      # (TD50_gy: 24.5, gamma50: 0.7), so merging changes no computed number -- only reachability.
       geud_a: 3.0
       alpha_beta_gy: 3.0
       LKB_loglogit: {TD50_gy: 24.5, gamma50: 0.7}
@@ -115,10 +124,6 @@ BREAST:
       geud_a: 20.0
       alpha_beta_gy: 3.0
       LKB_probit: {TD50_gy: 54.0, m: 0.18, n: 0.05}
-    Lung_Contra:
-      geud_a: 3.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 24.5, gamma50: 0.7}
     SpinalCord:
       geud_a: 20.0
       alpha_beta_gy: 3.0
@@ -126,7 +131,8 @@ BREAST:
 
 BRAIN_GBM:
   organs:
-    Brainstem:
+    BrainStem:
+      # Was "Brainstem" -- see the HN block above for why this must match canon_target() exactly.
       geud_a: 20.0
       alpha_beta_gy: 2.0
       LKB_probit: {TD50_gy: 53.0, m: 0.18, n: 0.05}
@@ -169,7 +175,8 @@ BRAIN_GBM:
 
 BRAIN_METS:
   organs:
-    Brainstem:
+    BrainStem:
+      # Was "Brainstem" -- see the HN block above for why this must match canon_target() exactly.
       geud_a: 20.0
       alpha_beta_gy: 2.0
       LKB_probit: {TD50_gy: 53.0, m: 0.18, n: 0.05}

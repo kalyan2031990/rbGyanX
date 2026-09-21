@@ -249,10 +249,18 @@ _PHASE3_EXTRA_ALIASES = {
     "PharynxConstrictor": ["pcm", "constrictors", "pharyngealconstrictor", "constrictormuscle"],
     "Larynx": ["voicebox", "glottis", "supraglotticlarynx"],
     "OralCavity": ["mouthcavity", "oralmucosa"],
-    "FemoralHead_L": ["lfemoralhead", "leftfemoralhead", "femoralheadleft", "femheadl",
-                      "femurheadl", "hipjointl", "femurl"],
-    "FemoralHead_R": ["rfemoralhead", "rightfemoralhead", "femoralheadright", "femheadr",
-                      "femurheadr", "hipjointr", "femurr"],
+    # "femoralheadl"/"femoralheadr" (the normalised form of the canonical key itself) were
+    # missing from every alias entry for these two organs -- normalise_name("FemoralHead_L")
+    # strips the underscore to "femoralheadl", but no existing alias equalled that exact string
+    # (the main table's "femoral_head_l" above still has a stray, un-normalised underscore, and
+    # this table's synonyms are all prefixed/suffixed variants, never the bare canonical form).
+    # canon_target() therefore never recognised "FemoralHead_L"/"_R" as OARs at all (category
+    # UNKNOWN), so PROSTATE NTCP for both structures silently never computed. See
+    # docs/KNOWN_LIMITATIONS.md.
+    "FemoralHead_L": ["femoralheadl", "lfemoralhead", "leftfemoralhead", "femoralheadleft",
+                      "femheadl", "femurheadl", "hipjointl", "femurl"],
+    "FemoralHead_R": ["femoralheadr", "rfemoralhead", "rightfemoralhead", "femoralheadright",
+                      "femheadr", "femurheadr", "hipjointr", "femurr"],
     "Kidney_L": ["lkidney", "leftkidney", "kidneyleft"],
     "Kidney_R": ["rkidney", "rightkidney", "kidneyright"],
     "Heart": ["wholeheart", "cardiac"],
