@@ -73,6 +73,58 @@ Mean Dose [Gy]: 36.9
     assert all(r.patient_id == "MS-001" for r in results)  # shared preamble preserved
 
 
+def test_multi_structure_survives_with_preserve_canonical_false(tmp_path: Path) -> None:
+    """Regression for the SPARK canonical-key collision (B.1): before this fix,
+    preserve_canonical=False routed a multi-structure file straight to the single-structure
+    reader, which has no per-block boundary reset -- it silently kept only the last structure's
+    name over dose/volume rows accumulated across ALL structures, discarding the other 5 (a real
+    cohort had 6 ROIs per file). Bladder/Rectum/PTV here all coerce to canonical "PTV" when
+    preserve_canonical=False (matching collect_txt_tcp's target-coercion default), which is
+    exactly the collision that used to collapse -- so this must return all three, each with its
+    own correct, distinct value, not one contaminated survivor."""
+    content = """\
+Patient ID           : MS-002
+Prescribed dose [Gy]: 36.25
+
+Structure: Bladder
+Mean Dose [Gy]: 7.0
+        Dose [Gy]   Ratio of Total Structure Volume [%]
+0    100
+5    60
+10   20
+15   0
+
+Structure: Rectum
+Mean Dose [Gy]: 10.0
+        Dose [Gy]   Ratio of Total Structure Volume [%]
+0    100
+8    70
+16   10
+20   0
+
+Structure: PTV
+Mean Dose [Gy]: 36.9
+        Dose [Gy]   Ratio of Total Structure Volume [%]
+0    100
+36   99
+38   40
+40   0
+"""
+    path = tmp_path / "MS-002_Planned_DVH.txt"
+    path.write_text(content, encoding="utf-8")
+
+    from rbgyanx_engine.pipeline import _read_txt_structures
+
+    results = _read_txt_structures(path, 2.0, False)  # the SPARK cohort's actual configuration
+    assert len(results) == 3, "one or more colliding structures was silently discarded"
+    assert {r.canonical_name for r in results} == {"PTV"}  # all coerced -- this IS the collision
+    by_raw = {r.raw_name: r for r in results}
+    assert {"Bladder", "Rectum", "PTV"} == set(by_raw)
+    assert by_raw["Bladder"].dmean_gy == pytest.approx(7.0)  # not contaminated by the other blocks
+    assert by_raw["Rectum"].dmean_gy == pytest.approx(10.0)
+    assert by_raw["PTV"].dmean_gy == pytest.approx(36.9)
+
+
 def test_multi_structure_falls_back_to_single(tmp_path: Path) -> None:
     content = """\
 Patient ID           : S-1

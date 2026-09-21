@@ -293,6 +293,7 @@ def parse_multi_structure_dvh_text(
     path: Path,
     *,
     default_dose_per_fraction_gy: float = 2.0,
+    preserve_canonical: bool = True,
 ) -> list[TxtDVHResult]:
     """Parse a multi-structure DVH text export (all ROIs in one file, e.g. an Eclipse
     plan-level export) into one TxtDVHResult per structure.
@@ -300,20 +301,30 @@ def parse_multi_structure_dvh_text(
     The file's global preamble (patient id, prescribed dose, fractions) is prepended to
     each per-structure block so shared metadata is preserved. Single-structure files fall
     back to :func:`parse_dvh_text_file`. Degenerate / empty structure blocks are skipped.
-    Each result keeps the ROI's true canonical name (Rectum, Bladder, PTV, …).
+
+    ``preserve_canonical`` controls only whether each block keeps the ROI's true canonical name
+    (Rectum, Bladder, PTV, …) or is coerced to a target type (GTV/CTV/PTV) — the same distinction
+    :func:`parse_dvh_text_file` makes for a single structure. It does NOT control whether multiple
+    ROIs are kept separate: every structure block in the file always becomes its own
+    :class:`TxtDVHResult`, regardless of this flag. (Before this fix, the caller in
+    ``rbgyanx_engine.pipeline._read_txt_structures`` routed ``preserve_canonical=False`` requests
+    to :func:`parse_dvh_text_file` directly on the whole multi-structure file instead of through
+    here — that single-structure reader has no per-block boundary reset, so it silently accumulated
+    every structure's rows together and returned only the last block's name over the merged data.
+    A real cohort had 6 ROIs per file (PTV, CTV, Bladder, Rectum, Urethra, Urethra_PRV); 5 were
+    discarded and the survivor's DVH was contaminated by rows from the others. See
+    docs/KNOWN_LIMITATIONS.md.)
     """
     text = path.read_text(encoding="utf-8", errors="ignore")
     lines = text.splitlines()
     struct_idx = [i for i, ln in enumerate(lines) if ln.strip().lower().startswith("structure:")]
     if len(struct_idx) <= 1:
-        # Single-ROI file. This function's contract is "keep the ROI's true canonical name", so the
-        # fallback must preserve it too — otherwise a lone OAR export (e.g. one `Parotid` file) is
-        # silently coerced to a target type and can never match an NTCP organ.
+        # Single-ROI file: parse_dvh_text_file is safe here (no second boundary for it to miss).
         return [
             parse_dvh_text_file(
                 path,
                 default_dose_per_fraction_gy=default_dose_per_fraction_gy,
-                preserve_canonical=True,
+                preserve_canonical=preserve_canonical,
             )
         ]
 
@@ -330,7 +341,7 @@ def parse_multi_structure_dvh_text(
                     source_name=f"{path.name}::{struct_name}",
                     fallback_name=struct_name,
                     default_dose_per_fraction_gy=default_dose_per_fraction_gy,
-                    preserve_canonical=True,
+                    preserve_canonical=preserve_canonical,
                 )
             )
         except ValueError:

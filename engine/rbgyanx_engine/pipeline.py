@@ -28,7 +28,6 @@ from dicom_io.site_detector import (
 from dicom_io.structure_mapper import canon_target, get_oar_structures, get_target_structures
 from dicom_io.txt_dvh_reader import (
     iter_dvh_text_files,
-    parse_dvh_text_file,
     parse_multi_structure_dvh_text,
 )
 from radiobiology.ntcp_calculator import NTCPCalculator
@@ -168,17 +167,18 @@ def collect_dicom_tcp(
 def _read_txt_structures(path: Path, default_dpf_gy: float, preserve_canonical: bool) -> list:
     """Read every ROI in a TPS DVH text export.
 
-    Plan-level exports put ALL structures in one file. The single-structure reader returns only the
-    last block, silently discarding the rest (a real cohort had 6 ROIs per file — PTV, CTV, Bladder,
-    Rectum, Urethra, Urethra_PRV — of which 5 were dropped). When ``preserve_canonical`` is on we use
-    the multi-structure reader, which yields one result per ROI and keeps true canonical names; it
-    falls back to the single-structure path for single-ROI files. With the flag off, legacy behaviour
-    is preserved exactly.
+    Plan-level exports put ALL structures in one file. Always goes through the multi-structure
+    reader (which yields one result per ROI and falls back to the single-structure path itself for
+    genuinely single-ROI files), passing ``preserve_canonical`` straight through — that flag only
+    decides whether each block keeps its true canonical name or is coerced to a target type, never
+    whether colliding structures are kept apart. Before this fix, ``preserve_canonical=False`` went
+    straight to the single-structure reader on the whole (possibly multi-ROI) file, which has no
+    per-structure boundary reset: it silently discarded every structure but the last and mixed the
+    discarded ones' dose/volume rows into the survivor's DVH. See docs/KNOWN_LIMITATIONS.md.
     """
-    if preserve_canonical:
-        return parse_multi_structure_dvh_text(path, default_dose_per_fraction_gy=default_dpf_gy)
-    return [parse_dvh_text_file(path, default_dose_per_fraction_gy=default_dpf_gy,
-                                preserve_canonical=False)]
+    return parse_multi_structure_dvh_text(
+        path, default_dose_per_fraction_gy=default_dpf_gy, preserve_canonical=preserve_canonical
+    )
 
 
 def collect_txt_tcp(
