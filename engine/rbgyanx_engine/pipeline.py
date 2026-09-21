@@ -154,6 +154,9 @@ def collect_dicom_tcp(
         row = calc.compute_all(dvh_r, meta, site_params, target_type=t_type)
         row["AnonPatientID"] = anon_id
         row["site"] = params_key
+        # Identity of the ROI behind this row, so structure_mapping.csv can tie canonical back to raw.
+        row["raw_name"] = dvh_r.raw_name
+        row["roi_number"] = dvh_r.roi_number
         _attach_site_metadata(row, site_info)
         row["params_snapshot"] = {
             "params_source": site_params.params_source,
