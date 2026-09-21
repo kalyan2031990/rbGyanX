@@ -6,13 +6,22 @@
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21757163-blue.svg)](https://doi.org/10.5281/zenodo.21757163)
 
 rbGyanX evaluates radiotherapy treatment plans using transparent, classical radiobiology. Given
-dose–volume histograms — from DICOM RTDOSE/RTSTRUCT or planning-system text exports — it computes
+dose–volume histograms — from DICOM RTDOSE/RTSTRUCT (the supported input; see below) or, with
+documented limits, planning-system text exports — it computes
 tumour control probability (**TCP**), normal-tissue complication probability (**NTCP**: LKB probit,
 LKB log-logistic, relative seriality), uncomplicated control (**P+**), an uncertainty-aware
 consensus, and QUANTEC flags, behind a four-tier validation harness.
 
 It is written for **medical physicists and radiobiology researchers** who need a number they can
 trace back to an equation, a parameter set, and the commit that produced it.
+
+**Supported inputs.** **DICOM-RT is the supported input path.** In the v1.3.0 public-cohort run,
+235 patients were attempted and 186 completed; all 49 exclusions were uniform `MISSING_RTPLAN` +
+`MISSING_RTDOSE`. **TPS-text (DVH export) input is limited**, with known gaps in site detection
+and in fractionation, both documented in [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md).
+For a text export, state explicitly what the file cannot: pass `--site` to fix the anatomical site
+and `--dose-per-fraction` to fix the fractionation. Every dvh_txt result row records whether its
+total dose, fraction count and dose per fraction were parsed from the file or assumed.
 
 ---
 

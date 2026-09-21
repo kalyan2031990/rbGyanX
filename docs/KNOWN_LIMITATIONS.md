@@ -190,6 +190,63 @@ fall back to a nearby site. DVH, NTCP and UTCP scoring are unaffected. This is r
 data: the DICOM site detector maps `PELVIS`, `CERVIX` and `ENDOMETRIUM` onto that key, so a pelvic
 plan will be refused TCP rather than given a number of uncertain provenance.
 
+## TPS-text (dvh_txt) input
+
+DICOM-RT is the supported input path. Planning-system DVH text exports are supported with the
+limits below. Where a limit is marked rather than refused, the entry says so.
+Use `--site` and `--dose-per-fraction` to state what the file cannot.
+
+### Fractionation is assumed, not required
+
+The no-substitution rule in the `site_params.py` docstring was applied to **site parameters** and
+**not** to fractionation. When a text export omits total dose, fraction count or dose per
+fraction, the reader substitutes (total dose = DVH maximum; dose per fraction = the configured
+default, 2.0 Gy unless `--dose-per-fraction` is given; fraction count derived from the two) and
+continues. As of v1.3.0 the assumption is **marked**: each result row carries
+`total_dose_source`, `n_fractions_source` and `dose_per_fraction_source` (`parsed` only when every
+input was stated in the file, otherwise `assumed`), and a warning naming the assumed values is
+logged at read time. Refusing outright is v1.4 work; it would change existing behaviour.
+
+### Per-structure site detection has no file-level context
+
+`detect_site_from_text` runs per structure and uses that structure's own raw name as a stand-in
+plan label. OAR names collide with `_PELVIS_KEYWORDS` (`RECTUM`, `BLADDER`), so an OAR is
+detected as `PELVIS`, which has no TCP parameters and raises `SiteParamsUnavailable`; a bare
+`PTV` yields `UNKNOWN`. Measured before the v1.3.0 collision fix, on a 41-patient multi-structure
+prostate cohort: **6 of 41 completed without `--preserve-structure-canonical` and 0 of 41 with it**
+— the flag relocates the failure rather than removing it. After the fix every structure is
+detected separately, so the un-flagged path now fails loudly where it used to return a
+contaminated single row (spot-checked on one patient file, n=1; not re-measured across the
+cohort). `--site` makes detection inert as a failure source and is the current workaround.
+
+### A structure-level exception fails the whole patient
+
+An exception raised for one structure propagates out of `collect_txt_tcp` to the per-patient
+handler in `cohort_runner.py`, discarding every other structure of that patient, including valid
+targets. Scoping the failure to the structure is v1.4 work.
+
+### PRV expansions canonicalise to the base organ name
+
+`SpinalCord_05` maps to `SpinalCord`, so organ NTCP is ambiguous between the organ and its
+planning-risk volume. Measured across 186 public-cohort patients: **median 19%, max 91%**
+difference within colliding NTCP pairs. A PRV is a planning margin, not the organ. On the DICOM
+path colliding structures are each kept as their own row and, from v1.3.0, `structure_mapping.csv`
+records each row's `raw_name` and `roi_number`; downstream aggregation must choose between them by
+a stated rule. Changing the naming policy is v1.4 work.
+
+### `PROSTATE_SBRT` has TCP parameters but no NTCP block
+
+`PROSTATE_SBRT` resolves to a distinct TCP parameter set, but `site_params_ntcp_default.yaml` has
+no `PROSTATE_SBRT` site, so no organ receives NTCP under that key.
+
+### `--site X` without `--preserve-structure-canonical` coerces every structure to a pseudo-target
+
+Every structure is coerced to a target type, so no OAR receives NTCP. Verified: **0 NTCP rows
+across all 41 SPARK patients** under that configuration. Since the v1.3.0 collision fix each
+structure is kept as its own row (distinguishable by `raw_name`), which also means OARs now
+appear as TCP rows labelled `PTV` (spot-checked on one patient file: 6 rows, n=1). Use
+`--preserve-structure-canonical` for any file that contains OARs.
+
 ---
 
 ## Reproducibility
