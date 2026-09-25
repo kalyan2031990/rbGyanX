@@ -231,12 +231,33 @@ logged at read time. Refusing outright is v1.4 work; it would change existing be
 `detect_site_from_text` runs per structure and uses that structure's own raw name as a stand-in
 plan label. OAR names collide with `_PELVIS_KEYWORDS` (`RECTUM`, `BLADDER`), so an OAR is
 detected as `PELVIS`, which has no TCP parameters and raises `SiteParamsUnavailable`; a bare
-`PTV` yields `UNKNOWN`. Measured before the v1.3.0 collision fix, on a 41-patient multi-structure
-prostate cohort: **6 of 41 completed without `--preserve-structure-canonical` and 0 of 41 with it**
-— the flag relocates the failure rather than removing it. After the fix every structure is
-detected separately, so the un-flagged path now fails loudly where it used to return a
-contaminated single row (spot-checked on one patient file, n=1; not re-measured across the
-cohort). `--site` makes detection inert as a failure source and is the current workaround.
+`PTV` yields `UNKNOWN`, on which the engine aborts.
+
+**Shipped behaviour.** Measured on the current code against a 41-patient multi-structure prostate
+cohort (all 41 processed, both arms): **0 of 41 complete without `--preserve-structure-canonical`,
+and 0 of 41 with it.** Without the flag the 41 failures split by mechanism — **28
+`SiteParamsUnavailable`** (an OAR name detected as `PELVIS`) and **13 `ValueError`** (site
+`UNKNOWN`); with the flag all 41 are `ValueError`. Site detection is therefore not a partially
+working path on this cohort: it fails for every patient, and the flag relocates the failure rather
+than removing it.
+
+`--site` makes detection inert as a failure source and is the current workaround: with
+`--site PROSTATE --dose-per-fraction 2.0` the same 41 patients all complete, at the cost described
+two entries below — every structure is coerced to a target, so no OAR receives NTCP. That arm also
+shows the collision fix working: the same 41 patients yield **1,084 TCP rows on current code
+against 369 before the fix** (26.4 versus 9.0 rows per patient), so **715 rows that previously
+overwrote one another now survive as their own rows**.
+
+*Historical, superseded:* before the v1.3.0 canonical-key collision fix, the un-flagged arm was
+measured at **6 of 41 completed**. Those 6 were not successes — the fix showed they were single
+rows onto which several colliding structures had collapsed. Both the count and its character
+changed with the fix: what used to return a contaminated row now refuses. The 0-of-41 figure for
+the flagged arm is unchanged.
+
+Both arms were re-measured with identical inputs and flags so that code was the only variable;
+outputs are in `02_Run_Outputs/v1_3_0_spark_post_b1_remeasure/`, alongside the pre-fix trees which
+are kept as record. This cohort is a limitation probe only — no result from it appears in any
+manuscript.
 
 ### A structure-level exception fails the whole patient
 
@@ -260,11 +281,18 @@ no `PROSTATE_SBRT` site, so no organ receives NTCP under that key.
 
 ### `--site X` without `--preserve-structure-canonical` coerces every structure to a pseudo-target
 
-Every structure is coerced to a target type, so no OAR receives NTCP. Verified: **0 NTCP rows
-across all 41 SPARK patients** under that configuration. Since the v1.3.0 collision fix each
-structure is kept as its own row (distinguishable by `raw_name`), which also means OARs now
-appear as TCP rows labelled `PTV` (spot-checked on one patient file: 6 rows, n=1). Use
+Every structure is coerced to a target type, so no OAR receives NTCP. Verified on current code
+across all 41 patients of the multi-structure prostate cohort: **41 of 41 complete, 1,084 TCP rows
+and 0 NTCP rows.** Since the v1.3.0 collision fix each structure is kept as its own row, which
+also means OARs now appear as TCP rows labelled `PTV` — 920 of those 1,084 rows are `PTV` and 164
+are `CTV`, against 360 and 9 before the fix, on the same input. The OARs are therefore not merely
+absent from NTCP; they are present in TCP under a target label. Use
 `--preserve-structure-canonical` for any file that contains OARs.
+
+One caveat on auditing that: `raw_name` is blank in `tcp_results.csv` for every dvh_txt row, in
+both the pre-fix and current runs, so which physical ROI produced a given row cannot be read from
+that table alone. B.2 populated `raw_name` for the DICOM path; the text path's result table still
+does not carry it.
 
 ---
 

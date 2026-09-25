@@ -91,3 +91,6 @@ release_assets/
 PUBLISH_RUNBOOK.md
 PUBLISH_COMPARISON.md
 CLAUDE_CODE_*.md
+
+# Scratch: logs, probe scripts and measurement helpers. Never part of a release.
+.tmp/
