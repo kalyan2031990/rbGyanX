@@ -1,7 +1,7 @@
 {
   "app_info": {
     "name": "rbGyanX",
-    "version": "1.0.0",
+    "version": "1.3.0",
     "intended_use": "Radiobiological Clinical Decision Support System (CDSS) for radiation oncology treatment plan evaluation",
     "description": "DICOM TCP/NTCP engine, UTCP, QUANTEC, physical plan-quality metrics; optional ML and Ask rbGyanX in ADVANCED mode"
   },
@@ -21,7 +21,7 @@
         "RS_Poisson": {
           "enabled": true,
           "description": "Relative Seriality Poisson model",
-          "reference": "Källman et al. (1992)"
+          "reference": "K\u00e4llman et al. (1992)"
         }
       },
       "tcp": {
@@ -49,14 +49,21 @@
     },
     "ml_models": {
       "enabled": true,
-      "models": ["ANN", "XGBoost"],
+      "models": [
+        "ANN",
+        "XGBoost"
+      ],
       "description": "Machine learning models for enhanced prediction accuracy",
       "validation": "Cross-validation with train/test split"
     },
     "shap_explainability": {
       "enabled": true,
       "description": "SHAP (SHapley Additive exPlanations) for model interpretability",
-      "features": ["Summary plots", "Beeswarm plots", "Feature importance"]
+      "features": [
+        "Summary plots",
+        "Beeswarm plots",
+        "Feature importance"
+      ]
     },
     "qa_checks": {
       "enabled": true,
@@ -73,7 +80,7 @@
       "enabled": true,
       "description": "Automated overfitting detection and warnings",
       "thresholds": {
-        "auc_difference_warning": 0.10,
+        "auc_difference_warning": 0.1,
         "auc_difference_fail": 0.15,
         "cv_std_warning": 0.15
       }
@@ -159,4 +166,3 @@
     "disclaimer": "This tool provides decision support and should not replace clinical judgment. All results should be reviewed by qualified medical physicists and radiation oncologists."
   }
 }
-
