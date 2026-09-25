@@ -141,6 +141,25 @@ as OARs at all). This guard only covers the shipped default file — a user-supp
 `site_params_ntcp_user.yaml` is not validated, and can reintroduce the same class of defect for
 whatever it overrides.
 
+### The NTCP applicability guard is blind on the DICOM path
+
+`cohort_runner.py` calls `evaluate_ntcp_applicability(struct, "OAR", r.get("raw_name", struct))`.
+On the DICOM path the NTCP row carries no `raw_name`: `collect_dicom_ntcp` sets `AnonPatientID`
+and the site metadata but never copies `dvh_r.raw_name` onto the row, although `collect_dicom_tcp`
+does exactly that for target rows and `collect_txt_ntcp` does it for text-path OAR rows. The
+`r.get(..., struct)` fallback therefore hands the guard the canonical organ name *as* the raw name,
+and `classify_definition()` compares the canonical against itself.
+
+The guard consequently cannot distinguish an organ from its own PRV expansion — `SpinalCord` from
+`SpinalCord_05`, which across 186 patients differ by a median of 19% and a maximum of 91% in NTCP
+(see "PRV expansions canonicalise to the base organ name" below). It will not refuse a
+planning-risk volume being reported as the organ, because it cannot see that it is one. This is a
+false negative in the applicability check, on the primary supported input path.
+
+The code change is two lines. The consequence is not: populating `raw_name` changes `definition_ok`
+and `reason_codes` for DICOM rows in `ntcp_results.csv`, so existing NTCP output would gain
+verdicts it does not currently carry, including refusals. Deferred to v1.4 with its own tests.
+
 ### Dosiomics require a real 3-D dose grid
 
 Spatial dose texture is computed only where an RTDOSE grid exists. Planning-system DVH text
