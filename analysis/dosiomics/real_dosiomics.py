@@ -209,8 +209,12 @@ def glszm_features(disc: np.ndarray) -> dict:
 
 # ------------------------------------------------------------------ per-patient extraction
 
-def organ_features(rtdose: Path, rtstruct: Path, roi_names: list[str], voxel_mm: float = 3.0) -> dict:
-    """REAL masked-dose features per ROI. Returns {} for ROIs that cannot be masked."""
+def organ_features(rtdose: Path, rtstruct: Path, roi_names: list[str], voxel_mm: float = 3.0,
+                   skips: list | None = None) -> dict:
+    """REAL masked-dose features per ROI. Returns {} for ROIs that cannot be masked.
+
+    If ``skips`` is given, one ``{"roi", "reason"}`` record is appended for every ROI that yields
+    no features (roi is "" when the whole dose grid is unusable)."""
     from rbgyanx_advanced.dose3d.dose_grid_extractor import (
         build_oar_mask,
         load_dose_grid,
@@ -218,8 +222,13 @@ def organ_features(rtdose: Path, rtstruct: Path, roi_names: list[str], voxel_mm:
     )
     import pydicom
 
+    def _skip(roi: str, reason: str) -> None:
+        if skips is not None:
+            skips.append({"roi": roi, "reason": reason})
+
     dd = load_dose_grid(rtdose)
     if dd is None:
+        _skip("", "RTDOSE grid could not be loaded")
         return {}
     dd = resample_to_isotropic(dd, voxel_mm)
     ds = pydicom.dcmread(str(rtstruct))
@@ -231,13 +240,20 @@ def organ_features(rtdose: Path, rtstruct: Path, roi_names: list[str], voxel_mm:
     out: dict = {}
     for name in roi_names:
         num = num_by_name.get(name.strip().lower())
-        if num is None or not seq_by_num.get(num):
+        if num is None:
+            _skip(name, "ROI name not found in RTSTRUCT")
+            continue
+        if not seq_by_num.get(num):
+            _skip(name, "ROI has no contour sequence")
             continue
         try:
             mask = build_oar_mask(seq_by_num[num], dd)
-        except Exception:
+        except Exception as exc:
+            _skip(name, f"mask failed: {type(exc).__name__}: {str(exc)[:150]}")
             continue
-        if mask.sum() < MIN_VOXELS:
+        n_mask = int(mask.sum())
+        if n_mask < MIN_VOXELS:
+            _skip(name, f"only {n_mask} voxels at {voxel_mm} mm (< {MIN_VOXELS})")
             continue
         vol = np.asarray(dd["dose_array"], dtype=np.float32)
         vals = vol[mask]
@@ -262,7 +278,8 @@ def main() -> int:
     ap.add_argument("--staging", required=True, type=Path, help="TCIA_HN DICOM staging root")
     ap.add_argument("--map-csv", required=True, type=Path, help="TCIA_HN pseudonym map")
     ap.add_argument("--out", required=True, type=Path)
-    ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--limit", type=int, default=None,
+                    help="Process at most N patients not already checkpointed in --out")
     a = ap.parse_args()
     for p in ("engine", "engine_advanced"):
         sys.path.insert(0, str(a.repo / p))
@@ -273,34 +290,70 @@ def main() -> int:
     pmap = {r["raw_patient_key"]: r["pseudonym"]
             for r in pd.read_csv(a.map_csv).to_dict("records")}
 
-    rows, skipped = [], []
+    # per-patient checkpoint, one JSON line written only after the patient finishes, so an
+    # interrupted run resumes instead of restarting and a batch continues rather than recomputes
+    ck = a.out / "_checkpoint_dosiomics.jsonl"
+    done: dict[str, dict] = {}
+    if ck.exists():
+        for line in ck.read_text(encoding="utf-8").splitlines():
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                continue  # a line cut short by a hard kill: that patient is simply redone
+            done[rec["pseudonym"]] = rec
+    if done:
+        print(f"resuming: {len(done)} patients already checkpointed", flush=True)
+
     mans = [m for m in discover_cohort(a.staging) if m.degraded_mode == "FULL"]
+    n_unmapped = sum(1 for m in mans if not pmap.get(m.patient_key))
+    todo = [m for m in mans if pmap.get(m.patient_key) and pmap[m.patient_key] not in done]
     if a.limit:
-        mans = mans[: a.limit]
-    for i, m in enumerate(mans, 1):
-        pse = pmap.get(m.patient_key)
-        if not pse:
-            continue
+        todo = todo[: a.limit]
+    fh = open(ck, "a", encoding="utf-8")
+    if ck.stat().st_size and not ck.read_bytes().endswith(b"\n"):
+        fh.write("\n")  # end a cut-short line so the next record is not appended onto it
+    for i, m in enumerate(todo, 1):
+        pse = pmap[m.patient_key]
+        rec = {"pseudonym": pse, "features": {}, "reason": "", "roi_skips": []}
         import pydicom
         try:
             ds = pydicom.dcmread(str(m.rtstruct_path), stop_before_pixels=True)
             names = [str(r.ROIName) for r in getattr(ds, "StructureSetROISequence", [])]
         except Exception as exc:
-            skipped.append({"pseudonym": pse, "reason": type(exc).__name__})
-            continue
-        # only OARs the engine recognises, so features align with the NTCP organs
-        keep = [n for n in names if canon_target(n).get("category") == "OAR"]
-        try:
-            f = organ_features(m.rtdose_path, m.rtstruct_path, keep)
-        except Exception as exc:
-            skipped.append({"pseudonym": pse, "reason": type(exc).__name__})
-            continue
-        if not f:
-            skipped.append({"pseudonym": pse, "reason": "no maskable ROI"})
-            continue
-        rows.append({"pseudonym": pse, **f})
+            rec["reason"] = f"{type(exc).__name__}: {str(exc)[:150]}"
+        else:
+            # only OARs the engine recognises, so features align with the NTCP organs
+            keep = [n for n in names if canon_target(n).get("category") == "OAR"]
+            try:
+                rec["features"] = organ_features(m.rtdose_path, m.rtstruct_path, keep,
+                                                 skips=rec["roi_skips"])
+            except Exception as exc:
+                rec["reason"] = f"{type(exc).__name__}: {str(exc)[:150]}"
+            else:
+                if not rec["features"]:
+                    rec["reason"] = "no maskable ROI"
+        fh.write(json.dumps(rec) + "\n")
+        fh.flush()
+        done[pse] = rec
         if i % 20 == 0:
-            print(f"  {i}/{len(mans)} processed", flush=True)
+            print(f"  {i}/{len(todo)} processed", flush=True)
+    fh.close()
+
+    # outputs are rebuilt from every checkpointed patient, in discovery order
+    rows, skipped, roi_skipped = [], [], []
+    # one row per unmapped patient; the raw key is PHI, so the pseudonym column stays blank
+    skipped += [{"pseudonym": "", "reason": "not in the pseudonym map"}] * n_unmapped
+    for m in mans:
+        rec = done.get(pmap.get(m.patient_key) or "")
+        if rec is None:
+            continue
+        roi_skipped += [{"pseudonym": rec["pseudonym"], **s} for s in rec["roi_skips"]]
+        if rec["reason"]:
+            skipped.append({"pseudonym": rec["pseudonym"], "reason": rec["reason"]})
+        else:
+            rows.append({"pseudonym": rec["pseudonym"], **rec["features"]})
+    pd.DataFrame(roi_skipped, columns=["pseudonym", "roi", "reason"]).to_csv(
+        a.out / "real_dosiomics_roi_skipped.csv", index=False)
 
     df = pd.DataFrame(rows)
     df.to_csv(a.out / "real_dosiomics_TCIA_HN_wide.csv", index=False)

@@ -158,7 +158,11 @@
           "path": "analysis/dosiomics/real_dosiomics.py",
           "sha256": "2f08b8ba073f353eb1fba6ee7371f1c84400c256de40e661bee5dbd777a53b49",
           "lines": 326,
-          "present": true
+          "present": true,
+          "sha256_basis": "CRLF line endings. Verified 2026-09-27: the file as committed before v1.3.0 (LF, sha256 2a454cc016826defa94bffc6df2529a53bb82dcca39e3b27359bb115e98e1c4a) hashes to the recorded sha256 after LF->CRLF conversion, so its content is exactly the code that produced the result_files below.",
+          "sha256_v1_3_0": "9c074cef620c103c7e714875a0d81c389dd6d50240807387410a8ab3a1f7a282",
+          "lines_v1_3_0": 379,
+          "v1_3_0_change": "Resume capability and skip reasons only, added so the script can be batched on an 8 GB machine: a per-patient checkpoint (_checkpoint_dosiomics.jsonl) written after each patient finishes, --limit now counting only patients not yet checkpointed, a recorded reason for every skipped organ (new real_dosiomics_roi_skipped.csv) and patient (exception message added; unmapped patients now listed without identifier). No change to any computation, constant, threshold or feature definition: verified by diff, and by AST comparison showing N_BINS, MIN_VOXELS, REPO, first_order, _discretise, glcm_features, glrlm_features and glszm_features identical; in organ_features only the three skip conditions were re-expressed to record a reason, with identical control flow. The result_files above were produced by the recorded sha256, not by this version."
         }
       ],
       "config": {

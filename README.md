@@ -132,17 +132,22 @@ Desktop: `python -m rbgyanx.qtapp` (Qt6, needs the `qt` extra) or `python rbgyan
 pytest -q
 ```
 
-Measured on Linux, Python 3.11, in two configurations:
+Each row is one measured run, on the platform and interpreter shown:
 
-| Installed | Result |
-|---|---|
-| `.[dev,ml]` + engine | **1351 passed, 24 skipped, 0 failed** |
-| the above + `.[qt]` (PySide6, plotly) | **1425 passed, 19 skipped, 1 failed** |
+| Platform | Python | Installed | Result |
+|---|---|---|---|
+| Linux | 3.11 | `.[dev,ml]` + engine | **1351 passed, 24 skipped, 0 failed** |
+| Linux, headless container | 3.11 | the above + `.[qt]` (PySide6, plotly) | **1425 passed, 19 skipped, 1 failed** |
+| Windows 11, desktop session | 3.10.11 | `-e ./engine -e ".[dev,ml,qt]"` | **1515 passed, 19 skipped, 0 failed** |
 
+The rows were measured at different points in the release, so their totals are not directly
+comparable. The Windows row is the v1.3.0 release candidate (1534 tests collected).
 Your numbers will differ, because whole modules skip when an optional dependency is absent. Run
 `pytest -rs` to see exactly what skipped and why.
 
-**The one failure is environmental, and expected in a container.**
+**The Linux failure is environmental, and expected in a container. On a real display the same
+test passes:** it passed in the Windows run above, and was also run on its own with its output
+confirmed (`SELFTEST OK`, one Plotly node rendered).
 `tests/test_qtapp_smoke.py::test_selftest_renders_plotly_in_a_live_webengine` drives a real
 `QWebEngineView`, loads an interactive Plotly DVH into it, and queries the rendered DOM to confirm
 the plot actually drew — it exists to catch a blank-plot packaging bug at source level. It needs a

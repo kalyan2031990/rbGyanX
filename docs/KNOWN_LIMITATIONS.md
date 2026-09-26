@@ -53,6 +53,29 @@ be revived at all.
 
 ---
 
+### The ML models hard-code `n_jobs=-1`
+
+The ML estimators and both `GridSearchCV` calls in
+`engine/ml_models/{random_forest,xgboost,lgbm}_tcp.py` hard-code `n_jobs=-1`. On a 12-thread
+machine this spawns worker processes that exhausted memory on an 8 GB workstation. `n_jobs` is not
+exposed as a parameter; constrain it externally with `LOKY_MAX_CPU_COUNT` and `OMP_NUM_THREADS`.
+Making it configurable is v1.4.
+
+Both variables are needed, because the three libraries honour different ones. Measured on
+Windows / Python 3.10 (joblib 1.6.0, LightGBM 4.7.0) by counting processes and threads during a
+real nested-CV fit:
+
+- `LOKY_MAX_CPU_COUNT=1` removes the joblib worker processes for `GridSearchCV` and the random
+  forest, and it also sets LightGBM's thread count: LightGBM resolves `n_jobs=-1` via joblib's CPU
+  count and ran on one thread whether or not `OMP_NUM_THREADS` was set.
+- `OMP_NUM_THREADS=1` is what bounds XGBoost, whose booster reports `nthread=-1` either way. It
+  also caps the numerical library's thread pool.
+
+With both variables set to 1, each model chose the same hyperparameters as a less constrained
+control (two joblib workers for the random forest, `OMP_NUM_THREADS` unset for XGBoost and
+LightGBM). An uncapped run was not measured.
+Record both variables in the run provenance of any result produced under them.
+
 ## Scientific scope
 
 ### IBSI compliance is not claimed
@@ -311,11 +334,11 @@ values accompany the associated publications.
 release tag. This is deliberate and should not be reconciled: which code produced a number and
 which version was distributed are different questions.
 
-### Eight analysis scripts no longer match their recorded SHA-256
+### Eight analysis scripts match their recorded SHA-256 only with CRLF line endings
 
 `analysis/FINAL_ANALYSIS_CODE_MANIFEST.json` records a SHA-256 for each script that produced a
 reported result — that mapping is the whole point of the manifest, and it closed audit blocker B1.
-Recomputing those digests against the current files, **15 of 23 match and 8 do not**:
+Hashing the files as checked out, **15 of 23 match and 8 do not**:
 
 ```
 analysis/radiomics/p14_ct_radiomics.py          analysis/pinn/v2_pinn.py
@@ -324,15 +347,19 @@ analysis/ibsi/v3_ibsi_benchmark.py              analysis/cohort/build_patient_fe
 analysis/dosiomics/real_dosiomics.py            analysis/bayesian/v3_bayesian_pymc.py
 ```
 
-The drift predates v1.3.0 — the files are byte-identical to their state at the v1.2.1 tag, so it
-was introduced earlier and has not been reconciled. For those eight, the manifest no longer
-identifies the exact bytes that produced the reported numbers, and the provenance claim is weaker
-than the manifest's own wording implies. The digests of the remaining fifteen are intact.
+This was earlier recorded as drift of unknown origin. It is not a content change. All eight match
+their recorded digests exactly once the file is converted from LF to CRLF: the manifest was stamped
+on Windows line endings, and `.gitattributes` (`* text=auto eol=lf`) normalises the repository copy
+to LF. Measured 2026-09-27 over all 23 entries: 15 match as LF, 8 match as CRLF, **0 match
+neither**. So for every script, the manifest still identifies the exact code that produced the
+reported numbers. What it does not identify is the byte form, which a verifier has to know is CRLF
+for those eight.
 
-This is recorded rather than repaired because there are only two honest repairs and both are
-decisions for the authors, not a cleanup: re-run those analyses and re-stamp the manifest, or
-restore the exact script versions the digests refer to. Silently re-stamping the manifest against
-the current files would make the hashes agree while destroying the evidence that anything changed.
+`real_dosiomics.py` has since been changed in v1.3.0, for resume and skip reasons only. Its
+manifest entry keeps the recorded digest (the version that produced the results) and adds
+`sha256_v1_3_0` with a note stating what changed, rather than overwriting it. Re-stamping any entry
+against the current file would make the hashes agree while destroying the evidence of which bytes
+produced the results.
 
 `analysis/` is excluded from linting and formatting for this reason — it is a frozen provenance
 artefact, not maintained code.
