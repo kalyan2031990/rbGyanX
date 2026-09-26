@@ -8,8 +8,6 @@ structure, never fewer, even though several of them collide on the same canonica
 """
 from pathlib import Path
 
-import pytest
-
 from rbgyanx_engine.pipeline import collect_txt_tcp
 
 _FIXTURE = """\

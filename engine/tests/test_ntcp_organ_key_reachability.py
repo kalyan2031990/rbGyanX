@@ -77,8 +77,8 @@ def test_breast_lung_key_is_the_reachable_canonical():
 
 
 def test_femoral_head_aliases_self_match():
-    from dicom_io.structure_mapper import normalise_name
     from config.structure_aliases import STRUCTURE_ALIASES
+    from dicom_io.structure_mapper import normalise_name
 
     for canonical in ("FemoralHead_L", "FemoralHead_R"):
         assert normalise_name(canonical) in STRUCTURE_ALIASES[canonical], (
