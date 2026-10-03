@@ -71,6 +71,20 @@ rbGyanX; rbGyanX does not exist to serve one. `CITATION.cff` accordingly sets no
   `{'success': False, 'error': ...}` contract. Attribute access, comprehensions, lambdas and
   non-numeric literals were never intended to work and now say so.
 
+- **A multi-structure `dvh_txt` file no longer collapses to a single row.** With
+  `preserve_canonical=False` — the SPARK configuration — `_read_txt_structures` routed
+  multi-structure files to the *single*-structure reader, which has no per-block boundary reset.
+  It returned one row carrying the **last** structure's name over dose and volume data
+  accumulated across every structure in the file, so the numbers on that row belonged to no
+  structure at all. It now always uses `parse_multi_structure_dvh_text`; `preserve_canonical`
+  controls naming only, never structure splitting. This matches the DICOM path, where colliding
+  structures each survive as their own row.
+
+  *Migration:* a caller that read one row per multi-structure file now gets one row **per
+  structure**, so row counts rise and any index- or length-based assumption about the result
+  breaks. Code that consumed the old single row was consuming a figure computed across mixed
+  structures; there is no way to reproduce it, and it should not be reproduced.
+
 ### Fixed
 
 - **The documented pipeline entry point raised on its first call.**
