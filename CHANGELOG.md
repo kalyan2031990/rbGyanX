@@ -166,6 +166,18 @@ rbGyanX; rbGyanX does not exist to serve one. `CITATION.cff` accordingly sets no
   source of truth. A clean-install smoke test installs both wheels into a fresh venv and runs the
   README quickstart.
 
+- **The release workflow runs the frozen application before packaging it.** PyInstaller omits a
+  module it cannot find with only a warning, so a successful freeze said nothing about what was
+  inside it: the installer shipped with no `shap` while every release job stayed green, because
+  nothing ever executed the frozen exe. The build now runs the exe's own self-test — a real DVH
+  loaded into a live `QWebEngineView`, with the rendered DOM queried via JavaScript to confirm
+  Plotly actually drew — and fails the job on a non-zero exit. `packaging/rbGyanX-qt.spec` had
+  asserted the opposite of what it shipped; the comment now describes the artefact, and `shap` is
+  listed in `excludes` so its absence is a guarantee rather than a side effect of the build's
+  install line. The installer's own SHA-256 is now recorded in the build log as well, so a
+  downloader can verify the binary independently; CI previously logged only the artifact zip
+  digest, which says nothing about the `.exe` attached to a release.
+
 - **`analysis/` is excluded from linting and formatting.** Its scripts are pinned by SHA-256 in
   `FINAL_ANALYSIS_CODE_MANIFEST.json`, so reformatting them breaks the mapping between a reported
   number and the bytes that produced it. It is a frozen provenance artefact, not maintained code.

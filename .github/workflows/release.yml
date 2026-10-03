@@ -237,6 +237,19 @@ jobs:
           fi
           echo "ok: $expected"
 
+      # The headline artefact of a release is this 233 MB binary, and upload-artifact logs only the
+      # digest of the artifact *zip* -- which tells a downloader of the attached .exe nothing. The
+      # exe's own digest belongs in the immutable build log so it can be verified independently.
+      - name: Record the installer's SHA-256
+        shell: bash
+        env:
+          VERSION: ${{ needs.version-agreement.outputs.version }}
+        run: |
+          set -euo pipefail
+          exe="build_qt/dist/rbGyanX-${VERSION}-Qt-Setup.exe"
+          sha256sum "$exe"
+          echo "size: $(wc -c < "$exe") bytes"
+
       - uses: actions/upload-artifact@v4
         with:
           name: rbgyanx-installer-${{ needs.version-agreement.outputs.version }}
