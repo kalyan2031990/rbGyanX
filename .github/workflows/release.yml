@@ -175,6 +175,34 @@ jobs:
             packaging/rbGyanX-qt.spec
           test -d "build_qt/dist/rbGyanX-Qt" || { echo "::error::freeze produced no build_qt/dist/rbGyanX-Qt"; exit 1; }
 
+      # Run the app we just froze, before it is packaged. PyInstaller omits a module it cannot
+      # find with only a warning, so "the freeze succeeded" says nothing about what is inside it:
+      # v1.3.0 shipped with no shap at all and every job stayed green, because nothing ever
+      # executed the frozen exe. The self-test builds a real DVH, loads it into a live
+      # QWebEngineView and asks the rendered DOM (via JavaScript, in the renderer process)
+      # whether Plotly actually drew -- the blank-plot class of bug only appears once the helper
+      # process and .pak resources have to be found on disk. It also checks the SHAP leg against
+      # what the spec says should ship. Non-zero exit fails the job.
+      - name: Run the frozen self-test
+        shell: pwsh
+        env:
+          RBGYANX_QT_SELFTEST: "1"
+          # The runner has no GPU; force software rendering so QtWebEngine still composites.
+          QTWEBENGINE_CHROMIUM_FLAGS: "--disable-gpu --no-sandbox"
+        run: |
+          $exe = "build_qt\dist\rbGyanX-Qt\rbGyanX-Qt.exe"
+          if (-not (Test-Path $exe)) { throw "frozen exe not found at $exe" }
+          # Built console=False, so stdout only lands anywhere if we hand it a real handle.
+          $p = Start-Process -FilePath $exe -RedirectStandardOutput selftest.out -RedirectStandardError selftest.err -PassThru -Wait
+          Write-Host "--- self-test stdout ---"
+          Get-Content selftest.out -ErrorAction SilentlyContinue
+          Write-Host "--- self-test stderr ---"
+          Get-Content selftest.err -ErrorAction SilentlyContinue
+          $out = Get-Content selftest.out -Raw -ErrorAction SilentlyContinue
+          if ($p.ExitCode -ne 0) { throw "frozen self-test FAILED with exit code $($p.ExitCode) -- see stdout above" }
+          if ($out -notmatch 'SELFTEST OK') { throw "self-test exited 0 but never printed SELFTEST OK; stdout capture or the bootloader is at fault" }
+          Write-Host "ok: the frozen exe passed its own self-test"
+
       # Inno Setup ships on the windows-latest image. Both defines are passed explicitly: the
       # .iss falls back to MyAppVersion "1.0.0" when none is given, which is precisely how a
       # release came to carry an asset named after the wrong version.

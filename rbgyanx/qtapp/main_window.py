@@ -433,10 +433,28 @@ def _selftest() -> int:
 
 
 def _selftest_shap() -> tuple[bool, str]:
-    """Fit a small RandomForest, compute genuine SHAP values, render the xAI bar. Returns (ok, note)."""
+    """Check the SHAP/xAI leg against what the build actually ships. Returns (ok, note).
+
+    shap is intentionally NOT bundled in the frozen app: it lives in the "ml" extra, the installer
+    is built from the "qt" extra, and no user-reachable path imports it, so the packaged xAI view
+    shows its documented placeholder (the reasoning is in packaging/rbGyanX-qt.spec). A cleanly
+    absent shap is therefore a PASS here, not a failure — asserting otherwise tests a fiction.
+
+    What still fails: a shap that is present but cannot compute, and in particular a *half*-bundled
+    one — shap collected without numba raises ModuleNotFoundError('numba') on import. That is a
+    packaging defect rather than a design choice, so it must stay loud. In the source tree, where
+    the ml extra is installed, this runs the full fit -> TreeExplainer -> render path as before.
+    """
+    try:
+        import shap
+    except ModuleNotFoundError as exc:
+        if exc.name == "shap":
+            return True, "not bundled (expected)"
+        # shap itself is here, but something it imports is not: a partial collection.
+        return False, f"FAILED:half-bundled shap:{type(exc).__name__}:{exc}"
+
     try:
         import numpy as np
-        import shap
         from sklearn.ensemble import RandomForestClassifier
 
         from rbgyanx.viz import get_backend, shap_spec_from_values
@@ -454,7 +472,7 @@ def _selftest_shap() -> tuple[bool, str]:
         spec = shap_spec_from_values(["dose", "volume", "age", "noise"], sv)
         html = get_backend("plotly").render(spec).to_html()
         return (len(html) > 500 and len(spec.features) == 4), "rendered"
-    except Exception as exc:  # bundled-shap failure must be visible, not fatal to the whole test
+    except Exception as exc:  # a present-but-broken shap must be visible, not fatal to the test
         return False, f"FAILED:{type(exc).__name__}:{exc}"
 
 

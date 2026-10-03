@@ -81,15 +81,38 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     # The Qt run path is: DVH parse -> engine LKB/RS NTCP -> RandomForest -> Plotly/Matplotlib,
-    # plus the ADVANCED xAI view (SHAP over the RandomForest TCP model). Everything below is an
-    # OPTIONAL research/ML extra or a Tk-only dependency the Qt app never imports. Excluding them
-    # keeps the analysis tractable (the first attempt scanned the full sympy/ML graph and was
-    # killed after 18 min) and the installer small.
+    # plus the ADVANCED xAI view, which renders SHAP values only if something hands it some (see
+    # the shap note below). Everything below is an OPTIONAL research/ML extra or a Tk-only
+    # dependency the Qt app never imports. Excluding them keeps the analysis tractable (the first
+    # attempt scanned the full sympy/ML graph and was killed after 18 min) and the installer small.
     #
-    # shap is deliberately NOT excluded: the SHAP/xAI view ships in the packaged app (verified by
-    # the frozen-exe self-test). This shap version imports numba unconditionally, so numba +
-    # llvmlite must ship too — a frozen build that excluded them raised ModuleNotFoundError:
-    # 'numba' the moment TreeExplainer ran. They are NOT in the excludes list below.
+    # shap, numba and llvmlite are NOT bundled, deliberately. An earlier version of this comment
+    # claimed the opposite, and nothing enforced either claim, so it stood unchallenged until the
+    # shipped v1.3.0 installer was inspected by hand.
+    #
+    # Why they are absent: shap is declared in the "ml" extra only, while this installer is built
+    # with `pip install -e "./engine" -e ".[qt]"` (.github/workflows/release.yml). shap is simply
+    # not in the build environment, so PyInstaller cannot collect it; numba and llvmlite were only
+    # ever shap's dependencies and so are absent too. "shap" is now also listed in excludes below,
+    # to make that a guarantee rather than a side effect of the install line.
+    #
+    # Why that is correct: no user-reachable code path imports shap. ml_models and xai ARE bundled
+    # (both are in the embedded PYZ), but ml_models/random_forest_tcp.py imports shap lazily under
+    # `if compute_shap:` inside try/except, so a missing shap degrades to shap_values=None plus the
+    # warning "SHAP computation failed: No module named 'shap'" — the RandomForest itself still
+    # trains, since sklearn ships. engine/xai/shap_tcp.py only plots values handed to it and never
+    # imports shap at all.
+    #
+    # What the packaged SHAP/xAI view therefore shows: its documented placeholder, not fabricated
+    # attributions. VisualisationScreen.set_ml_result() is the only way to populate that view, and
+    # nothing in the app calls it (sole caller: tests/test_qtapp_smoke.py). Bundling shap would
+    # drag numba + llvmlite into an already ~872 MB install to fill a view that would stay empty.
+    #
+    # _selftest_shap() in rbgyanx/qtapp/main_window.py matches this design: a cleanly absent shap
+    # is a PASS, while a shap that is present but cannot compute — including a half-bundled one,
+    # e.g. shap without numba — is a FAIL. The release workflow runs that frozen self-test right
+    # after the freeze and fails the job on a non-zero exit, which is what now pins all of the
+    # above. Same "assert it, do not assume it" pattern as the QtWebEngine note further up.
     excludes=[
         "tkinter",
         "tensorflow",
@@ -97,9 +120,12 @@ a = Analysis(
         "xgboost",
         "lightgbm",
         "lime",
+        # shap: see the long note above. Excluded explicitly so that a future change to the
+        # build's install line cannot silently pull shap — and with it numba + llvmlite — back in.
+        "shap",
         # NOTE: lifelines (cox_regression.py, top-level) and skimage (via dicompylercore,
         # needed for DICOM DVH extraction) are genuine engine imports — do NOT exclude them.
-        # numba + llvmlite are also kept in: shap needs numba at import/compute time.
+        # numba + llvmlite need no entry here: with shap gone, nothing bundled imports them.
         "sympy",
         "statsmodels",
         "seaborn",
