@@ -56,7 +56,15 @@ class RecordingTransport:
 
 def remote_config(**kw) -> AiConfig:
     """A genuinely remote provider with a key present, so ``is_ready`` is true."""
-    return AiConfig(provider="claude", api_key="test-key-not-real", **kw)
+    # The literal below is a non-credential fixture required by the PHI fail-closed test: the
+    # remote send path is only reached when a key is present, so is_ready() has to be true here.
+    # It is not a secret and never was one. Waived on its own line rather than by exempting this
+    # whole file, which would also switch off the privacy scan for every other line in it.
+    return AiConfig(
+        provider="claude",
+        api_key="test-key-not-real",  # pre-publish: allow hardcoded-secret - fixture, see above
+        **kw,
+    )
 
 
 def local_config(**kw) -> AiConfig:

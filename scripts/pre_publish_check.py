@@ -28,7 +28,9 @@ os.chdir(ROOT)
 BLOCK, WARN, OK = [], [], []
 SIZE_WARN_KB = 500
 
-# Paths whose contents are documentation of what NOT to do, or test fixtures.
+# Whole-FILE exemptions, for files whose entire content is documentation of what not to do.
+# Prefer the per-line pragma (see PRAGMA below) for everything else: an entry here also disables
+# the privacy scan for that file, so a real leak added to it later would never be reported.
 ALLOW = {
     "scripts/pre_publish_check.py",
     "docs/KNOWN_LIMITATIONS.md",
@@ -55,6 +57,42 @@ FORBIDDEN_PATHS = re.compile(
     r"(^|/)(__pycache__|\.pytest_cache|\.mypy_cache|\.ruff_cache|"
     r"[^/]+\.egg-info|build|dist|\.venv|venv|node_modules)(/|$)"
     r"|\.(pyc|pyo|log|bak|orig|rej|swp|DS_Store)$")
+
+# One finding can be waived on ONE line, with a stated reason, by annotating that line:
+#
+#     api_key="not-a-real-key",  # pre-publish: allow hardcoded-secret - why it is not one
+#
+# The slug is the finding's own label with spaces hyphenated ("hardcoded secret" ->
+# "hardcoded-secret"), so a waiver silences exactly one pattern on exactly one line and nothing
+# else. A reason is mandatory: the pragma is honoured only when text follows the separator.
+#
+# This exists so a known non-secret can be declared as one. Without it, the only way to quieten
+# this gate is a whole-file ALLOW entry -- and a gate that cannot say "this one is fine" is the
+# gate someone silences wholesale, which is exactly when it stops finding anything real.
+PRAGMA = re.compile(r"#\s*pre-publish:\s*allow\s+([a-z0-9-]+)\s*[-:]\s*\S")
+
+
+def _waived(line: str, label: str) -> bool:
+    """True when this line carries a pragma waiving exactly this finding, with a reason."""
+    slug = label.replace(" ", "-")
+    return any(m.group(1) == slug for m in PRAGMA.finditer(line))
+
+
+def _findings(txt: str, pat: re.Pattern[str], label: str) -> list[tuple[int, str]]:
+    r"""Matches of ``pat`` not waived on the line they start on, as (1-based line, excerpt).
+
+    Matching runs over the whole text rather than line by line, so a pattern whose ``\s*`` spans
+    a newline is still caught; only the *waiver* is line-scoped. Every match is reported, not
+    just the first in the file.
+    """
+    lines = txt.splitlines()
+    out: list[tuple[int, str]] = []
+    for m in pat.finditer(txt):
+        i = txt.count("\n", 0, m.start())
+        if i < len(lines) and _waived(lines[i], label):
+            continue
+        out.append((i + 1, m.group(0)[:40]))
+    return out
 
 
 def tracked() -> list[str]:
@@ -94,23 +132,21 @@ def main() -> int:
         if rel in ALLOW:
             continue
         for label, pat in SECRETS:
-            m = pat.search(txt)
-            if m:
-                sec_hits.append((rel, label, m.group(0)[:24]))
+            for lineno, excerpt in _findings(txt, pat, label):
+                sec_hits.append((rel, label, excerpt, lineno))
         for label, pat in PRIVACY:
-            m = pat.search(txt)
-            if m:
-                priv_hits.append((rel, label, m.group(0)[:40]))
+            for lineno, excerpt in _findings(txt, pat, label):
+                priv_hits.append((rel, label, excerpt, lineno))
 
     if sec_hits:
         BLOCK.append(f"{len(sec_hits)} possible credential(s): "
-                     + "; ".join(f"{f} [{l}]" for f, l, _ in sec_hits[:4]))
+                     + "; ".join(f"{f}:{n} [{l}]" for f, l, _, n in sec_hits[:4]))
     else:
         OK.append("no credentials or private keys found")
 
     if priv_hits:
         BLOCK.append(f"{len(priv_hits)} privacy leak(s): "
-                     + "; ".join(f"{f} [{l}] {s}" for f, l, s in priv_hits[:4]))
+                     + "; ".join(f"{f}:{n} [{l}] {s}" for f, l, s, n in priv_hits[:4]))
     else:
         OK.append("no absolute user paths or patient identifiers found")
 
