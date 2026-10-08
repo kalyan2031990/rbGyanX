@@ -79,8 +79,13 @@ class _RunWorker(QThread):
         reporter = CallbackReporter(
             log=self.line.emit, status=self.stage.emit, progress=self.pct.emit
         )
+        controller = RunController(reporter)
         try:
-            result = RunController(reporter).run_dvh_text(self._request, ntcp_models=self._models)
+            # The full engine: honours the analysis mode, cancer site, input source (DICOM or TPS
+            # text), clinical file and ML toggle, and writes to the output folder. Routing to
+            # run_dvh_text instead — as this did — silently discarded all of them and computed
+            # classical NTCP from DVH text whatever the operator selected.
+            result = controller.run_engine(self._request)
         except Exception as exc:  # never let a worker exception kill the app
             result = RunResult(ok=False, errors=[f"{type(exc).__name__}: {exc}"])
         self.done.emit(result)

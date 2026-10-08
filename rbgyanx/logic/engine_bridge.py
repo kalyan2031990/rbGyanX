@@ -7,6 +7,7 @@ for TPS text, FDVH, NTCP ML/SHAP, and code7 integration metrics when required.
 
 from __future__ import annotations
 
+import importlib.util
 import logging
 import shutil
 import sys
@@ -37,7 +38,22 @@ def get_engine_root() -> Path:
     return root
 
 
-def ensure_engine_on_path(engine_root: Path | None = None) -> Path:
+def ensure_engine_on_path(engine_root: Path | None = None) -> Path | None:
+    """Make ``rbgyanx_engine`` importable; return the root added, or None if none was needed.
+
+    ``rbgyanx-engine`` is a hard runtime requirement (see ``pyproject.toml``), so in a pip install
+    and inside the frozen desktop app it is **already importable** and there is no repository root
+    to put on ``sys.path``: ``get_engine_root`` looks for ``engine_bundle/`` or ``engine/`` on disk
+    and finds neither. This previously raised ``FileNotFoundError`` in exactly those two cases —
+    which is every environment a user actually installs — so the engine was sitting in the bundle
+    and the bridge refused to use it. Verified against the shipped v1.3.0 installer: no engine
+    directory on disk, ``rbgyanx_engine`` present in the embedded PYZ.
+
+    An explicit ``engine_root`` is still honoured and still added, for the repository layout and
+    for ``RBGYANX_ENGINE_PATH``.
+    """
+    if engine_root is None and importlib.util.find_spec("rbgyanx_engine") is not None:
+        return None
     root = (engine_root or get_engine_root()).resolve()
     root_str = str(root)
     if root_str not in sys.path:
