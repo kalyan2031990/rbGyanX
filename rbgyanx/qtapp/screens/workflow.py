@@ -183,4 +183,8 @@ class WorkflowScreen(QWidget):
             "input_source": self.source_combo.currentText(),
             "enable_ml": self.ml_check.isChecked(),
             "basic_mode": not self.policy.is_advanced,
+            # The site the operator picked. This was collected and then dropped, so the engine
+            # never saw it and a plan it could not auto-detect aborted with the selector sitting
+            # right there. tests/test_qt_request_fields.py fails if it stops being forwarded.
+            "site": self.site_combo.currentText(),
         }

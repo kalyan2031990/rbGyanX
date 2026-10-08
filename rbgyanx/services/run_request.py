@@ -30,6 +30,11 @@ class RunRequest:
     input_source: str = "auto"  # "auto" | "dicom" | "dvh_txt"
     enable_ml: bool = False
     basic_mode: bool = True
+    # Operator's site override, forwarded to the engine as ``site_override``. Empty means "let
+    # the engine detect it", which is what every caller got before this field existed: the Qt
+    # workflow screen collected a site and then dropped it, so a plan whose site cannot be
+    # auto-detected aborted with no way for the operator to say what it was.
+    site: str = ""
 
     def normalised(self) -> RunRequest:
         """Coerce string paths to ``Path`` (the GUI hands over strings)."""
@@ -41,6 +46,7 @@ class RunRequest:
             input_source=self.input_source or "auto",
             enable_ml=bool(self.enable_ml),
             basic_mode=bool(self.basic_mode),
+            site=(self.site or "").strip(),
         )
 
 
