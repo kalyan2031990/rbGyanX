@@ -84,8 +84,13 @@ def _category(canonical: str) -> str:
 #: ``_L`` / ``_R`` that every lateralised TG-263 key in this project uses.
 _LATERAL_TOKEN = re.compile(r"_(L|R)$", re.IGNORECASE)
 
-#: A source name that does assert a side. Deliberately generous — the cost of a false positive
-#: here is a fuzzy match allowed through, the cost of a false negative is an invented laterality.
+#: A source name that does assert a side. Deliberately NARROW: a false positive here means the
+#: guard believes a side was stated when it was not, and so lets a lateralised mapping through —
+#: which is the very thing being prevented. A false negative only means the fuzzy branch declines
+#: and the name is left unmapped, visibly, for a curated alias or a human to resolve. So when in
+#: doubt this pattern does NOT match. (``SubmandR`` is an example: it is not matched here and is
+#: resolved instead by its exact alias in ``config/structure_aliases.py``, which is a human
+#: decision rather than an inference.)
 _SOURCE_ASSERTS_SIDE = re.compile(
     r"(_(L|R)$|_(left|right)$|\b(left|right)\b|\b(lt|rt)\b|(^|[^a-z])(l|r)$|ips|contra)",
     re.IGNORECASE,
