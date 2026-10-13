@@ -163,6 +163,11 @@ def collect_dicom_tcp(
         # Identity of the ROI behind this row, so structure_mapping.csv can tie canonical back to raw.
         row["raw_name"] = dvh_r.raw_name
         row["roi_number"] = dvh_r.roi_number
+        row["extraction_mode"] = dvh_r.extraction_mode  # see the NTCP path: defect #17
+        # physical_metrics.csv and dvh_summary.csv both declare a volume_cc column and read
+        # total_volume_cc to fill it; the DICOM target path never set it, so the column shipped
+        # empty for every target on every DICOM run (the TPS-text path did set it).
+        row["total_volume_cc"] = dvh_r.total_volume_cc
         _attach_site_metadata(row, site_info)
         row["params_snapshot"] = {
             "params_source": site_params.params_source,
@@ -270,6 +275,20 @@ def collect_dicom_ntcp(
             continue
         row = calc.compute_all(dvh_r, meta, op, params_key)
         row["AnonPatientID"] = anon_id
+        # Identity of the ROI behind this row. Without it an organ and its own PRV expansion
+        # arrive as two rows with the same `structure` label and no field distinguishes them:
+        # measured on TCIA2, BrainStem/BrainStem_03 and SpinalCord/SpinalCord_05 collide in
+        # 121/121 patients, and SpinalCord NTCP differs 7-fold between the two (defect #19).
+        # The TCP path has carried raw_name and roi_number all along; this one did not.
+        row["raw_name"] = dvh_r.raw_name
+        row["roi_number"] = dvh_r.roi_number
+        row["total_volume_cc"] = dvh_r.total_volume_cc
+        # How this DVH was obtained. Computed per ROI by the extractor, aggregated correctly by
+        # patient_registry, filed there under "DVH_Mode", and read downstream as
+        # "extraction_mode" -- a three-way name mismatch that shipped the column empty on every
+        # run at every version (defect #17).
+        row["extraction_mode"] = dvh_r.extraction_mode
+        row["mapping_confidence"] = getattr(dvh_r, "quality_flag", "")
         _attach_site_metadata(row, site_info)
         results.append(row)
     return results
