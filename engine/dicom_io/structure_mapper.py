@@ -80,6 +80,31 @@ def _category(canonical: str) -> str:
     return "OAR"
 
 
+#: A canonical token that commits to a side. Kept narrow on purpose: it matches the trailing
+#: ``_L`` / ``_R`` that every lateralised TG-263 key in this project uses.
+_LATERAL_TOKEN = re.compile(r"_(L|R)$", re.IGNORECASE)
+
+#: A source name that does assert a side. Deliberately generous — the cost of a false positive
+#: here is a fuzzy match allowed through, the cost of a false negative is an invented laterality.
+_SOURCE_ASSERTS_SIDE = re.compile(
+    r"(_(L|R)$|_(left|right)$|\b(left|right)\b|\b(lt|rt)\b|(^|[^a-z])(l|r)$|ips|contra)",
+    re.IGNORECASE,
+)
+
+
+def _fuzzy_would_invent_laterality(raw_name: str, token: str) -> bool:
+    """True when ``token`` commits to a side that ``raw_name`` does not.
+
+    Guards defect #21 by construction rather than by persuasion: no model output, alias entry or
+    configuration can route an unlateralised source name to a lateralised canonical through the
+    fuzzy branch. An exact alias or TG-263 match is unaffected — a curated alias asserting the
+    side is a human decision, and ``FemHead_R`` -> ``FemoralHead_R`` must keep working.
+    """
+    if not _LATERAL_TOKEN.search(token):
+        return False
+    return not _SOURCE_ASSERTS_SIDE.search(raw_name.strip())
+
+
 def normalize_to_tg263(raw_name: str) -> dict:
     """
     Map vendor/TCIA structure name to AAPM TG-263 token.
@@ -101,6 +126,21 @@ def normalize_to_tg263(raw_name: str) -> dict:
     if close:
         for token in TG263_ALIASES:
             if normalise_name(token) == close[0]:
+                if _fuzzy_would_invent_laterality(raw_name, token):
+                    # The source name asserts no side and this token does. difflib ties the
+                    # "_L" and "_R" keys exactly and breaks the tie lexicographically, so "_R"
+                    # always won and the side was chosen by the alphabet, not by anatomy
+                    # (defect #21: 120/121 TCIA2 patients, 54/54 of the parotid-54 cohort).
+                    # Refusing here is also what makes the documented bilateral-name policy in
+                    # config/structure_aliases.py actually hold: the alias table honoured it and
+                    # this branch bypassed it.
+                    logger.warning(
+                        "TG-263 fuzzy map REFUSED: %r -> %s would assert a laterality the "
+                        "source name does not carry; left unmapped",
+                        raw_name,
+                        token,
+                    )
+                    break
                 logger.info("TG-263 fuzzy map: %r -> %s", raw_name, token)
                 return {
                     "tg263": token,

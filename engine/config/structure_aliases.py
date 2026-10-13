@@ -246,7 +246,10 @@ STRUCTURE_ALIASES: dict[str, list[str]] = {
 _PHASE3_EXTRA_ALIASES = {
     "PRV_Cord": ["spinalcordprv", "prvspinalcord", "scprv3", "scprv5", "cordprv3", "cordprv5"],
     "Brainstem": ["brainstemprv", "bstem", "prvbrainstem"],
-    "PharynxConstrictor": ["pcm", "constrictors", "pharyngealconstrictor", "constrictormuscle"],
+    "PharynxConstrictor": ["pcm", "constrictors", "pharyngealconstrictor", "constrictormuscle",
+                            # TCIA2 / AIRTP spells it "PharynxConst" in 135/135 patients; the
+                            # fuzzy ratio is 0.80, under the 0.88 cutoff, so it never resolved.
+                            "pharynxconst", "pharynxconstrict"],
     "Larynx": ["voicebox", "glottis", "supraglotticlarynx"],
     "OralCavity": ["mouthcavity", "oralmucosa"],
     # "femoralheadl"/"femoralheadr" (the normalised form of the canonical key itself) were
