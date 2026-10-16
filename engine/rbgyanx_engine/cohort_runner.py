@@ -30,7 +30,9 @@ logger = logging.getLogger(__name__)
 # The 16 guaranteed cohort-level exports (written even when empty, stable column order).
 COHORT_CSVS: dict[str, list[str]] = {
     "patient_features.csv": ["pseudonym", "site", "site_confidence", "n_structures", "n_mapped",
-                             "n_unmapped", "dvh_mode", "plan_selected", "degraded_mode"],
+                             "n_unmapped", "dvh_mode", "plan_selected", "dose_selected",
+                             "struct_selected", "ct_instance_count", "selection_notes",
+                             "degraded_mode"],
     "physical_metrics.csv": ["pseudonym", "structure", "category", "volume_cc", "Dmean_gy",
                              "Dmax_gy", "D2_gy", "D98_gy"],
     "tcp_results.csv": ["pseudonym", "structure", "model", "tcp"],
@@ -91,6 +93,17 @@ class PatientRecord:
     n_missing: int = 0
     dvh_mode: str = ""
     plan_selected: str = ""
+    # The RTDOSE is the sole origin of every DVH, Dmean, gEUD, TCP and NTCP value this engine
+    # produces, and until now the output recorded only which PLAN was chosen (defect #18b).
+    dose_selected: str = ""
+    struct_selected: str = ""
+    # Both of these were computed and then discarded: selection_notes was written at
+    # cohort_discovery.py:161 and read nowhere, ct_instance_count assigned at :147 and read
+    # nowhere (defect #17).
+    selection_notes: str = ""
+    ct_instance_count: int = 0
+    site_detected: str = ""
+    site_confidence: str = ""
     degraded_mode: str = ""
     warnings: list[str] = field(default_factory=list)
     failure_reason: str = ""
@@ -214,6 +227,12 @@ def _process_patient(cfg: RunnerConfig, pseudonym: str, unit: dict, patient_dir:
             man = unit["manifest"]
             rec.degraded_mode = man.degraded_mode
             rec.plan_selected = Path(man.rtplan_path).name if man.rtplan_path else ""
+            rec.dose_selected = Path(man.rtdose_path).name if man.rtdose_path else ""
+            rec.struct_selected = Path(man.rtstruct_path).name if man.rtstruct_path else ""
+            rec.ct_instance_count = man.ct_instance_count
+            rec.selection_notes = "; ".join(
+                f"{k}={v}" for k, v in sorted(man.selection_notes.items())
+            )
             rec.warnings = list(man.reason_codes)
             # A DVH needs BOTH a dose grid and contours. Missing either is a documented reduced-output
             # mode (recorded with its reason code), not a failure — the engine would just raise.
@@ -397,9 +416,27 @@ def _accumulate(cfg: RunnerConfig, pseudonym: str, rec: PatientRecord, harvest: 
             if k.startswith("dosio_"):
                 accum["ML_features.csv"].append({"pseudonym": pseudonym, "feature": k, "value": v})
 
-    accum["patient_features.csv"].append({"pseudonym": pseudonym, "site": cfg.site or "",
+    # The DETECTED site and its confidence, not the CLI override. The engine detects the site
+    # correctly and attaches it to every row (site_detected / site_confidence, pipeline.py:53-61);
+    # this column previously wrote `cfg.site`, which is empty unless --site was passed, so a
+    # correctly detected HN at HIGH confidence shipped as an empty cell (defect #17).
+    _rows = harvest.get("ntcp", []) + harvest.get("tcp", [])
+    rec.site_detected = next((str(r.get("site_detected") or "") for r in _rows
+                              if r.get("site_detected")), cfg.site or "")
+    rec.site_confidence = next((str(r.get("site_confidence") or "") for r in _rows
+                                if r.get("site_confidence")), "")
+    # dvh_mode now arrives on the rows under the name the reader already used.
+    _modes = {str(r.get("extraction_mode") or "") for r in _rows if r.get("extraction_mode")}
+    if _modes:
+        rec.dvh_mode = next(iter(_modes)) if len(_modes) == 1 else "MIXED"
+
+    accum["patient_features.csv"].append({"pseudonym": pseudonym, "site": rec.site_detected,
+        "site_confidence": rec.site_confidence,
         "n_structures": rec.n_structures, "n_mapped": rec.n_structures, "n_unmapped": rec.n_missing,
-        "dvh_mode": rec.dvh_mode, "plan_selected": rec.plan_selected, "degraded_mode": rec.degraded_mode})
+        "dvh_mode": rec.dvh_mode, "plan_selected": rec.plan_selected,
+        "dose_selected": rec.dose_selected, "struct_selected": rec.struct_selected,
+        "ct_instance_count": rec.ct_instance_count, "selection_notes": rec.selection_notes,
+        "degraded_mode": rec.degraded_mode})
     for code in rec.warnings:
         accum["QA.csv"].append({"pseudonym": pseudonym, "reason_code": code, "detail": ""})
         reason_counts[code] = reason_counts.get(code, 0) + 1
@@ -477,6 +514,9 @@ def run_cohort(cfg: RunnerConfig, progress: bool = False) -> dict:
         "git_commit": _git_commit(repo_root), "config_hash": _config_hash(cfg), "seed": cfg.seed,
         "python": platform.python_version(), "packages": _pkg_versions(),
         "start_utc": start_utc, "end_utc": datetime.now(timezone.utc).isoformat(),
+        # The input tree this run read. Its absence made a completed run unreproducible from its
+        # own output: nothing recorded WHERE the data came from (defect #17).
+        "input_root": str(Path(cfg.input_root).resolve()),
         "input_inventory": {"n_units_discovered": len(units), "n_processed": len(records)},
         "per_patient_status": {r.pseudonym: r.status for r in records},
         "pseudonym_map_location": str(map_dir.resolve()),

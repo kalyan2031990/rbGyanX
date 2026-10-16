@@ -72,6 +72,18 @@ _PELVIS_KEYWORDS = frozenset(
 _LIVER_KEYWORDS = frozenset({"LIVER", "FOIE", "HCC", "HEPATO", "HEPATIC", "SBRT_LIVER"})
 
 
+def _fmt(items) -> str:
+    """Render a set into an evidence string DETERMINISTICALLY.
+
+    A bare ``{set}`` interpolation renders in string-hash order, which PYTHONHASHSEED
+    randomises per process, so two runs on identical input produced byte-different evidence
+    strings (defect #24). Byte-identical output comparison is how this project diagnosed the
+    CRLF false alarm, validated the Step A dose-selection replication and checked the installer,
+    so a column that changes on its own defeats the project's own reproducibility check.
+    """
+    return "{" + ", ".join(repr(x) for x in sorted(items)) + "}" if items else "{}"
+
+
 def _label_contains_keyword(plan_label: str, keywords: frozenset[str]) -> set[str]:
     upper = plan_label.upper()
     return {kw for kw in keywords if kw in upper}
@@ -82,31 +94,31 @@ def _match_anatomical_site(plan_label: str) -> tuple[str | None, list[str]]:
     evidence: list[str] = []
     brain = _label_contains_keyword(plan_label, _BRAIN_ANATOMY | _BRAIN_METS_HINTS)
     if brain:
-        evidence.append(f"Brain-related keyword(s): {brain}")
+        evidence.append(f"Brain-related keyword(s): {_fmt(brain)}")
         return "BRAIN", evidence
     hn = _label_contains_keyword(plan_label, _HN_KEYWORDS)
     if hn:
-        evidence.append(f"H&N keyword(s): {hn}")
+        evidence.append(f"H&N keyword(s): {_fmt(hn)}")
         return "HN", evidence
     lung = _label_contains_keyword(plan_label, _LUNG_KEYWORDS)
     if lung:
-        evidence.append(f"Lung/thorax keyword(s): {lung}")
+        evidence.append(f"Lung/thorax keyword(s): {_fmt(lung)}")
         return "LUNG", evidence
     breast = _label_contains_keyword(plan_label, _BREAST_KEYWORDS)
     if breast:
-        evidence.append(f"Breast keyword(s): {breast}")
+        evidence.append(f"Breast keyword(s): {_fmt(breast)}")
         return "BREAST", evidence
     prostate = _label_contains_keyword(plan_label, _PROSTATE_KEYWORDS)
     if prostate:
-        evidence.append(f"Prostate keyword(s): {prostate}")
+        evidence.append(f"Prostate keyword(s): {_fmt(prostate)}")
         return "PROSTATE", evidence
     pelvis = _label_contains_keyword(plan_label, _PELVIS_KEYWORDS)
     if pelvis:
-        evidence.append(f"Pelvic keyword(s): {pelvis}")
+        evidence.append(f"Pelvic keyword(s): {_fmt(pelvis)}")
         return "PELVIS", evidence
     liver = _label_contains_keyword(plan_label, _LIVER_KEYWORDS)
     if liver:
-        evidence.append(f"Liver keyword(s): {liver}")
+        evidence.append(f"Liver keyword(s): {_fmt(liver)}")
         return "LIVER", evidence
     return None, evidence
 
@@ -122,13 +134,13 @@ def _brain_histology(plan_label: str) -> tuple[str, list[str]]:
     mets_hits = _label_contains_keyword(upper, _BRAIN_METS_HINTS)
     gbm_hits = _label_contains_keyword(upper, _BRAIN_GBM_HINTS)
     if mets_hits and not gbm_hits:
-        evidence.append(f"Metastasis keyword(s): {mets_hits}")
+        evidence.append(f"Metastasis keyword(s): {_fmt(mets_hits)}")
         return "METS", evidence
     if gbm_hits and not mets_hits:
-        evidence.append(f"Primary brain tumour keyword(s): {gbm_hits}")
+        evidence.append(f"Primary brain tumour keyword(s): {_fmt(gbm_hits)}")
         return "GBM", evidence
     if mets_hits and gbm_hits:
-        evidence.append(f"Conflicting keywords METS={mets_hits} GBM={gbm_hits}; default GBM")
+        evidence.append(f"Conflicting keywords METS={_fmt(mets_hits)} GBM={_fmt(gbm_hits)}; default GBM")
         return "GBM", evidence
     evidence.append("No brain histology keyword; default GBM (override with --site BRAIN_METS)")
     return "GBM", evidence
@@ -166,7 +178,7 @@ def _oar_site(structure_list: list[dict]) -> tuple[str | None, list[str]]:
 
     hn_markers = {"Parotid_L", "Parotid_R", "Mandible", "Pharynx", "OralCavity"}
     if canonicals & hn_markers:
-        evidence.append(f"H&N OAR structures: {canonicals & hn_markers}")
+        evidence.append(f"H&N OAR structures: {_fmt(canonicals & hn_markers)}")
         return "HN", evidence
 
     lung_markers = {"Lung_R", "Lung_L", "LungTotal"}
@@ -175,7 +187,7 @@ def _oar_site(structure_list: list[dict]) -> tuple[str | None, list[str]]:
         return "LUNG", evidence
 
     if canonicals & {"Breast_Contra", "LAD"}:
-        evidence.append(f"Breast OAR structures: {canonicals & {'Breast_Contra', 'LAD'}}")
+        evidence.append(f"Breast OAR structures: {_fmt(canonicals & {'Breast_Contra', 'LAD'})}")
         return "BREAST", evidence
 
     brain_markers = {
@@ -187,12 +199,12 @@ def _oar_site(structure_list: list[dict]) -> tuple[str | None, list[str]]:
         "OpticChiasm",
     }
     if canonicals & brain_markers:
-        evidence.append(f"Brain OAR structures: {canonicals & brain_markers}")
+        evidence.append(f"Brain OAR structures: {_fmt(canonicals & brain_markers)}")
         return "BRAIN", evidence
 
     prostate_markers = {"Rectum", "Bladder", "FemoralHead_L", "FemoralHead_R", "Urethra"}
     if len(canonicals & prostate_markers) >= 2:
-        evidence.append(f"Pelvic OAR structures: {canonicals & prostate_markers}")
+        evidence.append(f"Pelvic OAR structures: {_fmt(canonicals & prostate_markers)}")
         return "PROSTATE", evidence
 
     if canonicals & {"Liver"}:
