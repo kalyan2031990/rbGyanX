@@ -31,7 +31,7 @@ _ENGINE = str(Path(__file__).resolve().parents[1])
 # Exercises the keyword path and the OAR-structure path together.
 _PROBE = """
 import sys
-sys.path.insert(0, %r)
+sys.path.insert(0, __ENGINE__)
 from dicom_io.site_detector import _fmt, _match_anatomical_site
 out = []
 out.append(_fmt({"OralCavity", "Mandible", "Larynx", "SpinalCord", "BrainStem"}))
@@ -41,7 +41,7 @@ site, ev = _match_anatomical_site("HeadNeck IMRT parotid larynx mandible oral ca
 out.append(str(site))
 out.extend(ev)
 print("\\n".join(out))
-""" % _ENGINE
+""".replace("__ENGINE__", repr(_ENGINE))
 
 
 def _run(seed: str) -> str:

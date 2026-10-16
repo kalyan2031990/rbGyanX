@@ -19,6 +19,7 @@ cutoff -- a margin of 0.005. These tests make the policy hold by construction.
 from __future__ import annotations
 
 import pytest
+
 from dicom_io.structure_mapper import canon_target, normalize_to_tg263
 
 pytestmark = pytest.mark.unit
