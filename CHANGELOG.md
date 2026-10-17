@@ -5,6 +5,51 @@ All notable changes to this project are documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-10-17 — minor: provenance, laterality and determinism repaired
+
+A **minor** release. It repairs software defects and **adds no new scientific result**: no analysis
+was rerun to produce it, every headline value in the head-and-neck evidence package is a
+measurement rather than a change, and the release identifier stays **FINAL_V3.2** because the
+analysis programme generation is unchanged.
+
+### Fixed
+
+- **Provenance was computed and discarded.** `site`, `site_confidence` and `dvh_mode` are now
+  populated on **357 of 357** cohort rows instead of **0 of 357**, and `dose_selected` — a column
+  that did not previously exist — on 357 of 357.
+- **The structure mapper invented a laterality the source name lacked.** A fuzzy match that would
+  assign a side not present in the contour name is now **refused**. Consequence, stated with the
+  loss: `Submandibular_R` previously yielded **1,062** NTCP rows with a fabricated side and now
+  yields none; `PharynxConstrictor` becomes reachable, **0 of 121 → 121 of 121**, adding 1,071
+  rows. Net NTCP rows **9,057 → 9,066**, reconciling exactly as +1,071 − 1,062 = +9. Organ
+  reachability stays 7 of 11, but its composition changes from six correct plus one fabricated to
+  **seven correct**.
+- **Evidence sets rendered non-deterministically**, so two runs of the same input were not
+  byte-identical. They now are.
+
+### Added
+
+- **LLM-assisted structure mapping that proposes and never decides.** Every proposal is validated
+  in code before use; the model cannot introduce a mapping the validator rejects.
+
+### Known issues
+
+- The obsolete **`dicom`** distribution (pydicom's pre-1.0 name, unmaintained since 2017) shadows
+  `pydicom` for `dicompylercore`. On an interpreter carrying it, six tests fail and the **shipped
+  synthetic positive control returns all-NaN without raising**. Install into a clean environment.
+  Declaring the conflict with a startup refusal is the highest-priority follow-up.
+- `engine/VERSION` is a vestigial file reading `1.0.0` that nothing reads; the version-agreement
+  gate does not check it. Queued for deletion rather than for a bump.
+
+### Provenance note
+
+The three AFTER cohort runs that produced the evidence package executed at commit **`7f42c4d0`**,
+which **predates this version bump**, so their `run_manifest.json` files carry the embedded string
+`1.3.0`. That is not fixable retroactively and was deliberately not rerun. **The commit SHA
+recorded in each manifest is the authoritative identifier** of what produced that artefact — not
+the tag, and not the embedded version string. The non-test `engine/` tree is byte-identical across
+`7f42c4d0`, `492fef9` and the tagged commit.
+
 ## [1.3.0] - 2026-09-13 — minor: three documented behaviours changed
 
 A **minor** release, not a patch. Three behaviours that the documentation described are now

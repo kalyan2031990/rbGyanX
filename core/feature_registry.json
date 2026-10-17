@@ -1,7 +1,7 @@
 {
   "app_info": {
     "name": "rbGyanX",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "intended_use": "Radiobiological Clinical Decision Support System (CDSS) for radiation oncology treatment plan evaluation",
     "description": "DICOM TCP/NTCP engine, UTCP, QUANTEC, physical plan-quality metrics; optional ML and Ask rbGyanX in ADVANCED mode"
   },

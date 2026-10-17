@@ -1,21 +1,37 @@
-rbGyanX Version 1.3.0
+rbGyanX Version 1.4.0
 Release Identifier: FINAL_V3.2
-Release Date: 2026-09-12
+Release Date: 2026-10-17
 Type: Production Release
 
 Two identifiers are in use and they mean different things:
 
-  Software version   1.3.0        semantic version of the codebase (engine + GUI + analysis)
+  Software version   1.4.0        semantic version of the codebase (engine + GUI + analysis)
   Release identifier FINAL_V3.2   generation of the validation/analysis programme that this
                                   release freezes (V1 -> V2 -> V3 -> V3.1 -> V3.2)
 
-The release identifier is deliberately UNCHANGED at FINAL_V3.2. The 1.2.x and 1.3.x lines add
-the AI assistant and repair software defects; they introduce no new scientific result, rerun no
+The release identifier is deliberately UNCHANGED at FINAL_V3.2. The 1.2.x, 1.3.x and 1.4.x lines
+add the AI assistant and repair software defects; they introduce no new scientific result, rerun no
 analysis and alter no reported number. The analysis programme this release freezes is therefore
 the same generation 1.1.0 froze, and saying otherwise would imply a revalidation that did not
 happen. What changed is software, and it is described in CHANGELOG.md.
 
-1.3.0 is a MINOR release, not a patch, because it changes three documented behaviours. Suspected
+1.4.0 is a MINOR release. It repairs software defects and adds no new scientific result: the
+head-and-neck three-arm evidence package was produced against this code, every headline value in it
+is a measurement rather than a change, and no analysis was rerun to produce this release. The
+release identifier stays FINAL_V3.2 for the reason given above - the analysis programme generation
+is unchanged, and moving it would imply a revalidation that did not happen. What changed is
+provenance (site, site_confidence and dvh_mode now populated on 357 of 357 rows instead of 0),
+structure-name laterality (a fuzzy match that invented a side is now refused), output determinism,
+and LLM-assisted structure mapping that proposes and never decides. See CHANGELOG.md.
+
+Note on the evidence artefacts: the three AFTER cohort runs executed at commit 7f42c4d0, which
+predates this bump, so their run_manifest.json files carry the embedded string 1.3.0. That is not
+fixable retroactively and was deliberately not rerun. THE COMMIT SHA RECORDED IN EACH MANIFEST IS
+THE AUTHORITATIVE IDENTIFIER of what produced that artefact, not the embedded version string.
+
+The 1.3.0 rationale, kept as history:
+
+1.3.0 was a MINOR release, not a patch, because it changed three documented behaviours. Suspected
 PHI bound for a remote AI provider is now blocked outright instead of warned about and sent; a
 site whose TCP parameters are missing or technique-specific now resolves correctly or raises
 instead of silently substituting a near match; and the expression calculator no longer evaluates

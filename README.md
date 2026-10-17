@@ -66,7 +66,7 @@ Or from the release assets — **both wheels together**, because `rbgyanx` impor
 at module scope and the engine is published as a release asset rather than on PyPI:
 
 ```bash
-pip install rbgyanx_engine-1.3.0-py3-none-any.whl rbgyanx-1.3.0-py3-none-any.whl
+pip install rbgyanx_engine-1.4.0-py3-none-any.whl rbgyanx-1.4.0-py3-none-any.whl
 ```
 
 Installing only the `rbgyanx` wheel fails at install time with an unresolved `rbgyanx-engine`
