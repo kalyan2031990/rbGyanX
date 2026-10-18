@@ -9,7 +9,7 @@ MCD cohort-consistency (out-of-domain plan flagging).
   plans that sit outside the cohort's dose-feature domain.
 
 Emits under ``--out-dir``: subsampling_curve.csv, subsampling_curve.png,
-ccs_report.json. Reference-planned dose (see docs/EXTVAL_DATA_READINESS.md).
+ccs_report.json. Reference-planned dose (see EXTVAL_DATA_READINESS.md, in the reproduction capsule).
 
 Usage:
     python external_validation/run_phase4_analysis.py \

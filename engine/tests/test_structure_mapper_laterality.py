@@ -7,8 +7,8 @@ by the alphabet, not by anatomy.
 
 Measured before the fix: ``Submandibular`` -> ``Submandibular_R`` in 120 of 121 TCIA2 patients and
 ``Parotid`` -> ``Parotid_R`` in 54 of 54 of the parotid-54 cohort, both at confidence LOW, and that
-LOW never reached any output. ``HN-CHUM-005`` carried ``SubmandL-PTV`` and no ``SubmandR-PTV`` --
-the only laterality evidence in that patient pointed LEFT and the engine reported RIGHT.
+LOW never reached any output. In one subject the contours carried ``SubmandL-PTV`` and no
+``SubmandR-PTV`` -- the only laterality evidence present pointed LEFT and the engine reported RIGHT.
 
 ``config/structure_aliases.py`` already documents the policy ("Deliberately does NOT add
 merged/bilateral names (e.g. 'parotids') to single-sided canonicals"). The alias table honoured it;

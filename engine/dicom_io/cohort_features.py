@@ -7,7 +7,7 @@ dysphagia-OAR metric block, DVH-shape dosiomics, and BED/EQD2 from fractionation
 all with provenance columns. Reuses the validated radiobiology numerics; this module
 only *assembles* features (no new dose–response math).
 
-Parsing rules (per docs/EXTVAL_DATA_READINESS.md):
+Parsing rules (per EXTVAL_DATA_READINESS.md, in the reproduction capsule):
 - prefer the pure OAR contour over ``-PTV`` planning-subtraction volumes;
 - pick a single prescription PTV (PTV70 / PTVHighOPT) and one plan-sum RTDOSE.
 

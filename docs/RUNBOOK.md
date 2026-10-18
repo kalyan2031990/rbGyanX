@@ -102,8 +102,8 @@ are recorded in `failures.csv` / `QA.csv`, never crashing the cohort.
 
 ```
 [rbGyanX] cohort=TCIA_HN kind=dicom → <OUTPUT_ROOT>\Outputs
-  [1/121] TCIA_HN-0001: completed (3.2s), 9 structures
-  [2/121] TCIA_HN-0002: completed (2.9s), 8 structures
+  [1/121] <SUBJECT-ID>: completed (3.2s), 9 structures
+  [2/121] <SUBJECT-ID>: completed (2.9s), 8 structures
   ...
 [rbGyanX] done: {'cohort': 'TCIA_HN', 'completed': 118, 'skipped': 2, 'failed': 1, 'attempted': 121}
 ```

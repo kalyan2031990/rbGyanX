@@ -53,7 +53,7 @@ def test_load_hnscc_outcomes_multisheet_and_coercion(tmp_path: Path):
     with pd.ExcelWriter(xlsx, engine="openpyxl") as xw:
         pd.DataFrame(
             {
-                "Patient #": ["HN-HGJ-001", "HN-HGJ-002"],
+                "Patient #": ["HN-SYN-001", "HN-SYN-002"],
                 "Age": [60, 71],
                 "Locoregional": [1, 0],
                 "Death": ["Yes", "No"],
@@ -66,12 +66,12 @@ def test_load_hnscc_outcomes_multisheet_and_coercion(tmp_path: Path):
 
     out = load_hnscc_outcomes(xlsx)
     assert len(out) == 2  # Excluded sheet skipped
-    assert set(out["patient_id"]) == {"HN-HGJ-001", "HN-HGJ-002"}
-    row1 = out.set_index("patient_id").loc["HN-HGJ-001"]
+    assert set(out["patient_id"]) == {"HN-SYN-001", "HN-SYN-002"}
+    row1 = out.set_index("patient_id").loc["HN-SYN-001"]
     assert row1["locoregional"] == 1.0
     assert row1["death"] == 1.0  # "Yes" -> 1
     assert row1["hpv_status"] == "positive"  # non-event covariate passed through verbatim
-    assert out.set_index("patient_id").loc["HN-HGJ-002"]["death"] == 0.0  # "No" -> 0
+    assert out.set_index("patient_id").loc["HN-SYN-002"]["death"] == 0.0  # "No" -> 0
 
 
 def _write_triple_to_zip(zf: zipfile.ZipFile, coll: str, pid: str, **kwargs) -> None:
@@ -85,16 +85,16 @@ def _write_triple_to_zip(zf: zipfile.ZipFile, coll: str, pid: str, **kwargs) -> 
 def test_zip_pipeline_to_cohort_csv(tmp_path: Path):
     zpath = tmp_path / "mini.zip"
     with zipfile.ZipFile(zpath, "w") as zf:
-        _write_triple_to_zip(zf, "MINI", "HN-CHUM-001", dose_gy=70.0, n_fractions=35)
-        _write_triple_to_zip(zf, "MINI", "HN-CHUM-002", dose_gy=60.0, n_fractions=30)
+        _write_triple_to_zip(zf, "MINI", "HN-SYN-003", dose_gy=70.0, n_fractions=35)
+        _write_triple_to_zip(zf, "MINI", "HN-SYN-004", dose_gy=60.0, n_fractions=30)
 
     out_csv = tmp_path / "cohort_features.csv"
     df = build_cohort_csv(zpath, clinical_xlsx=None, out_csv=out_csv, limit=None)
 
     assert out_csv.is_file()
-    assert set(df["patient_id"]) == {"HN-CHUM-001", "HN-CHUM-002"}
+    assert set(df["patient_id"]) == {"HN-SYN-003", "HN-SYN-004"}
     assert (df["dose_summation_type"] == "PLAN").all()
     # PTV mean dose tracks the per-patient prescription.
     by_id = df.set_index("patient_id")["PTV_Dmean_gy"]
-    assert abs(by_id["HN-CHUM-001"] - 70.0) < 0.2
-    assert abs(by_id["HN-CHUM-002"] - 60.0) < 0.2
+    assert abs(by_id["HN-SYN-003"] - 70.0) < 0.2
+    assert abs(by_id["HN-SYN-004"] - 60.0) < 0.2

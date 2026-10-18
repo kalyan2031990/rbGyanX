@@ -235,7 +235,7 @@ Start here:
 | [`docs/RBGYANX_1.0_DESKTOP.md`](docs/RBGYANX_1.0_DESKTOP.md) | Desktop feature guide |
 | [`analysis/README.md`](analysis/README.md) | Which script produced which reported number |
 | [`DATA_AVAILABILITY.md`](DATA_AVAILABILITY.md) | What is and is not distributed, and how to obtain the cohorts |
-| [`docs/EXTVAL_RESULTS.md`](docs/EXTVAL_RESULTS.md) | External-validation benchmark: methods, seeds, tables |
+| *(external-validation benchmark: methods, seeds, tables)* | Moved to the reproduction capsule (`archived_repo_docs/`), removed from this repository under the no-patient-results policy. It carries real-cohort outcome counts and model metrics, which belong in the capsule, not on GitHub. |
 | [`docs/DOSIOMICS_DATA_PROVENANCE.md`](docs/DOSIOMICS_DATA_PROVENANCE.md) | Real production dosiomics vs synthetic test data |
 | [`SECURITY.md`](SECURITY.md) | Reporting a vulnerability; accepted audit findings |
 | [`CHANGELOG.md`](CHANGELOG.md) · [`CONTRIBUTING.md`](CONTRIBUTING.md) | Release history; how to contribute |
