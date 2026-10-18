@@ -10,7 +10,7 @@ authors:
   - family-names: Vijay
     given-names: Anuj
     orcid: "https://orcid.org/0000-0001-6610-3844"
-title: "rbGyanX: A radiobiology-guided clinical decision support framework"
+title: "rbGyanX: A research framework for radiobiological evaluation of radiotherapy plans (TCP/NTCP) from DICOM-RT"
 version: "1.4.0"
 date-released: 2026-10-17
 # Concept DOI: always resolves to the newest version of the record. Cite this rather than
@@ -22,12 +22,12 @@ repository-code: "https://github.com/kalyan2031990/rbGyanX"
 license: MIT
 keywords:
   - radiobiology
-  - clinical decision support
+  - treatment plan evaluation
   - TCP
   - NTCP
   - radiotherapy
   - medical physics
-abstract: "rbGyanX is a radiobiology-guided clinical decision support framework designed to integrate physical dosimetry, radiobiological modeling, and explainable machine learning for treatment plan evaluation in radiation oncology."
+abstract: "rbGyanX is a research framework for radiobiological evaluation of radiotherapy plans (TCP/NTCP) from DICOM-RT. It integrates physical dosimetry, radiobiological modelling and explainable machine learning for treatment plan evaluation in radiation oncology. For research use only. Not a medical device and not intended for clinical decision-making."
 # This file cites THE SOFTWARE, and deliberately sets no `preferred-citation`.
 #
 # `preferred-citation` tells citation tools to cite something else *instead of* this software.

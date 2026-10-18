@@ -335,7 +335,7 @@ All v1.0.1 workflows produce **identical outputs** in v2.0.0:
 
 ## 🤝 Contributing
 
-This pipeline is part of a PhD dissertation and manuscript under review. For questions or issues:
+For questions or issues:
 - **GitHub Issues:** Report bugs or request features
 - **GitHub Discussions:** Ask questions
 - **Contact:** Via project maintainer

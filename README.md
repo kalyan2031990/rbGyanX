@@ -1,13 +1,16 @@
-# rbGyanX — radiobiology-guided clinical decision **support**
+# rbGyanX — radiobiological evaluation of radiotherapy plans (research software)
+
+> **For research use only. Not a medical device and not intended for clinical decision-making.**
 
 [![CI](https://github.com/kalyan2031990/rbGyanX/actions/workflows/ci.yml/badge.svg)](https://github.com/kalyan2031990/rbGyanX/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10--3.12-blue.svg)](pyproject.toml)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21757163-blue.svg)](https://doi.org/10.5281/zenodo.21757163)
 
-rbGyanX evaluates radiotherapy treatment plans using transparent, classical radiobiology. Given
-dose–volume histograms — from DICOM RTDOSE/RTSTRUCT (the supported input; see below) or, with
-documented limits, planning-system text exports — it computes
+rbGyanX is a research framework for radiobiological evaluation of radiotherapy plans (TCP/NTCP)
+from DICOM-RT. It evaluates radiotherapy treatment plans using transparent, classical
+radiobiology. Given dose–volume histograms — from DICOM RTDOSE/RTSTRUCT (the supported input; see
+below) or, with documented limits, planning-system text exports — it computes
 tumour control probability (**TCP**), normal-tissue complication probability (**NTCP**: LKB probit,
 LKB log-logistic, relative seriality), uncomplicated control (**P+**), an uncertainty-aware
 consensus, and QUANTEC flags, behind a four-tier validation harness.
@@ -185,7 +188,7 @@ CI additionally runs ruff over the whole maintained tree, black and mypy on the 
 The engine enforces a **BASIC / ADVANCED** split (`rbgyanx.logic.mode_controller`):
 
 - **BASIC (clinic)** — one well-understood NTCP model per site, no ML, no experimental features. A
-  small, auditable decision-support surface.
+  small, auditable evaluation surface.
 - **ADVANCED (research)** — additional NTCP models, dosiomics/ML, SHAP explainability, a PINN
   benchmark, and an opt-in AI assistant. Everything here is labelled **experimental**.
 
@@ -266,8 +269,9 @@ synthetic mirror only.
 rbGyanX is citable in its own right. Cite the archived release via its **concept DOI**, which
 always resolves to the newest version — see [`CITATION.cff`](CITATION.cff), or:
 
-> Mondal, K., Mandal, A., & Vijay, A. *rbGyanX: A radiobiology-guided clinical decision support
-> framework* (v1.3.0). Zenodo. https://doi.org/10.5281/zenodo.21757163
+> Mondal, K., Mandal, A., & Vijay, A. *rbGyanX: A research framework for radiobiological
+> evaluation of radiotherapy plans (TCP/NTCP) from DICOM-RT* (v1.4.0). Zenodo.
+> https://doi.org/10.5281/zenodo.21757163
 
 Where reproducibility matters, cite the **version** DOI of the release you actually ran rather
 than the concept DOI, so a reported number stays tied to the code that produced it.
@@ -280,4 +284,5 @@ single publication. Related papers belong under `references:`.
 
 ## Licence
 
-[MIT](LICENSE). Research and decision-**support** software — not a regulated medical device.
+[MIT](LICENSE). **For research use only. Not a medical device and not intended for clinical
+decision-making.**

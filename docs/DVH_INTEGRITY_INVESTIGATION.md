@@ -17,7 +17,7 @@ Evidence:
    (the fixes are to the GUI service and a new validator on the *text* path, not the DICOM
    validation path).
 
-The defect is isolated to the **demo data + GUI display path**. The paper's numbers stand.
+The defect is isolated to the **demo data + GUI display path**. The reported numbers stand.
 
 ## B. Root cause of each defect
 
@@ -45,7 +45,7 @@ gating. Target classification must come from `structure_mapper.canon_target(raw_
 Before the fix, `run_controller._read_one` applied the one OAR NTCP model (LKB parotid) to
 **every** structure, so PTV70 carried NTCP 0.973 and was folded into the Sankey P+ composition
 as `(1 - NTCP_target)`. That is a scientific error in the **GUI display only**. It does **not**
-touch any published number: the manuscript's P+/uNTCP/consensus and the cohort-consistency score
+touch any reported number: the reported P+/uNTCP/consensus and the cohort-consistency score
 are computed in `engine/validation/*` from the OAR-only cohort feature tables (targets live in a
 separate PTV block, `cohort_features._ptv_block`), never from the GUI's per-structure NTCP.
 Corrected: targets now carry no NTCP and are excluded from the Sankey P+ product.
