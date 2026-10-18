@@ -46,6 +46,7 @@ Run the tests with:
 
     pytest tests/test_extension_example.py -v
 """
+
 from __future__ import annotations
 
 import math
@@ -114,6 +115,7 @@ class NiemierkoLogisticNTCP:
         `organ_params` supplies `TD50_gy`, `gamma50` and the gEUD exponent `a` (mapping-attribute
         or dict, so a caller can pass either).
         """
+
         def _get(obj: Any, key: str, default: Any = None) -> Any:
             if obj is None:
                 return default
@@ -129,12 +131,18 @@ class NiemierkoLogisticNTCP:
             doses = np.asarray(dvh_df["dose_gy"], dtype=float)
             vols = np.asarray(dvh_df["volume_frac"], dtype=float)
         except (KeyError, TypeError, ValueError):
-            return {"ntcp": float("nan"), "model": self.name,
-                    "reason": "dvh_df must provide dose_gy and volume_frac"}
+            return {
+                "ntcp": float("nan"),
+                "model": self.name,
+                "reason": "dvh_df must provide dose_gy and volume_frac",
+            }
 
         geud = generalised_eud(doses, vols, float(a) if a is not None else 1.0)
-        ntcp = niemierko_logistic_ntcp(geud, float(td50) if td50 is not None else float("nan"),
-                                       float(gamma50) if gamma50 is not None else float("nan"))
+        ntcp = niemierko_logistic_ntcp(
+            geud,
+            float(td50) if td50 is not None else float("nan"),
+            float(gamma50) if gamma50 is not None else float("nan"),
+        )
         return {
             "ntcp": ntcp,
             "geud_gy": geud,
@@ -166,4 +174,5 @@ if __name__ == "__main__":
     out = m.compute_ntcp_dvh(dvh, {"TD50_gy": 30.0, "gamma50": 2.0, "a": 1.0})
     print(f"gEUD = {out['geud_gy']:.6f} Gy   NTCP = {out['ntcp']:.6f}   (expected exactly 0.5)")
     from radiobiology.model_registry import iter_ntcp_models
+
     print("registry now contains:", sorted(iter_ntcp_models()))
