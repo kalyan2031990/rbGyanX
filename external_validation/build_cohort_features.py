@@ -8,7 +8,7 @@ the per-patient feature row via ``dicom_io.cohort_features``, and joins the
 loco-regional / death outcomes from the clinical workbook.
 
 NO patient DICOM is written; only the derived, de-identified feature table.
-Frame results as "association on reference-planned dose" (see docs/EXTVAL_DATA_READINESS.md).
+Frame results as "association on reference-planned dose" (see EXTVAL_DATA_READINESS.md, in the reproduction capsule).
 
 Usage:
     python external_validation/build_cohort_features.py \

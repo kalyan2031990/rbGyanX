@@ -36,7 +36,7 @@ python external_validation/run_phase4_analysis.py `
 
 `external_validation/data/` is gitignored: **no patient DICOM and no derived real-cohort
 table is committed.** Results and framing (reference-dose caveat, small N) are in
-`docs/EXTVAL_RESULTS.md`; the paper section is `paper/EXTERNAL_VALIDATION.md`.
+`EXTVAL_RESULTS.md`; the paper section is `EXTERNAL_VALIDATION.md`. Both now live in the reproduction capsule (`archived_repo_docs/`), removed from this repository under the no-patient-results policy.
 
 ## Requirements
 

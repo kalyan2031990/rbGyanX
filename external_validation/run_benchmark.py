@@ -7,7 +7,7 @@ Emits, under ``--out-dir``:
   optimism_<endpoint>.png                 apparent-vs-CV AUC (Fig-4 style)
 
 Everything is derived from the reference-planned-dose feature table; frame results
-as "association on reference-planned dose" (see docs/EXTVAL_DATA_READINESS.md).
+as "association on reference-planned dose" (see EXTVAL_DATA_READINESS.md, in the reproduction capsule).
 
 Usage:
     python external_validation/run_benchmark.py \

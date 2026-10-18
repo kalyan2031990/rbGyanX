@@ -59,8 +59,8 @@ def ct_series_table(ct: pd.DataFrame) -> pd.DataFrame:
     # Uniform spacing is NOT the right gate. Several TCIA series are acquired in two blocks (e.g. 3 mm
     # through the primary and 5 mm elsewhere): irregular, but every slice is present, so resampling to
     # an isotropic grid - which any IBSI-compliant radiomics pass does anyway - reconstructs them
-    # faithfully. What cannot be recovered is a MISSING block: HN-CHUM-001 and HN-HGJ-002 show gaps at
-    # exact multiples of the base step (up to 16 mm and 36 mm), and interpolating across those would
+    # faithfully. What cannot be recovered is a MISSING block: two subjects in this cohort show gaps
+    # at exact multiples of the base step (up to 16 mm and 36 mm), and interpolating across those would
     # fabricate anatomy. The gate is therefore the largest gap, not the spacing's regularity.
     t["z_interpolatable"] = (t.z_max_gap_mm.notna() & (t.z_max_gap_mm <= MAX_Z_GAP_MM)
                              & (t.z_duplicate_positions == 0))

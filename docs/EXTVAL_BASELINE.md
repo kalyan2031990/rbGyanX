@@ -3,7 +3,7 @@
 **Date:** 2026-07-01 · **Branch:** `feat/extval-benchmark` · **Repo state:** working-tree drift reconciled to a single commit.
 
 This file records the verified clean-checkout baseline that all downstream external-validation phases
-(`CLAUDE_CODE_EXTVAL_PLAN.md`) build on. Phase 0 data-readiness is in `docs/EXTVAL_DATA_READINESS.md` (verified, not re-derived).
+(`CLAUDE_CODE_EXTVAL_PLAN.md`) build on. Phase 0 data-readiness is in `EXTVAL_DATA_READINESS.md`, now in the reproduction capsule (`archived_repo_docs/`), removed from this repository under the no-patient-results policy (verified, not re-derived).
 
 ## 1. Install (clean checkout)
 
