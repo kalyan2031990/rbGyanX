@@ -160,7 +160,7 @@ sent, to whom, under which capability, and how often a guard refused.
 2. Keep `run_audit.csv` with the run outputs.
 3. Any literature comparison marked **unverified** — including every entry in the shipped
    QUANTEC pack, which is awaiting review — must be checked against the primary source before it
-   goes into a manuscript. The export carries that notice, and the rows stay marked.
+   goes into a report or publication. The export carries that notice, and the rows stay marked.
 
 ## Two things that will look like bugs and are not
 

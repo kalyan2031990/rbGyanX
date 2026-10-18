@@ -1,6 +1,6 @@
-# Manuscript evidence — factual answers, governance IDs, capability matrix, adversarial review
+# Technical evidence — factual answers, governance IDs, capability matrix, adversarial self-review
 
-Deliverable for the CMPB/Physica Medica/Medical Physics manuscript. PHI-free. Cohort analyses
+The project's technical evidence record. PHI-free. Cohort analyses
 (Parts B, C, D, F, I–N) run from `analysis/RUNBOOK.md` on the private data and are not reproduced
 here; this file holds the answers that do **not** need the cohorts.
 
@@ -20,7 +20,7 @@ lands. Reproduce the verbatim line with `pytest -q` on a clean checkout (exit 0,
 ## 1.2 Version truth
 
 - Tags in existence: `v1.0.0` and a junk lightweight tag `rbGyanX`. **No `v2.0.0` exists** — the
-  referee's claim of a v2.0.0 dated before v1.0.0 is **false**. (`git tag -l` → `rbGyanX`,
+  claim of a v2.0.0 dated before v1.0.0 is **false**. (`git tag -l` → `rbGyanX`,
   `v1.0.0`.)
 - Version is single-sourced at **1.0.0**: `engine/rbgyanx_engine/_version.py`, `pyproject.toml`,
   `VERSION.txt`, `CITATION.cff`, and the installer `.iss` all agree.
@@ -68,21 +68,21 @@ and ROE (CMPB 2024) do not — stated as code facts, not performance:
 (The literature comparison is the author's to finalise; the middle/right columns are claims to
 verify against those tools, not asserted here.)
 
-## 5.9 Adversarial review (hostile-referee pass on the current evidence)
+## 5.9 Adversarial self-review (hostile-reader pass on the current evidence)
 
 - **"748 vs 763" will be spot-checked.** State the exact number for the tagged commit and paste
-  the verbatim `pytest` line; do not let the README and paper disagree (the old README said 487).
+  the verbatim `pytest` line; do not let the README and the documentation disagree (the old README said 487).
 - **The consensus is the headline but is unvalidated (Part B).** With 34 parotid events, no
-  performance claim survives review; report calibration (pre-specified primary) with bootstrap CIs
-  and the stress test, and be willing to publish an honest negative. Do **not** tune to win.
-- **CCS 24% flagged with no consequence (Part C/M)** is a referee magnet — either show the flag
+  performance claim survives scrutiny; report calibration (pre-specified primary) with bootstrap CIs
+  and the stress test, and report the result as measured, whichever way it falls. Do **not** tune to win.
+- **CCS 24% flagged with no consequence (Part C/M)** is an obvious target for criticism — either show the flag
   carries information (residual effect size + CI) or state plainly that it does not.
 - **P+ is computed but never shown to change a decision (Part D).** One worked vignette is the
-  minimum; without it, reviewers will call P+ decorative.
+  minimum; without it, readers will call P+ decorative.
 - **Small-N everywhere.** Frame I–N as *methodological* validation (coverage, stability,
   decomposition, decision instability), never as discrimination performance. Decision instability
   at n=54 is the most defensible novel result.
-- **`paper/` ships a manuscript Methods/Results section** — reconcile with the paper's "no
-  manuscript files in the repo" statement (keep as a synthetic capsule, or move out).
+- **`paper/` ships a Methods/Results narrative** — reconcile with the stated "no
+  narrative documents in the repo" policy (keep as a synthetic capsule, or move out).
 - **The demo `PTV70` DVH was inverted** until PR #2; make sure the tagged release includes that
-  fix so a referee cloning the repo does not see a rising DVH.
+  fix so someone cloning the repo does not see a rising DVH.

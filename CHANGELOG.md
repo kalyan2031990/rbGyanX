@@ -17,20 +17,24 @@ analysis programme generation is unchanged.
 - **Provenance was computed and discarded.** `site`, `site_confidence` and `dvh_mode` are now
   populated on **357 of 357** cohort rows instead of **0 of 357**, and `dose_selected` — a column
   that did not previously exist — on 357 of 357.
-- **The structure mapper invented a laterality the source name lacked.** A fuzzy match that would
-  assign a side not present in the contour name is now **refused**. Consequence, stated with the
-  loss: `Submandibular_R` previously yielded **1,062** NTCP rows with a fabricated side and now
-  yields none; `PharynxConstrictor` becomes reachable, **0 of 121 → 121 of 121**, adding 1,071
-  rows. Net NTCP rows **9,057 → 9,066**, reconciling exactly as +1,071 − 1,062 = +9. Organ
-  reachability stays 7 of 11, but its composition changes from six correct plus one fabricated to
-  **seven correct**.
-- **Evidence sets rendered non-deterministically**, so two runs of the same input were not
-  byte-identical. They now are.
+- **The structure mapper assigned a laterality absent from the source contour name.** A fuzzy
+  match that would assign a side not present in the contour name is now **refused**. Consequence,
+  stated with the loss: `Submandibular_R` previously yielded **1,062** NTCP rows with a laterality
+  absent from the source contour name and now yields none; `PharynxConstrictor` becomes reachable,
+  **0 of 121 → 121 of 121**, adding 1,071 rows. Net NTCP rows **9,057 → 9,066**, reconciling
+  exactly as +1,071 − 1,062 = +9. Organ reachability stays 7 of 11, but its composition changes
+  from six correct plus one unsupported laterality to **seven correct**.
+- **Site-detection `evidence` strings rendered non-deterministically**, so the same input could
+  produce byte-different evidence values between runs. They are now stable, asserted by
+  `engine/tests/test_output_determinism.py::test_evidence_strings_are_identical_across_hash_seeds`
+  across `PYTHONHASHSEED` values. This covers the `evidence` strings, not every output.
 
 ### Added
 
 - **LLM-assisted structure mapping that proposes and never decides.** Every proposal is validated
-  in code before use; the model cannot introduce a mapping the validator rejects.
+  in code before use; the model cannot introduce a mapping the validator rejects. The proposal,
+  validation and approval pipeline is tested against a mocked provider; no evaluation against a
+  live model is included in this release.
 
 ### Known issues
 

@@ -125,7 +125,7 @@ p2.5/p97.5 — a real 95% CI). Both are computed correctly for what they claim t
 documented, until now, that the other exists or that they differ. A user comparing a
 cohort-run NTCP band against a UTCP figure from the uncertainty-aware TCP path is comparing a
 90% interval to a 95% one with nothing in either output saying so. State which convention is in
-use wherever a band is reported downstream (tables, figures, manuscript text); do not assume
+use wherever a band is reported downstream (tables, figures, report text); do not assume
 "the band" means the same coverage level across both modules.
 
 ### An unparameterised OAR is dropped silently, not refused
@@ -194,7 +194,7 @@ engine refuses to fabricate `dosio_*` columns from synthetic voxels.
 
 Where a structure export carries a single parotid volume per patient, single-gland and bilateral
 contouring conventions are indistinguishable. The engine's `Parotid_R` label in such cases is an
-ordering artefact. The manuscript-facing name is `Parotid_unspecified` and affected rows carry
+ordering artefact. The reporting name is `Parotid_unspecified` and affected rows carry
 `NTCP_DEFINITION_UNVERIFIED`. No lateralised parotid result should be reported from these inputs.
 
 ### Cohort Consistency Score thresholds are uncalibrated
@@ -279,8 +279,8 @@ the flagged arm is unchanged.
 
 Both arms were re-measured with identical inputs and flags so that code was the only variable;
 outputs are in `02_Run_Outputs/v1_3_0_spark_post_b1_remeasure/`, alongside the pre-fix trees which
-are kept as record. This cohort is a limitation probe only — no result from it appears in any
-manuscript.
+are kept as record. This cohort is a limitation probe only — no result from it is reported anywhere
+else.
 
 ### A structure-level exception fails the whole patient
 

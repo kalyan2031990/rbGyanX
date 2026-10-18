@@ -9,7 +9,7 @@ separated by construction, by a hard guard, and by regression tests.
 |---|---|---|
 | Voxel source | the patient's RTDOSE grid, masked by the RTSTRUCT ROI | `numpy` normal draws around a chosen mean |
 | `dose_source` label | `real_rtdose` | `synthetic_test_fixture` |
-| May appear in a manuscript | **yes** | **never** |
+| May appear in a report or publication | **yes** | **never** |
 | May be called "dosiomics" | yes | **no** — they are surrogates |
 | Reachable in production | yes | no: requires an explicit `allow_synthetic=True` |
 | Purpose | measurement | exercising the code path in tests and development |
@@ -57,7 +57,7 @@ information; they were **retracted** and are not the basis of any reported resul
 | Reported 3-D texture dosiomics, TCIA-HN n=186, 735 features (first-order 300, GLCM 180, GLRLM 120, GLSZM 135) | `real_dosiomics.py` against real RTDOSE grids | versioned at `analysis/dosiomics/real_dosiomics.py` |
 | First-order dose statistics attached to NTCP rows in ADVANCED runs | `engine_advanced/rbgyanx_advanced/dose3d/dosiomics.py` | this module |
 
-The manuscript dosiomics arm (AUC 0.682) comes from the first row. This module computes first-order
+The reported dosiomics arm (AUC 0.682) comes from the first row. This module computes first-order
 statistics only; it does not compute GLCM/GLRLM/GLSZM and does not claim to.
 
 Parotid and SPARK are marked NOT APPLICABLE for dosiomics: those cohorts supply TPS DVH text, not a

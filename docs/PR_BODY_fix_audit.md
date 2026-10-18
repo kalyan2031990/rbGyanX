@@ -60,9 +60,9 @@ this repo). Two further engine defects surfaced and were fixed:
 **Status: green.** Full suite **600 passed / 3 skipped / 0 failed**; CI-scoped ruff + black +
 mypy clean; HN TCP byte-identical (max |Δ| = 0.000e+00).
 
-### Parotid derived-table correction (paper ↔ capsule now agree)
-The manuscript figure script and the reproducibility capsule disagreed on the single-gland
-stratum. Investigating the raw DVH headers showed **the paper's derived file was wrong**, not the
+### Parotid derived-table correction (figure script ↔ capsule now agree)
+The figure script and the reproducibility capsule disagreed on the single-gland
+stratum. Investigating the raw DVH headers showed **the figure script's derived file was wrong**, not the
 capsule:
 
 | Defect in the old `parotid_cohort_full.csv` | Evidence |
@@ -72,14 +72,14 @@ capsule:
 
 Both are fixed by `scripts/rebuild_parotid_cohort_full.py`, which recomputes the table with the
 corrected engine and takes volume from the file's own `Volume [cm³]:` header. Exactly **one**
-patient's dose changed. Paper and capsule now read the same file and report the same numbers:
+patient's dose changed. The figure script and the capsule now read the same file and report the same numbers:
 
 **single-gland ≤45 cm³ → n=32, 20 events, AUC 0.579** (was mis-stated as n=31/0.570 in the
-capsule and n=32/0.600 in the paper). Cutoff sensitivity 0.519 / 0.579 / 0.515 at 40/45/50 cm³.
+capsule and n=32/0.600 in the figure script). Cutoff sensitivity 0.519 / 0.579 / 0.515 at 40/45/50 cm³.
 
 > The instruction was to reconcile to AUC 0.60. That value is only reachable by keeping the 100×
 > units error, so it was **not** adopted — reconciling to a wrong number would put a known units
-> bug into the manuscript. Both artefacts were moved onto the corrected value instead.
+> bug into the reported figures. Both artefacts were moved onto the corrected value instead.
 
 ### Capsule
 `capsule/run_all.py` regenerates **every** table and figure end-to-end from the de-identified

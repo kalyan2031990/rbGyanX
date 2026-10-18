@@ -59,8 +59,8 @@ it possible for TCP logic to leak into NTCP arms (this is how A1 arose).
 
 ### A6 · No positive-control tests for the models — **S-High (gap)** (→ S6)
 Nothing pins NTCP=0.5 at gEUD=TD50, monotonicity in dose, QUANTEC/rectal LKB reproduction, or UTCP
-factorisation. Without these, A2-class bugs pass CI silently. This is also the strongest evidence a
-tool paper can present ("the engine reproduces validated models").
+factorisation. Without these, A2-class bugs pass CI silently. This is also the strongest evidence the
+documentation can present ("the engine reproduces validated models").
 
 ### A7 · Structure-definition heterogeneity in a derived cohort — **S-Med, data-side** (→ S3)
 The institutional parotid input carries a single `Structure: Parotid` per patient whose **volume
@@ -117,7 +117,7 @@ is by convention rather than by interface (see A5).
 | --- | --- | --- | --- |
 | 1 | A1 wire real NTCP models; TCP/NTCP separation (A5) | P1 S1/S5 | invalidates current NTCP results |
 | 2 | A2 RS saturation | P1 S2 | predictor is constant → meaningless |
-| 3 | A6 positive-control tests | P1 S6 | prevents recurrence; key paper evidence |
+| 3 | A6 positive-control tests | P1 S6 | prevents recurrence; key evidence |
 | 4 | A3 parotid a≈1; A7 reconcile/report | P1 S3 | model-endpoint mismatch |
 | 5 | A4 explicit units | P1 S4 | latent 100× error |
 | 6 | D1–D3 de-duplication | P2 | after science is pinned by tests |

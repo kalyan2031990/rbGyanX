@@ -106,7 +106,7 @@ tuned to win; both were pre-registered.
 > consensus as, at these event counts, no better than the best single model and mechanistically fragile,
 > and recommend a robust (median or disagreement-penalised) combiner instead.**
 
-## Adversarial self-review (hostile CMPB referee)
+## Adversarial self-review (hostile external reader)
 
 - **This does not establish that the consensus is *worse* in general** — n=54/34 events; the "worse than
   RS" CI is narrow but the cohort is one centre with anti-discriminating literature parameters. State it
@@ -238,7 +238,7 @@ genuine precision information when the models *are* well-specified and independe
 
 ## B12. Applying the finding to the software (engine change)
 
-Analysis B is not just a paper result — it changes the default the engine ships. Evidence-driven change,
+Analysis B is not just a reported result — it changes the default the engine ships. Evidence-driven change,
 made minimally and with do-no-harm on the classical numerics.
 
 **What changed (`engine/uncertainty/inverse_variance_consensus.py`).** The module now offers three

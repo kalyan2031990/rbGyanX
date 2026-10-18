@@ -1,0 +1,39 @@
+{
+  "title": "rbGyanX: A research framework for radiobiological evaluation of radiotherapy plans (TCP/NTCP) from DICOM-RT",
+  "description": "<p>rbGyanX is a research framework for radiobiological evaluation of radiotherapy plans (TCP/NTCP) from DICOM-RT. It integrates physical dosimetry, radiobiological modelling (TCP/NTCP) and explainable machine learning for treatment plan evaluation in radiation oncology.</p><p><strong>For research use only. Not a medical device and not intended for clinical decision-making.</strong></p>",
+  "upload_type": "software",
+  "license": "MIT",
+  "access_right": "open",
+  "creators": [
+    {
+      "name": "Mondal, Kalyan",
+      "orcid": "0000-0001-7685-7391"
+    },
+    {
+      "name": "Mandal, Abhijit",
+      "orcid": "0000-0001-5626-1072"
+    },
+    {
+      "name": "Vijay, Anuj",
+      "orcid": "0000-0001-6610-3844"
+    }
+  ],
+  "keywords": [
+    "radiobiology",
+    "treatment plan evaluation",
+    "TCP",
+    "NTCP",
+    "radiotherapy",
+    "medical physics",
+    "DICOM-RT",
+    "research software"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/kalyan2031990/rbGyanX",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ],
+  "notes": "For research use only. Not a medical device and not intended for clinical decision-making. Study data and results are not distributed in the source repository; see the reproduction capsule."
+}
