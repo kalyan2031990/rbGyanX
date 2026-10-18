@@ -153,6 +153,9 @@ jobs:
     name: Windows installer
     runs-on: windows-latest
     needs: version-agreement
+    outputs:
+      installer_sha256: ${{ steps.installer_digest.outputs.sha256 }}
+      installer_bytes: ${{ steps.installer_digest.outputs.bytes }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -241,6 +244,7 @@ jobs:
       # digest of the artifact *zip* -- which tells a downloader of the attached .exe nothing. The
       # exe's own digest belongs in the immutable build log so it can be verified independently.
       - name: Record the installer's SHA-256
+        id: installer_digest
         shell: bash
         env:
           VERSION: ${{ needs.version-agreement.outputs.version }}
@@ -249,6 +253,10 @@ jobs:
           exe="build_qt/dist/rbGyanX-${VERSION}-Qt-Setup.exe"
           sha256sum "$exe"
           echo "size: $(wc -c < "$exe") bytes"
+          # Also expose it, so the release body can quote the digest from this build rather than
+          # leaving a reader to dig it out of the log. Defect #41: the body used to be a stub.
+          echo "sha256=$(sha256sum "$exe" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          echo "bytes=$(wc -c < "$exe")" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -262,6 +270,14 @@ jobs:
     needs: [version-agreement, build-wheels, build-windows-installer]
     if: startsWith(github.ref, 'refs/tags/')
     steps:
+      # fetch-depth: 0 AND an explicit --force tag fetch are both required. The default checkout
+      # gives a shallow tree whose tag ref is the COMMIT, not the tag object, so
+      # `git tag -l --format='%(contents)'` returns empty and the body would silently be blank --
+      # which is the same class of failure as defect #41 itself.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: actions/download-artifact@v4
         with:
           path: assets/
@@ -269,17 +285,48 @@ jobs:
       - name: List what will be attached
         run: find assets -type f | sort
 
+      - name: Build the release body from the annotated tag message
+        id: body
+        shell: bash
+        env:
+          VERSION: ${{ needs.version-agreement.outputs.version }}
+          SHA256: ${{ needs.build-windows-installer.outputs.installer_sha256 }}
+          BYTES: ${{ needs.build-windows-installer.outputs.installer_bytes }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          git fetch --force origin "refs/tags/${tag}:refs/tags/${tag}"
+
+          # An annotated tag is required: a lightweight tag carries no message, and publishing an
+          # empty body is exactly the failure this step exists to prevent. Fail loudly instead.
+          if [ "$(git cat-file -t "$tag")" != "tag" ]; then
+            echo "::error::${tag} is a lightweight tag and carries no message. Tag releases with"\
+                 "'git tag -a ... --cleanup=verbatim -F <body>' so the record reaches the page." >&2
+            exit 1
+          fi
+
+          git tag -l "$tag" --format='%(contents)' > release_body.md
+          if [ ! -s release_body.md ]; then
+            echo "::error::the annotation of ${tag} is empty; refusing to publish a stub body" >&2
+            exit 1
+          fi
+
+          {
+            printf '\n---\n\n## Installer verification\n\n'
+            printf 'Computed in this build (job *Windows installer*, step *Record the '
+            printf "installer's SHA-256*):\n\n"
+            printf '```\n%s  rbGyanX-%s-Qt-Setup.exe\n```\n\n' "$SHA256" "$VERSION"
+            printf 'Size: **%s bytes**. Verify with `sha256sum` after download.\n' "$BYTES"
+          } >> release_body.md
+
+          echo "release body: $(wc -l < release_body.md) lines"
+
       - name: Attach to the GitHub release
         uses: softprops/action-gh-release@v2
         with:
           files: assets/**/*
           fail_on_unmatched_files: true
-          body: |
-            See `CHANGELOG.md` for the full entry, including the Changed / Breaking section.
-
-            **Install (both wheels — the engine is a hard requirement and is not on PyPI):**
-
-            ```bash
-            pip install rbgyanx_engine-${{ needs.version-agreement.outputs.version }}-py3-none-any.whl \
-                        rbgyanx-${{ needs.version-agreement.outputs.version }}-py3-none-any.whl
-            ```
+          # The body is the annotated tag message plus this build's installer digest. It is NOT a
+          # hardcoded block: that discarded a 211-line provenance record on v1.4.0 and published a
+          # four-line stub instead (defect #41).
+          body_path: release_body.md
