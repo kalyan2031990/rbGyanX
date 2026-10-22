@@ -110,8 +110,21 @@ def validate_run_request(req: RunRequest) -> ValidationResult:
 
 
 def _looks_like_dicom_dir(path: Path) -> bool:
-    """True if the folder plausibly holds DICOM RT (mirrors the GUI's engine-bridge check)."""
-    if any(path.glob("*.dcm")):
-        return True
-    names = " ".join(p.name.upper() for p in path.iterdir() if p.is_file())
-    return any(tag in names for tag in ("RTPLAN", "RTDOSE", "RTSTRUCT"))
+    """True if the folder plausibly holds DICOM RT (mirrors the GUI's engine-bridge check).
+
+    Checks the folder itself and its immediate subfolders. A cohort laid out one patient per
+    subfolder - which is what ``scripts/make_synthetic_dicom_cohort.py`` writes, and what
+    ``docs/GUI_MODES_AND_HELP.md`` tells the operator to browse to - was previously refused here
+    even though the engine beneath handles it. One level is enough for that layout and keeps the
+    check cheap: a wrongly chosen folder must never cost a full recursive walk.
+    """
+    for folder in (path, *(d for d in path.iterdir() if d.is_dir())):
+        try:
+            if next(folder.glob("*.dcm"), None) is not None:
+                return True
+            names = " ".join(p.name.upper() for p in folder.iterdir() if p.is_file())
+        except OSError:  # unreadable subfolder is not a reason to refuse the parent
+            continue
+        if any(tag in names for tag in ("RTPLAN", "RTDOSE", "RTSTRUCT")):
+            return True
+    return False

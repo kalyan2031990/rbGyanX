@@ -150,7 +150,14 @@ class VisualisationScreen(QWidget):
         if key == "cohort_flow":
             total = result.n_files
             plotted = sum(1 for s in result.structures if s.dose_gy)
-            stages = [FlowStage("DVH files found", total)]
+            # This is a *structure* inclusion flow, so it may only open on a count that bounds
+            # the structures. On the dvh_txt path one file is one structure and the file count
+            # does bound them. On DICOM it does not - one RTSTRUCT carries many structures, and
+            # ``n_files`` counts patients - so the file stage is dropped rather than opening a
+            # flow that grows, which CohortFlowSpec rightly refuses.
+            stages = []
+            if total >= len(result.structures):
+                stages.append(FlowStage("DVH files found", total))
             if result.errors:
                 stages.append(
                     FlowStage(

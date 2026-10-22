@@ -5,6 +5,36 @@ All notable changes to this project are documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — the DICOM path through the desktop app
+
+Three defects found by driving the Qt app over a synthetic DICOM-RT study. **All three sat in the
+GUI and service layer; the engine beneath was correct throughout**, which is why they went
+unnoticed — every written CSV carried the right numbers. **No published result is affected and no
+analysis was rerun**: `engine/` is unchanged, and cohort runs go through
+`rbgyanx_engine.cohort_runner`, which touches none of this.
+
+### Fixed
+
+- **The folder check refused a cohort root the engine handles.** `_looks_like_dicom_dir` inspected
+  only the chosen folder, so a cohort laid out one patient per subfolder — what
+  `scripts/make_synthetic_dicom_cohort.py` writes, and what `docs/GUI_MODES_AND_HELP.md` tells the
+  operator to browse to — was rejected with *"Folder does not look like DICOM RT"*, although the
+  engine processed that same root correctly when called directly. It now also checks immediate
+  subfolders. Depth stays bounded at one level on purpose: a wrongly chosen folder must never cost
+  a full recursive walk.
+- **The Cohort flow view raised on a DICOM result.** Its opening stage counted files while the
+  next counted structures. One DVH text file is one structure, so the text path was monotone; one
+  RTSTRUCT carries many, so DICOM was not, and `CohortFlowSpec` correctly refused a flow that
+  grows — the `ValueError` then escaped `MainWindow.populate_results`. The file stage is now shown
+  only when it bounds the structure count, which is exactly when it is meaningful.
+- **Structure volume was lost on the DICOM path.** The results table read `nan` in Volume (cm³)
+  for every row while the written `ntcp_results.csv` carried the real value. The adapter asked
+  rows for `volume_cc`; the engine names it **`total_volume_cc`**. A single mis-spelled lookup,
+  silently defaulting to NaN — the text path was unaffected because it reads the parsed object
+  rather than an engine row.
+
+`tests/test_dicom_gui_path.py` covers all three.
+
 ## [1.4.0] - 2026-10-17 — minor: provenance, laterality and determinism repaired
 
 A **minor** release. It repairs software defects and **adds no new scientific result**: no analysis
