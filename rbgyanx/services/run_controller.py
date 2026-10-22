@@ -228,6 +228,10 @@ class RunController:
         Target rows carry ``TCP_*`` and ``raw_name``; OAR rows carry ``NTCP_*`` and ``structure``
         (DICOM OAR rows have no ``raw_name`` — see the applicability-guard entry in
         docs/KNOWN_LIMITATIONS.md). Both carry ``_dvh_df``.
+
+        The engine names the structure volume ``total_volume_cc``; this read used to ask for
+        ``volume_cc``, which no engine row has, so every DICOM row reached the results table with
+        the volume as NaN while the written CSV carried the real number.
         """
         structures: list[StructureResult] = []
 
@@ -240,7 +244,7 @@ class RunController:
                     dose_gy=dose,
                     volume_pct=vol,
                     mean_dose_gy=_as_float(row.get("Dmean_gy")),
-                    volume_cc=_as_float(row.get("volume_cc")),
+                    volume_cc=_as_float(row.get("total_volume_cc", row.get("volume_cc"))),
                     source_file=str(row.get("source_file", "")),
                     is_target=True,
                     target_type=str(row.get("target_type", "")),
@@ -257,7 +261,7 @@ class RunController:
                     dose_gy=dose,
                     volume_pct=vol,
                     mean_dose_gy=_as_float(row.get("Dmean_gy")),
-                    volume_cc=_as_float(row.get("volume_cc")),
+                    volume_cc=_as_float(row.get("total_volume_cc", row.get("volume_cc"))),
                     source_file=str(row.get("source_file", "")),
                     is_target=False,
                     ntcp=_models_from_row(row, "NTCP_"),
