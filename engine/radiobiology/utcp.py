@@ -119,10 +119,44 @@ _UTCP_SITE_ALIASES = {
 }
 
 
+#: Reason written when P+ cannot be formed because a listed OAR was never scored (#20).
+UTCP_INCOMPLETE_OAR_SET = "UTCP_INCOMPLETE_OAR_SET"
+
+
 def normalize_utcp_site(site_key: str) -> str:
     """Map TCP/NTCP site_params_key to UTCP_OAR_MAP key."""
     key = str(site_key or "").upper()
     return _UTCP_SITE_ALIASES.get(key, key)
+
+
+def resolve_oar_map(oar_list: list[dict]) -> list[dict]:
+    """Canonicalise every OAR name in a UTCP map through ``canon_target`` (defect #20).
+
+    The map was written by hand against the canonical vocabulary and drifted from it: the HN,
+    BRAIN_GBM and BRAIN_METS entries said ``Brainstem`` while the NTCP parameter library and the
+    structure mapper both use ``BrainStem``, so the brainstem was reported missing from P+ on
+    every patient at three sites. BREAST listed ``Lung_Ipsi`` and ``Lung_Contra``, which both
+    canonicalise to ``LungTotal`` -- one organ entered the product twice.
+
+    Entries are resolved and de-duplicated, keeping the highest severity weight (the
+    conservative choice). ``oar`` becomes the canonical key; ``oar_listed`` keeps what the map
+    actually said, so the drift stays visible.
+    """
+    from dicom_io.structure_mapper import canon_target
+
+    resolved: dict[str, dict] = {}
+    for entry in oar_list:
+        listed = str(entry["oar"])
+        canonical = canon_target(listed)["canonical"]
+        weight = float(entry.get("severity_weight", 1.0))
+        existing = resolved.get(canonical)
+        if existing is None:
+            resolved[canonical] = {**entry, "oar": canonical, "oar_listed": listed}
+            continue
+        existing["oar_listed"] = existing["oar_listed"] + ", " + listed
+        if weight > float(existing.get("severity_weight", 1.0)):
+            existing["severity_weight"] = weight
+    return list(resolved.values())
 
 
 @dataclass
@@ -142,6 +176,10 @@ class UTCPResult:
     site: str
     AnonPatientID: str = ""
     warnings: list[str] = field(default_factory=list)
+    #: ``UTCP_INCOMPLETE_OAR_SET`` when P+ was refused for an incomplete OAR set (#20).
+    reason: str = ""
+    #: Canonical names of the OARs that entered the product.
+    scored_OAR_names: list[str] = field(default_factory=list)
 
 
 def compute_utcp(
@@ -151,9 +189,16 @@ def compute_utcp(
     tcp_model: str = "auto",
     ntcp_model: str = "LKB_loglogit",
     custom_oar_map: list[dict] | None = None,
+    allow_partial: bool = False,
 ) -> UTCPResult:
     """
     Compute UTCP for one patient (Källman 1992: TCP × Π(1−NTCP_k)).
+
+    P+ is a product over *all* the OARs of the site, so dropping one raises the product.
+    An incomplete set is therefore refused: UTCP is NaN, ``reason`` is
+    ``UTCP_INCOMPLETE_OAR_SET`` and the missing organs are named (defect #20).
+    ``allow_partial=True`` computes the partial product anyway, and the row still
+    records what was missing.
     """
     warns: list[str] = []
     anon_id = str(tcp_result.get("AnonPatientID", ""))
@@ -189,7 +234,7 @@ def compute_utcp(
         if oar and isinstance(val, (int, float)) and not math.isnan(float(val)):
             oar_ntcp[oar] = float(val)
 
-    oar_list = custom_oar_map or UTCP_OAR_MAP.get(site_norm, [])
+    oar_list = resolve_oar_map(custom_oar_map or UTCP_OAR_MAP.get(site_norm, []))
     scored_oars: list[dict] = []
     missing_oars: list[str] = []
     ntcp_product = 1.0
@@ -209,6 +254,7 @@ def compute_utcp(
                     "NTCP": ntcp_k,
                     "severity_weight": w_k,
                     "contribution": 1.0 - ntcp_k,
+                    "oar_listed": entry.get("oar_listed", oar_name),
                 }
             )
         else:
@@ -219,7 +265,16 @@ def compute_utcp(
                 f"UTCP may be overestimated if this OAR has high NTCP."
             )
 
-    if math.isnan(tcp_val):
+    reason = ""
+    if not oar_list:
+        reason = UTCP_INCOMPLETE_OAR_SET
+        warns.append(
+            "No UTCP OAR map for site " + str(site_key) + "; P+ is undefined without an OAR set."
+        )
+    elif missing_oars:
+        reason = UTCP_INCOMPLETE_OAR_SET
+
+    if math.isnan(tcp_val) or (reason and not allow_partial):
         utcp = utcp_w = math.nan
     else:
         utcp = float(tcp_val * ntcp_product)
@@ -239,6 +294,8 @@ def compute_utcp(
         site=site_norm,
         AnonPatientID=anon_id,
         warnings=warns,
+        reason=reason,
+        scored_OAR_names=[d["oar"] for d in scored_oars],
     )
 
 
@@ -247,13 +304,22 @@ def compute_utcp_cohort(
     ntcp_results_by_patient: dict[str, list[dict]],
     site_key: str,
     ntcp_model: str = "LKB_loglogit",
+    allow_partial: bool = False,
 ) -> list[UTCPResult]:
     """Compute UTCP for each TCP result row (one per target row in tcp_results)."""
     results: list[UTCPResult] = []
     for tcp_r in tcp_results:
         anon_id = str(tcp_r.get("AnonPatientID", ""))
         ntcp_rs = ntcp_results_by_patient.get(anon_id, [])
-        results.append(compute_utcp(tcp_r, ntcp_rs, site_key, ntcp_model=ntcp_model))
+        results.append(
+            compute_utcp(
+                tcp_r,
+                ntcp_rs,
+                site_key,
+                ntcp_model=ntcp_model,
+                allow_partial=allow_partial,
+            )
+        )
     return results
 
 
@@ -261,21 +327,39 @@ def attach_utcp_to_tcp_results(
     tcp_results: list[dict],
     ntcp_results: list[dict],
     site_key: str,
+    allow_partial: bool = False,
 ) -> list[UTCPResult]:
-    """Group NTCP by patient, compute UTCP, merge fields into tcp_results."""
+    """Group NTCP by patient, compute UTCP, merge fields into tcp_results.
+
+    Every row gets ``UTCP_OARs_scored`` and ``UTCP_OARs_missing`` (defect #20), including rows
+    for which no UTCP could be formed at all: a blank column is indistinguishable from a
+    complete OAR set.
+    """
     from collections import defaultdict
 
     ntcp_by_patient: dict[str, list[dict]] = defaultdict(list)
     for r in ntcp_results:
         ntcp_by_patient[str(r.get("AnonPatientID", ""))].append(r)
 
-    utcp_list = compute_utcp_cohort(tcp_results, dict(ntcp_by_patient), site_key)
+    utcp_list = compute_utcp_cohort(
+        tcp_results, dict(ntcp_by_patient), site_key, allow_partial=allow_partial
+    )
     utcp_map = {u.AnonPatientID: u for u in utcp_list}
+    n_listed = len(resolve_oar_map(UTCP_OAR_MAP.get(normalize_utcp_site(site_key), [])))
     for r in tcp_results:
         pid = str(r.get("AnonPatientID", ""))
-        if pid not in utcp_map:
+        u = utcp_map.get(pid)
+        r["UTCP_OARs_listed"] = n_listed
+        if u is None:
+            r["UTCP"] = math.nan
+            r["UTCP_weighted"] = math.nan
+            r["UTCP_NTCP_product"] = math.nan
+            r["UTCP_OARs_scored"] = 0
+            r["UTCP_OARs_missing"] = n_listed
+            r["UTCP_missing_OARs"] = ""
+            r["UTCP_TCP_model"] = ""
+            r["UTCP_reason"] = UTCP_INCOMPLETE_OAR_SET
             continue
-        u = utcp_map[pid]
         r["UTCP"] = u.UTCP
         r["UTCP_weighted"] = u.UTCP_weighted
         r["UTCP_NTCP_product"] = u.NTCP_product
@@ -283,4 +367,5 @@ def attach_utcp_to_tcp_results(
         r["UTCP_OARs_missing"] = u.n_oars_missing
         r["UTCP_missing_OARs"] = ", ".join(u.missing_OAR_names)
         r["UTCP_TCP_model"] = u.TCP_model
+        r["UTCP_reason"] = u.reason
     return utcp_list

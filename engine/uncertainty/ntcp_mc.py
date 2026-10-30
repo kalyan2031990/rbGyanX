@@ -9,6 +9,9 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+#: Coverage of the p5-p95 interval these aggregates report (defect #7).
+BAND_LEVEL = 0.90
+
 
 @dataclass
 class NTCPUncertaintyConfig:
@@ -20,12 +23,11 @@ class NTCPUncertaintyConfig:
     gamma_rs_cv: float = 0.20
     s_rs_cv: float = 0.25
     n_samples: int = 1000
-    # This seed governs the actual MC draws. It is independent of RunnerConfig.seed
-    # (engine/rbgyanx_engine/cohort_runner.py), which is recorded in run_manifest.json for
-    # provenance but is never passed down to this config — cohort_runner always constructs
-    # NTCPUncertaintyConfig(n_samples=n_mc) and leaves this field at its default. A manifest's
-    # "seed" value does not describe the randomness in that same run's uncertainty bands.
-    # See docs/KNOWN_LIMITATIONS.md ("Two seeds, one manifest field") — unifying them is v1.4 work.
+    # This seed governs the actual MC draws, and since v1.5.0 it is the run's own seed:
+    # RunnerConfig.seed -> RunConfig.seed -> apply_ntcp_uncertainty(seed=...) -> here. Before that
+    # (defect #6) the field stayed at its default while run_manifest.json recorded a different
+    # number, so the manifest did not describe the randomness in that run's uncertainty bands.
+    # The default below is only for callers that construct this config directly.
     seed: int = 42
     # Consensus combiner: "median" (default, robust — Analysis B), "inverse_variance"
     # (historical), or "disagreement" (inverse-variance + between-model penalty).
@@ -41,20 +43,33 @@ def _truncated_normal(mean: float, cv: float, n: int, rng: np.random.Generator) 
 
 
 def _agg(arr: np.ndarray) -> dict:
-    """p5/p95 is a 90% interval, not 95% — do not relabel without checking every caller.
-    utils/uncertainty_models.py reports a genuine, parametric 95% CI (p2.5/p97.5, configurable
-    via confidence_level) for a different code path; the two are not the same convention and a
-    band from one must not be compared against a band from the other without noting which is
-    which. See docs/KNOWN_LIMITATIONS.md ("Two interval conventions, one word: 'band'")."""
+    """Summarise MC draws as mean, SD and a p5-p95 interval.
+
+    ``band_level`` names the coverage of that interval explicitly: 0.90, because p5-p95 is a 90%
+    interval, not 95% (defect #7). ``utils/uncertainty_models.py`` reports a genuine parametric
+    95% CI (p2.5-p97.5, configurable via ``confidence_level``) on a different code path. The two
+    conventions are not interchangeable and a band from one must never be compared with a band
+    from the other without reading ``band_level`` first. Column names are unchanged on purpose:
+    only the level is now stated rather than implied.
+    See docs/KNOWN_LIMITATIONS.md ("Two interval conventions, one word: 'band'").
+    """
     v = arr[np.isfinite(arr)]
     if len(v) == 0:
-        return {"mean": math.nan, "sd": math.nan, "p5": math.nan, "p95": math.nan, "n_valid": 0}
+        return {
+            "mean": math.nan,
+            "sd": math.nan,
+            "p5": math.nan,
+            "p95": math.nan,
+            "n_valid": 0,
+            "band_level": BAND_LEVEL,
+        }
     return {
         "mean": float(np.mean(v)),
         "sd": float(np.std(v, ddof=1)),
         "p5": float(np.percentile(v, 5)),
         "p95": float(np.percentile(v, 95)),
         "n_valid": int(len(v)),
+        "band_level": BAND_LEVEL,
     }
 
 

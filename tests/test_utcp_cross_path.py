@@ -43,11 +43,25 @@ def test_engine_utcp_hn():
     sys.path.insert(0, str(Path(__file__).parents[1] / "engine"))
     from radiobiology.utcp import compute_utcp
 
-    result = compute_utcp(TCP_RESULT, NTCP_RESULTS, "HN", ntcp_model="LKB_loglogit")
+    # Defect #20: three of HN's eight OARs are scored here, so P+ is a partial product and is
+    # refused unless the caller asks for it. This test is about the formula, so it asks -- and
+    # checks that the incompleteness is still recorded on the result.
+    result = compute_utcp(
+        TCP_RESULT,
+        NTCP_RESULTS,
+        "HN",
+        ntcp_model="LKB_loglogit",
+        allow_partial=True,
+    )
     expected = 0.72 * (1 - 0.03) * (1 - 0.18) * (1 - 0.15)
     assert not math.isnan(result.UTCP)
     assert abs(result.UTCP - expected) < 0.02
-    assert result.n_oars_scored >= 3
+    assert result.n_oars_scored == 3
+    assert result.reason == "UTCP_INCOMPLETE_OAR_SET"
+    assert result.n_oars_missing == 5
+
+    refused = compute_utcp(TCP_RESULT, NTCP_RESULTS, "HN", ntcp_model="LKB_loglogit")
+    assert math.isnan(refused.UTCP)
 
 
 def test_utcp_multi_patient_grouping():
@@ -67,8 +81,11 @@ def test_utcp_multi_patient_grouping():
         {"AnonPatientID": "P2", "structure": "SpinalCord", "NTCP_LKB_loglogit": 0.10},
         {"AnonPatientID": "P2", "structure": "Parotid_L", "NTCP_LKB_loglogit": 0.30},
     ]
-    attach_utcp_to_tcp_results(tcp, ntcp, "HN")
+    # #20: two of eight OARs each, so the product is partial for both patients. Grouping is
+    # what is under test, so the partial product is requested explicitly.
+    attach_utcp_to_tcp_results(tcp, ntcp, "HN", allow_partial=True)
     utcp_p1 = tcp[0].get("UTCP", math.nan)
     utcp_p2 = tcp[1].get("UTCP", math.nan)
     assert not math.isnan(utcp_p1) and not math.isnan(utcp_p2)
     assert utcp_p2 < utcp_p1
+    assert tcp[0]["UTCP_OARs_missing"] == tcp[1]["UTCP_OARs_missing"] == 6

@@ -21,6 +21,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+#: Reason written when the dose per fraction is outside the LQ model's validity range.
+LQ_INVALID_DPF = "LQ_INVALID_DPF"
+
 
 class TCPCalculator:
     """Orchestrates Poisson, Z-M, gEUD, and Logistic TCP models."""
@@ -37,7 +40,15 @@ class TCPCalculator:
         plan_metadata: dict,
         site_params: TCPSiteParams,
         target_type: str | None = None,
+        allow_lq_extrapolation: bool = False,
     ) -> dict:
+        """Compute every TCP model for one target.
+
+        Defect #10: a dose per fraction above ``site_params.lq_valid_max_dpf_gy`` used only to
+        raise ``lq_caution``, and the numbers were written anyway. Outside its validity range the
+        LQ model is being extrapolated, so TCP is now refused with ``LQ_INVALID_DPF`` unless the
+        caller asks for the extrapolation by passing ``allow_lq_extrapolation=True``.
+        """
         canonical = getattr(dvh_result, "canonical_name", "GTV")
         target = target_type or canonical
         if target not in ("GTV", "CTV", "PTV"):
@@ -69,6 +80,9 @@ class TCPCalculator:
             "n_fractions": n_fractions,
             "dose_per_fraction": dpf,
             "lq_caution": lq_caution,
+            "tcp_refused": False,
+            "tcp_refusal_reason": "",
+            "lq_extrapolation_allowed": bool(allow_lq_extrapolation),
             "BED_gy": bed_gy,
             "EQD2_gy": eqd2_gy,
             "Dmean_gy": dmean,
@@ -80,6 +94,7 @@ class TCPCalculator:
             "p0_single_cell": math.nan,
             "TCP_gEUD": math.nan,
             "gEUD_gy": math.nan,
+            "gEUD_reason": "",
             "TCP_Logistic": math.nan,
             "TCP_mean": math.nan,
             "TCP_range": math.nan,
@@ -91,6 +106,22 @@ class TCPCalculator:
                 dvh_result.quality_flag,
                 canonical,
             )
+
+        if lq_caution and not allow_lq_extrapolation:
+            # #10: refuse rather than publish an extrapolated number with a flag beside it.
+            result["tcp_refused"] = True
+            result["tcp_refusal_reason"] = LQ_INVALID_DPF
+            logger.warning(
+                "TCP refused for %s: %.3g Gy/fraction exceeds the LQ validity cap of %.3g Gy "
+                "for site %s (%s). Pass allow_lq_extrapolation=True to compute anyway.",
+                canonical,
+                dpf,
+                site_params.lq_valid_max_dpf_gy,
+                site_params.site,
+                LQ_INVALID_DPF,
+            )
+            result["_dvh_df"] = dvh_df
+            return result
 
         try:
             poisson = self._poisson.compute_tcp_dvh(dvh_df, n_fractions, site_params, target)
@@ -112,6 +143,7 @@ class TCPCalculator:
             geud = self._geud.compute_tcp(dvh_df, site_params)
             result["TCP_gEUD"] = geud["tcp"]
             result["gEUD_gy"] = geud["geud_gy"]
+            result["gEUD_reason"] = geud.get("geud_reason", "")
         except Exception as exc:
             logger.warning("gEUD TCP failed: %s", exc)
 
@@ -158,6 +190,7 @@ class TCPCalculator:
         self,
         patient_list: list[dict],
         site_params_map: dict[str, TCPSiteParams],
+        allow_lq_extrapolation: bool = False,
     ) -> pd.DataFrame:
         rows: list[dict] = []
         for patient in patient_list:
@@ -169,7 +202,12 @@ class TCPCalculator:
             plan_meta = patient.get("plan_metadata", {})
             targets = patient.get("all_target_dvhs") or []
             for dvh_res in targets:
-                row = self.compute_all(dvh_res, plan_meta, params)
+                row = self.compute_all(
+                    dvh_res,
+                    plan_meta,
+                    params,
+                    allow_lq_extrapolation=allow_lq_extrapolation,
+                )
                 row["AnonPatientID"] = anon_id
                 rows.append(row)
         return pd.DataFrame(rows)

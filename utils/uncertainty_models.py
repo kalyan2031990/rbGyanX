@@ -325,6 +325,11 @@ class UncertaintyAwareTCP:
                 'TCP_std': result['tcp_std'],
                 'TCP_CI_lower': result['tcp_ci'][0],
                 'TCP_CI_upper': result['tcp_ci'][1],
+                # Defect #7: this path's interval is a genuine parametric CI at
+                # self.confidence_level (0.95 by default), NOT the p5-p95 / 0.90 band that
+                # engine/uncertainty/{ntcp_mc,parameter_mc}.py report. Stating the level on the
+                # row is what makes the two tellable apart downstream.
+                'band_level': float(self.confidence_level),
                 'Uncertainty_level': self._classify_uncertainty(result['tcp_std'])
             })
         

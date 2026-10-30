@@ -253,6 +253,7 @@ def _process_patient(cfg: RunnerConfig, pseudonym: str, unit: dict, patient_dir:
             enable_ml=(cfg.mode == "advanced"),
             no_uncertainty=(cfg.mode != "advanced"),
             n_mc=cfg.n_mc,
+            seed=cfg.seed,  # #6: the manifest's seed is the one the MC actually uses
             outcome_csv=cfg.outcome_csv,
             cohort=False, dvh_glob="*.txt", dose_per_fraction=cfg.dose_per_fraction,
             preserve_txt_canonical=cfg.preserve_txt_canonical,
@@ -396,6 +397,13 @@ def _accumulate(cfg: RunnerConfig, pseudonym: str, rec: PatientRecord, harvest: 
             definition_ok, codes = verdict["definition_ok"], ";".join(verdict["reason_codes"])
         except Exception:
             definition_ok, codes = "", ""
+        # A row that already refused itself keeps its own reason: the applicability verdict above
+        # is about the ROI's definition and cannot see that the site has no NTCP parameters at
+        # all (defect #11). Without this the reason was computed and then overwritten.
+        row_reason = str(r.get("ntcp_refusal_reason", "") or "")
+        if row_reason:
+            definition_ok = False
+            codes = ";".join(c for c in (row_reason, codes) if c)
         for key in sorted(k for k in r if k.startswith("NTCP_")):
             model = key[5:]
             u = r.get(f"uNTCP_{model}") or {}

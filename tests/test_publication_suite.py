@@ -464,19 +464,31 @@ class TestUTCP:
         ]
 
     def test_utcp_formula(self):
-        """UTCP = TCP × Π(1−NTCP_k) for scored OARs."""
-        r = self.compute(self.tcp, self.ntcp, "HN")
+        """UTCP = TCP × Π(1−NTCP_k) for scored OARs.
+
+        Defect #20: these fixtures score 3 of HN's 8 OARs, so the product is partial and is
+        refused by default. The formula is what is under test, so the partial product is asked
+        for explicitly; test_utcp_incomplete_set_is_refused covers the default.
+        """
+        r = self.compute(self.tcp, self.ntcp, "HN", allow_partial=True)
         assert abs(r.UTCP - r.TCP_used * r.NTCP_product) < 0.001
 
     def test_utcp_leq_tcp(self):
-        r = self.compute(self.tcp, self.ntcp, "HN")
+        r = self.compute(self.tcp, self.ntcp, "HN", allow_partial=True)
         assert r.TCP_used + 1e-6 >= r.UTCP
+
+    def test_utcp_incomplete_set_is_refused(self):
+        """#20: P+ over a partial OAR set is an overestimate, so it is NaN with a reason."""
+        r = self.compute(self.tcp, self.ntcp, "HN")
+        assert math.isnan(r.UTCP)
+        assert r.reason == "UTCP_INCOMPLETE_OAR_SET"
+        assert r.n_oars_missing == 5
 
     def test_utcp_zero_ntcps_equals_tcp(self):
         ntcp_zero = [{"AnonPatientID": "HN001", "structure": s,
                       "NTCP_LKB_loglogit": 0.0}
                      for s in ("SpinalCord", "Parotid_L", "Parotid_R")]
-        r = self.compute(self.tcp, ntcp_zero, "HN")
+        r = self.compute(self.tcp, ntcp_zero, "HN", allow_partial=True)
         assert abs(r.UTCP - r.TCP_used) < 0.01
 
     def test_utcp_nan_tcp_gives_nan(self):
@@ -492,7 +504,7 @@ class TestUTCP:
             {"AnonPatientID": "P1", "structure": "Parotid_L", "NTCP_LKB_loglogit": 0.15},
             {"AnonPatientID": "P2", "structure": "Parotid_L", "NTCP_LKB_loglogit": 0.40},
         ]
-        self.attach(tcp, ntcp, "HN")
+        self.attach(tcp, ntcp, "HN", allow_partial=True)  # #20: 1 of 8 OARs scored
         u1, u2 = tcp[0].get("UTCP", math.nan), tcp[1].get("UTCP", math.nan)
         assert not math.isnan(u1) and not math.isnan(u2)
         assert u2 < u1

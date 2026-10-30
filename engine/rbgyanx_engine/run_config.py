@@ -24,6 +24,11 @@ class RunConfig:
     outcome_csv: Path | None = None
     site: str | None = None
     n_mc: int = 1000
+    # Defect #6: the seed that actually drives the Monte-Carlo draws. RunnerConfig.seed was
+    # recorded in run_manifest.json but never reached ParamUncertaintyConfig or
+    # NTCPUncertaintyConfig, which both hard-coded 42 — so the manifest described a seed the
+    # run had not used. It is threaded through now and the manifest is true.
+    seed: int = 42
     enable_ml: bool = False  # opt-in explicitly; engine_bridge sets True for advanced+outcome
     mode: RunMode = "basic"
     user_config: Path | None = None
@@ -35,6 +40,9 @@ class RunConfig:
     dose_per_fraction: float = 2.0
     cohort: bool = False
     no_uncertainty: bool = False
+    # Defect #10: a dose per fraction outside the site's LQ validity range refuses TCP.
+    # Setting this to True computes it anyway and flags the row as an extrapolation.
+    allow_lq_extrapolation: bool = False
     no_ml_augment: bool = False
     figures: bool = False
     verbose: bool = False
