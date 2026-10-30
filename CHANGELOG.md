@@ -5,6 +5,117 @@ All notable changes to this project are documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — Tier A: the defects that change written numbers
+
+Thirteen output-affecting defects in `engine/`, each with a test that fails at v1.4.0 (`ffd69ef`)
+and passes after the fix. **These change numbers.** Several change them on every run, so results
+produced with v1.4.0 and earlier are not comparable with v1.5.0 output without the version
+comparison that accompanies the release. Default NTCP parameters are deliberately **not** touched
+here; they are proposed separately, with a source and page for every value, and await review.
+
+### Fixed — values that were simply wrong
+
+- **gEUD dropped every zero-dose bin (#45).** `compute_geud` masked `doses > 0`, so the
+  unirradiated part of a partly covered target vanished and its gEUD read as the hot dose alone:
+  for 50% of the volume at 0 Gy and 50% at 70 Gy, v1.4.0 returned **70.0 Gy** where the gEUD is
+  35.0 (a = 1), 55.56 (a = 3) and 0.0 (a = −10). Zero-dose bins are kept. For a < 0 the
+  generalised mean has no finite value when an occupied bin sits at 0 Gy, so the limit 0.0 is
+  returned with the reason `GEUD_ZERO_DOSE_NEG_A`, carried to the TCP row as `gEUD_reason`. A
+  structure that received no dose now reads 0 Gy instead of NaN — "no dose" and "not computable"
+  are different statements.
+- **The EPV guard counted the wrong class (#36).** It hard-coded `events = sum(y == 0)`, correct
+  only for this project's own 0 = recurrence convention. On a cohort coded the other way round it
+  counted the majority: for 12 events among 100 patients labelled 1 = event it reported **88
+  events and EPV 44.0** instead of 6.0, so a model that should have been refused was waved
+  through. `event_label` is now a required argument with no default and nothing inferred; a
+  non-binary outcome and a label absent from the data are both refused. Threaded through every
+  caller, including `extval_benchmark._run_c2`, whose own minority-class inference disagreed with
+  the event count the same module reports.
+- **Volume was lost through the structure mapper onto PRV expansions (#9, #19).** A
+  planning-risk volume is the organ grown by a margin, so its DVH is colder and larger.
+  `SpinalCord_05` and `BrainStem_03` carried no alias, fell through to fuzzy TG-263 matching and
+  came back as the organ itself; `brainstemprv` was mapped onto the organ by the alias table
+  outright. Measured on the TCIA2 cohort the organ and its own PRV collided in **121 of 121
+  patients**, and spinal-cord NTCP differed **sevenfold** between the two, so which one was
+  scored changed the published number. PRVs now get their own canonical key, `<Organ>_PRV`, with
+  `is_prv` and `prv_of` on the mapping result, and are never scored with organ parameters unless
+  the operator maps that key themselves.
+- **Each SIB target is scored against its own dose level (#25).** A plan carries one
+  `prescription_dose_gy`, so on a simultaneous integrated boost every target was given the
+  highest level — a PTV56 was scored at 70 Gy, which overstates its TCP. The level is read from
+  the `DoseReferenceSequence` item referencing the ROI or matching its description, else from the
+  target's own name (`PTV63`, `PTV_5040_cGy`), else TCP is refused. `dose_level_gy` and
+  `dose_level_source` are written on every row.
+- **The manifest's seed did not drive the Monte Carlo (#6).** `RunnerConfig.seed` was recorded in
+  `run_manifest.json` while `ParamUncertaintyConfig` and `NTCPUncertaintyConfig` both stayed at a
+  hard-coded 42, so the manifest named a seed the run had not used. It is threaded through now,
+  which means **cohort uncertainty bands change**: the manifest is true, and the cohort runner's
+  own default seed is 0.
+
+### Fixed — refusing instead of publishing
+
+- **No prescription or fractionation is invented from a TPS text export (#4, #5).** The
+  prescription fell back to the DVH maximum and the dose per fraction to a flat 2.0 Gy, with a
+  logged warning beside the written number. A DVH maximum is not a prescription — it overstates
+  the dose on a hot plan and understates it on a cold one — and 2 Gy per fraction is a guess about
+  someone else's clinic. Both defaults are gone. TCP is refused with `RX_MISSING` /
+  `FRACTIONATION_MISSING`; NTCP still runs, on physical dose, with `ntcp_dose_basis` saying so;
+  and `--rx-gy` / `--n-frac` state what the header cannot. `RunConfig.dose_per_fraction` and
+  `RunnerConfig.dose_per_fraction` default to `None` rather than 2.0.
+- **TCP is refused outside the LQ model's validity range (#10).** A dose per fraction above
+  `lq_valid_max_dpf_gy` only raised `lq_caution`. `LUNG_SBRT` at 18 Gy × 3 is an extrapolation, so
+  TCP is now refused with `LQ_INVALID_DPF` unless `allow_lq_extrapolation=True` is passed
+  explicitly. A refused row keeps its dose metrics.
+- **A site with TCP parameters but no NTCP block reports rather than falls silent (#11).**
+  `PROSTATE_SBRT` and `LUNG_SBRT` have no organs in `site_params_ntcp_default.yaml`, so
+  `allowed_oar_names()` was empty, the OAR filter discarded every contour, and the run produced no
+  NTCP rows and no reason — indistinguishable from a patient with no OAR contours. Each OAR now
+  gets a row with NaN for every model, `definition_ok = False` and `NO_NTCP_PARAMS_FOR_SITE`.
+- **P+ over an incomplete OAR set is refused (#20).** The UTCP OAR map had drifted from the
+  canonical vocabulary: HN, BRAIN_GBM and BRAIN_METS said `Brainstem` where everything else says
+  `BrainStem`, so **the brainstem was missing from P+ on every patient at three sites**; BREAST
+  listed `Lung_Ipsi` and `Lung_Contra`, which both canonicalise to `LungTotal`, so one organ
+  entered the product twice. Every entry is resolved through `canon_target()` and de-duplicated on
+  the higher severity weight. Since P+ is a product over all the site's OARs, dropping one raises
+  it, so an incomplete set gives NaN with `UTCP_INCOMPLETE_OAR_SET` and the missing organs named,
+  unless `allow_partial=True`. `UTCP_OARs_scored` and `UTCP_OARs_missing` are on every row,
+  including rows that got no UTCP at all.
+- **An arbitrary tie-break between plans is refused (#18).** Plan selection ranked APPROVED, then
+  latest, then SOPInstanceUID. When several plans are all UNAPPROVED with the same prescription and
+  date, only the UID separates them — an accident of the archive that a re-export can reorder. Such
+  a patient is refused with `AMBIGUOUS_PLAN_SELECTION`, the candidate labels are listed, and
+  `--plan-label` or a per-patient override resolves it. Approval, a later date or a different
+  prescription still separate plans without an operator.
+
+### Fixed — saying what a number means
+
+- **Every uncertainty band declares its coverage (#7).** `p5`–`p95` is a 90% interval and nothing
+  on the row said so, while `utils/uncertainty_models.py` reports a genuine parametric 95% CI on a
+  different path. Column names are unchanged; `band_level` is now on every aggregate — 0.90 in the
+  engine, `confidence_level` in the utils path — and the two docstrings that had drifted are one.
+- **EPV is printed to three significant figures (#35).** `{epv:.1f}` rendered a true EPV of 0.024
+  as `EPV=0.0 < 5`, which reads as no events at all.
+- **Organ-key reachability is measured against real contour names (#22).**
+  `_validate_default_organ_keys_reachable()` asserted `canon_target(key) == key`, which compares
+  the alias table with itself and passes however far it has drifted from what a planning system
+  writes: `PharynxConst`, exported by **135 of 135** TCIA2 patients, went unmapped while the check
+  was green. Reachability is now measured against `tests/fixtures/contour_name_corpus.txt` — 491
+  real contour names harvested from this project's own recorded run provenance, **names only, with
+  no identifier, date, dose or outcome**. 21 of 37 organ keys are reached; the 16 that are not are
+  pinned by the test so the inventory cannot drift, 12 because the corpus covers only
+  head-and-neck and prostate, and 4 because that cohort contoured the salivary glands side-lessly,
+  which must not be given a side.
+
+### Known gaps surfaced, not closed
+
+- **Five UTCP sites list OARs their NTCP block cannot score**, so P+ at those sites is NaN by
+  default: BRAIN_METS/NormalBrain, LUNG/SpinalCord (both fractionations), PROSTATE/SpinalCord,
+  LIVER/Esophagus, and all six organs of PELVIS, which has no NTCP block at all. Supplying
+  parameters is a scientific decision, so the inventory is pinned by a test rather than papered
+  over.
+- **`ITV50` maps to UNKNOWN** rather than a target: the dose-embedded-name pass covers the gtv,
+  ctv and ptv prefixes and not itv. Pre-existing and out of Tier A's scope.
+
 ## [Unreleased] — the DICOM path through the desktop app
 
 Three defects found by driving the Qt app over a synthetic DICOM-RT study. **All three sat in the
