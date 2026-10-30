@@ -61,7 +61,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--output-dir", type=pathlib.Path, default=pathlib.Path("rbgyanx_output"))
     p.add_argument("--cohort", action="store_true", help="Multi-patient DICOM cohort mode")
     p.add_argument("--dvh-glob", default="*.txt")
-    p.add_argument("--dose-per-fraction", type=float, default=2.0)
+    p.add_argument("--dose-per-fraction", type=float, default=None,
+                   help="TPS text: dose per fraction when the export omits it. Unset "
+                        "means not stated, and TCP is refused rather than assuming 2 Gy")
+    p.add_argument("--rx-gy", type=float, default=None,
+                   help="TPS text: prescribed total dose in Gy when the header omits it")
+    p.add_argument("--n-frac", type=int, default=None,
+                   help="TPS text: number of fractions when the header omits it")
     p.add_argument("--user-config", type=pathlib.Path, default=None, help="TCP site_params_user.yaml")
     p.add_argument("--user-ntcp-config", type=pathlib.Path, default=None, help="NTCP YAML override")
     p.add_argument("--outcome-csv", type=pathlib.Path, default=None)
@@ -177,6 +183,8 @@ def main(argv: list[str] | None = None) -> int:
         user_ntcp_config=args.user_ntcp_config,
         dvh_glob=args.dvh_glob,
         dose_per_fraction=args.dose_per_fraction,
+        rx_gy=args.rx_gy,
+        n_frac=args.n_frac,
         cohort=args.cohort,
         no_uncertainty=args.no_uncertainty,
         no_ml_augment=args.no_ml_augment,

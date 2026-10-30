@@ -51,7 +51,43 @@ _BRAIN_CANONICALS = frozenset(
         "Cochlea_R",
     }
 )
-_UNIVERSAL_CANONICALS = frozenset({"SpinalCord", "PRV_Cord", "Heart", "Brainstem"})
+_UNIVERSAL_CANONICALS = frozenset(
+    {"SpinalCord", "SpinalCord_PRV", "Heart", "Brainstem", "BrainStem_PRV"}
+)
+
+# Defects #9 and #19: a planning-risk volume is the organ grown by a margin, so its DVH is
+# colder and larger than the organ's. Scoring it with the organ's published parameters is
+# scoring a different structure. ``SpinalCord_05`` and ``BrainStem_03`` carried no alias, fell
+# through to fuzzy TG-263 matching and came back as ``SpinalCord`` and ``BrainStem``; measured
+# on TCIA2 the organ and its own PRV collided in 121/121 patients and SpinalCord NTCP differed
+# sevenfold between the two. ``brainstemprv`` was mapped onto the organ by the alias table
+# outright. A PRV now gets its own canonical key, ``<Organ>_PRV``, with ``is_prv`` True, so it
+# is never scored with organ parameters unless the operator maps that key themselves in
+# site_params_ntcp_user.yaml.
+#
+# Matched on the NORMALISED name (separators stripped, lower-cased): an explicit prv/prf marker,
+# or a trailing 1-2 digit margin in mm which is how AIRTP and most TPSs spell a PRV expansion.
+_PRV_MARKER_RE = re.compile(r"(prv|prf)")
+_PRV_MARGIN_RE = re.compile(r"^(?P<base>.*?[a-z])(?P<margin>\d{1,2})(mm)?$")
+
+
+def _strip_prv_marker(normalised: str) -> str | None:
+    """Return the organ part of a PRV name, or None when the name is not a PRV.
+
+    ``spinalcord05`` -> ``spinalcord``; ``brainstemprv`` -> ``brainstem``;
+    ``prvcord`` -> ``cord``; ``ptv70`` -> None (a target dose level, not a margin).
+    """
+    if normalised.startswith(("gtv", "ctv", "ptv", "itv")):
+        return None  # a dose level on a target, not a PRV margin
+    if _PRV_MARKER_RE.search(normalised):
+        base = _PRV_MARKER_RE.sub("", normalised)
+        base = re.sub(r"\d{1,2}(mm)?$", "", base)
+        return base or None
+    margin = _PRV_MARGIN_RE.match(normalised)
+    if margin:
+        return margin.group("base")
+    return None
+
 
 def normalise_name(raw: str) -> str:
     """Strip separators and lowercase."""
@@ -184,9 +220,25 @@ def canon_target(raw_name: str, roi_interpreted_type: str | None = None) -> dict
             "category": _category(canonical),
             "site_hint": _site_hint(canonical),
             "confidence": "HIGH",
+            "is_prv": False,
         }
 
     normalised = normalise_name(raw_name)
+
+    prv_base = _strip_prv_marker(normalised)
+    if prv_base is not None:
+        organ = _resolve_organ(prv_base)
+        if organ is not None:
+            return {
+                "canonical": organ + "_PRV",
+                "category": "OAR",
+                "site_hint": _site_hint(organ),
+                "confidence": "MEDIUM",
+                "is_prv": True,
+                "prv_of": organ,
+                "tg263": normalize_to_tg263(organ),
+            }
+
     match = _lookup_alias(normalised)
     if match:
         tg = normalize_to_tg263(match)
@@ -196,6 +248,7 @@ def canon_target(raw_name: str, roi_interpreted_type: str | None = None) -> dict
             "category": _category(match),
             "site_hint": _site_hint(match),
             "confidence": "MEDIUM",
+            "is_prv": False,
             "tg263": tg,
         }
 
@@ -206,6 +259,7 @@ def canon_target(raw_name: str, roi_interpreted_type: str | None = None) -> dict
             "category": "OAR",
             "site_hint": _site_hint(tg["tg263"]),
             "confidence": "MEDIUM" if tg["method"] == "exact" else "LOW",
+            "is_prv": False,
             "tg263": tg,
         }
 
@@ -214,8 +268,23 @@ def canon_target(raw_name: str, roi_interpreted_type: str | None = None) -> dict
         "category": "UNKNOWN",
         "site_hint": "",
         "confidence": "LOW",
+        "is_prv": False,
         "tg263": tg,
     }
+
+
+def _resolve_organ(normalised_base: str) -> str | None:
+    """Canonical OAR key for the organ part of a PRV name, or None if it is not an organ."""
+    match = _lookup_alias(normalised_base)
+    if match is not None:
+        if _category(match) != "OAR":
+            return None
+        tg = normalize_to_tg263(match)
+        return str(tg["tg263"]) if tg["mapped"] else match
+    tg = normalize_to_tg263(normalised_base)
+    if tg["mapped"]:
+        return str(tg["tg263"])
+    return None
 
 
 def get_target_structures(rt_struct_ds, plan_metadata: dict) -> list[dict]:

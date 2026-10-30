@@ -107,6 +107,20 @@ class TCPCalculator:
                 canonical,
             )
 
+        upstream = [str(r) for r in (plan_metadata.get("tcp_refusal_reasons") or []) if r]
+        if upstream:
+            # #4/#5: the TPS export stated no prescription and/or no fractionation, and nothing
+            # is invented in its place. NTCP from physical dose is unaffected.
+            result["tcp_refused"] = True
+            result["tcp_refusal_reason"] = ";".join(upstream)
+            logger.warning(
+                "TCP refused for %s: %s. Supply the prescription and fractionation to compute it.",
+                canonical,
+                ";".join(upstream),
+            )
+            result["_dvh_df"] = dvh_df
+            return result
+
         if lq_caution and not allow_lq_extrapolation:
             # #10: refuse rather than publish an extrapolated number with a flag beside it.
             result["tcp_refused"] = True

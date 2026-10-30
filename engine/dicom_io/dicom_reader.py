@@ -115,6 +115,70 @@ def _classify_beam_type(
     return "3DCRT"
 
 
+#: Reason written when a target's own prescription level cannot be established (#25).
+SIB_LEVEL_UNKNOWN = "SIB_LEVEL_UNKNOWN"
+
+#: Plausible prescription range in Gy, used only to reject a number that cannot be a dose level.
+_MIN_LEVEL_GY = 5.0
+_MAX_LEVEL_GY = 120.0
+
+_LEVEL_IN_NAME_RE = re.compile(r"(?<!\d)(\d{2,5})(?:\s*(?:gy|cgy))?(?!\d)", re.IGNORECASE)
+
+
+def dose_levels_from_plan(rt_plan_ds: Dataset) -> list[dict]:
+    """Every prescription level in the plan, with whatever identifies the target it belongs to.
+
+    Defect #25: ``_prescription_dose_gy`` returns ONE number for the whole plan, so on a
+    simultaneous integrated boost every target was scored against the highest level -- a PTV56
+    was given 70 Gy, which raises its TCP and is simply the wrong dose. Each
+    ``DoseReferenceSequence`` item is kept here with its description and referenced ROI number so
+    a target can be matched to its own level.
+    """
+    levels: list[dict] = []
+    for item in getattr(rt_plan_ds, "DoseReferenceSequence", []) or []:
+        dose = getattr(item, "TargetPrescriptionDose", None)
+        if dose is None:
+            dose = getattr(item, "DeliveryMaximumDose", None)
+        if dose is None:
+            continue
+        try:
+            dose_gy = float(dose)
+        except (TypeError, ValueError):
+            continue
+        if not (_MIN_LEVEL_GY <= dose_gy <= _MAX_LEVEL_GY):
+            continue
+        roi = getattr(item, "ReferencedROINumber", None)
+        levels.append(
+            {
+                "dose_gy": dose_gy,
+                "description": str(getattr(item, "DoseReferenceDescription", "") or ""),
+                "roi_number": int(roi) if roi is not None else None,
+                "type": str(getattr(item, "DoseReferenceType", "") or "").upper(),
+            }
+        )
+    return levels
+
+
+def dose_level_from_target_name(raw_name: str) -> float | None:
+    """The dose level a target's own name states, e.g. ``PTV63`` -> 63.0, ``PTV 5600`` -> 56.0.
+
+    Only names that carry a number in a plausible prescription range yield a level. A 4-5 digit
+    number is read as cGy. Returns None when the name says nothing, which is a refusal, not a
+    licence to use the plan's highest level (defect #25).
+    """
+    name = str(raw_name or "")
+    best: float | None = None
+    for match in _LEVEL_IN_NAME_RE.finditer(name):
+        digits = match.group(1)
+        raw = float(digits)
+        candidate = raw / 100.0 if len(digits) >= 4 else raw
+        if _MIN_LEVEL_GY <= candidate <= _MAX_LEVEL_GY:
+            # a name with several numbers ("PTV63_56") is ambiguous; take the highest and let the
+            # DoseReferenceSequence override it when the plan states one
+            best = candidate if best is None else max(best, candidate)
+    return best
+
+
 def _prescription_dose_gy(rt_plan_ds: Dataset) -> float | None:
     sequence = getattr(rt_plan_ds, "DoseReferenceSequence", None)
     if not sequence:
@@ -268,6 +332,8 @@ class DicomPlanReader:
         return {
             "plan_label": str(getattr(rt_plan_ds, "RTPlanLabel", "") or ""),
             "prescription_dose_gy": prescription,
+            # #25: every level the plan states, so a SIB target can be matched to its own
+            "dose_levels": dose_levels_from_plan(rt_plan_ds),
             "n_fractions": n_fractions,
             "dose_per_fraction_gy": dose_per_fraction,
             "n_beams": len(treatment_beams),

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import re
 from collections import defaultdict
 from collections.abc import Iterator
 from pathlib import Path
@@ -22,7 +23,11 @@ from config.site_ntcp_params import (
     load_site_ntcp_params,
 )
 from config.site_params import load_site_params
-from dicom_io.dicom_reader import DicomPlanReader
+from dicom_io.dicom_reader import (
+    SIB_LEVEL_UNKNOWN,
+    DicomPlanReader,
+    dose_level_from_target_name,
+)
 from dicom_io.dvh_extractor import DVHExtractor
 from dicom_io.site_detector import (
     detect_site,
@@ -70,6 +75,83 @@ def _mark_no_ntcp_params(row: dict) -> dict:
     row["ntcp_refusal_reason"] = NO_NTCP_PARAMS_FOR_SITE
     row["reason_codes"] = [NO_NTCP_PARAMS_FOR_SITE]
     return row
+
+
+def _target_plan_metadata(meta: dict, dvh_r) -> dict:
+    """Plan metadata for ONE target, with that target's own prescription level (defect #25).
+
+    A plan carries one ``prescription_dose_gy``, so on a simultaneous integrated boost every
+    target was scored against the highest level: a PTV56 was given 70 Gy, which overstates its
+    TCP. The level is taken from the ``DoseReferenceSequence`` item that names or references this
+    ROI, else from the target's own name (``PTV63``), else -- when the plan states several levels
+    and nothing ties one to this target -- TCP is refused with ``SIB_LEVEL_UNKNOWN``.
+    """
+    levels = list(meta.get("dose_levels") or [])
+    raw_name = str(getattr(dvh_r, "raw_name", "") or "")
+    roi_number = getattr(dvh_r, "roi_number", None)
+
+    chosen: float | None = None
+    source = ""
+    by_roi = next(
+        (lv for lv in levels if roi_number is not None and lv.get("roi_number") == roi_number),
+        None,
+    )
+    if by_roi is not None:
+        chosen, source = by_roi["dose_gy"], "DoseReferenceSequence.ReferencedROINumber"
+    else:
+        normalised = _normalise_for_match(raw_name)
+        by_description = next(
+            (
+                lv
+                for lv in levels
+                if lv.get("description")
+                and _normalise_for_match(lv["description"]) == normalised
+            ),
+            None,
+        )
+        if by_description is not None:
+            chosen, source = (
+                by_description["dose_gy"],
+                "DoseReferenceSequence.DoseReferenceDescription",
+            )
+
+    if chosen is None:
+        from_name = dose_level_from_target_name(raw_name)
+        if from_name is not None:
+            chosen, source = from_name, "target name"
+
+    if chosen is None and len(levels) == 1:
+        chosen, source = levels[0]["dose_gy"], "single plan level"
+    if chosen is None and not levels and meta.get("prescription_dose_gy"):
+        chosen, source = float(meta["prescription_dose_gy"]), "plan prescription"
+
+    target_meta = dict(meta)
+    reasons = [str(r) for r in (meta.get("tcp_refusal_reasons") or []) if r]
+    if chosen is None:
+        target_meta["tcp_refusal_reasons"] = [*reasons, SIB_LEVEL_UNKNOWN]
+        target_meta["dose_level_source"] = "unknown"
+        logger.warning(
+            "%s: the plan states %d prescription levels and none can be tied to this target; "
+            "TCP refused (%s). Rename the ROI with its level (PTV63) or give the plan a "
+            "DoseReferenceSequence that references the ROI.",
+            raw_name or "<unnamed target>",
+            len(levels),
+            SIB_LEVEL_UNKNOWN,
+        )
+        return target_meta
+
+    n_fractions = int(meta.get("n_fractions") or 0)
+    target_meta["prescription_dose_gy"] = chosen
+    target_meta["dose_level_gy"] = chosen
+    target_meta["dose_level_source"] = source
+    target_meta["tcp_refusal_reasons"] = reasons
+    if n_fractions > 0:
+        target_meta["dose_per_fraction_gy"] = chosen / n_fractions
+    return target_meta
+
+
+def _normalise_for_match(value: str) -> str:
+    return re.sub(r"[\s_\-/]+", "", str(value)).casefold()
 
 
 def _attach_site_metadata(row: dict, site_info: dict) -> None:
@@ -184,13 +266,16 @@ def collect_dicom_tcp(
         t_type = dvh_r.canonical_name
         if t_type not in ("GTV", "CTV", "PTV"):
             continue
+        target_meta = _target_plan_metadata(meta, dvh_r)
         row = calc.compute_all(
             dvh_r,
-            meta,
+            target_meta,
             site_params,
             target_type=t_type,
             allow_lq_extrapolation=allow_lq_extrapolation,
         )
+        row["dose_level_gy"] = target_meta.get("dose_level_gy", float("nan"))
+        row["dose_level_source"] = target_meta.get("dose_level_source", "")
         row["AnonPatientID"] = anon_id
         row["site"] = params_key
         # Identity of the ROI behind this row, so structure_mapping.csv can tie canonical back to raw.
@@ -211,7 +296,13 @@ def collect_dicom_tcp(
     return results
 
 
-def _read_txt_structures(path: Path, default_dpf_gy: float, preserve_canonical: bool) -> list:
+def _read_txt_structures(
+    path: Path,
+    default_dpf_gy: float,
+    preserve_canonical: bool,
+    rx_gy: float | None = None,
+    n_frac: int | None = None,
+) -> list:
     """Read every ROI in a TPS DVH text export.
 
     Plan-level exports put ALL structures in one file. Always goes through the multi-structure
@@ -224,7 +315,11 @@ def _read_txt_structures(path: Path, default_dpf_gy: float, preserve_canonical: 
     discarded ones' dose/volume rows into the survivor's DVH. See docs/KNOWN_LIMITATIONS.md.
     """
     return parse_multi_structure_dvh_text(
-        path, default_dose_per_fraction_gy=default_dpf_gy, preserve_canonical=preserve_canonical
+        path,
+        default_dose_per_fraction_gy=default_dpf_gy,
+        preserve_canonical=preserve_canonical,
+        rx_gy=rx_gy,
+        n_frac=n_frac,
     )
 
 
@@ -236,6 +331,8 @@ def collect_txt_tcp(
     default_dpf_gy: float,
     preserve_canonical: bool = False,
     allow_lq_extrapolation: bool = False,
+    rx_gy: float | None = None,
+    n_frac: int | None = None,
 ) -> list[dict]:
     """Phase 1–2 from TPS DVH text exports.
 
@@ -245,7 +342,9 @@ def collect_txt_tcp(
     results: list[dict] = []
 
     for path in iter_dvh_text_files(dvh_dir, glob_pattern):
-        for txt in _read_txt_structures(path, default_dpf_gy, preserve_canonical):
+        for txt in _read_txt_structures(
+            path, default_dpf_gy, preserve_canonical, rx_gy=rx_gy, n_frac=n_frac
+        ):
             # Symmetric to the "a TARGET never receives NTCP" rule: an OAR must never receive TCP.
             # Only reachable when preserve_canonical is on (otherwise everything is coerced to a target).
             if preserve_canonical and canon_target(txt.raw_name).get("category") != "TARGET":
@@ -360,13 +459,17 @@ def collect_txt_ntcp(
     glob_pattern: str,
     default_dpf_gy: float,
     preserve_canonical: bool = False,
+    rx_gy: float | None = None,
+    n_frac: int | None = None,
 ) -> list[dict]:
     """NTCP from TPS DVH text when structure maps to a configured OAR."""
     calc = NTCPCalculator()
     results: list[dict] = []
 
     for path in iter_dvh_text_files(dvh_dir, glob_pattern):
-        for txt in _read_txt_structures(path, default_dpf_gy, preserve_canonical):
+        for txt in _read_txt_structures(
+            path, default_dpf_gy, preserve_canonical, rx_gy=rx_gy, n_frac=n_frac
+        ):
             detection = detect_site_from_text(
                 txt.plan_metadata, txt.raw_name, txt.header_text
             )

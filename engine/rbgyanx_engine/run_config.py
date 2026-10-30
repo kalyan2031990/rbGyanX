@@ -37,7 +37,15 @@ class RunConfig:
     # TPS-text OAR support: keep the ROI's true canonical (Parotid_R, Rectum, ...) instead of
     # coercing to a target type, so classical NTCP can match an organ. Default off = legacy.
     preserve_txt_canonical: bool = False
-    dose_per_fraction: float = 2.0
+    # Defects #4 and #5: this used to default to 2.0 Gy, so a TPS export that stated no
+    # fractionation was silently given someone else's. None means "not stated"; state it
+    # with --dose-per-fraction, or give --rx-gy and --n-frac, or TCP is refused.
+    dose_per_fraction: float | None = None
+    # Defects #4 and #5: a TPS text export that states neither a prescription nor a
+    # fractionation refuses TCP rather than falling back to the DVH maximum and 2 Gy/fx.
+    # These two state them explicitly when the header cannot.
+    rx_gy: float | None = None
+    n_frac: int | None = None
     cohort: bool = False
     no_uncertainty: bool = False
     # Defect #10: a dose per fraction outside the site's LQ validity range refuses TCP.

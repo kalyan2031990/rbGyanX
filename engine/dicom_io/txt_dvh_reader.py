@@ -7,6 +7,7 @@ Parses cumulative or differential DVH tables with dose/volume columns in cGy or 
 from __future__ import annotations
 
 import logging
+import math
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -119,14 +120,21 @@ class TxtDVHResult:
     header_text: str = ""
 
 
+#: Reasons a TPS text export cannot support a TCP calculation (defects #4 and #5).
+RX_MISSING = "RX_MISSING"
+FRACTIONATION_MISSING = "FRACTIONATION_MISSING"
+
+
 def _parse_dvh_text(
     text: str,
     *,
     source_name: str,
     fallback_name: str,
-    default_dose_per_fraction_gy: float = 2.0,
+    default_dose_per_fraction_gy: float | None = None,
     default_target_type: str | None = None,
     preserve_canonical: bool = False,
+    rx_gy: float | None = None,
+    n_frac: int | None = None,
 ) -> TxtDVHResult:
     """Core parser over DVH text. ``preserve_canonical`` keeps the true per-structure
     canonical (Rectum/Bladder/…) instead of coercing everything to a target type."""
@@ -228,35 +236,62 @@ def _parse_dvh_text(
 
     dvh_df = pd.DataFrame({"dose_gy": centres, "volume_frac": vf})
 
-    rx_gy = float(meta.get("tpd", d_gy.max()))
-    if rx_gy <= 0:
-        rx_gy = float(d_gy.max())
-        tpd_parsed = False
-    else:
-        tpd_parsed = "tpd" in meta
-    dpf = float(meta.get("dpf", default_dose_per_fraction_gy))
-    n_frac = int(meta.get("n_frac", max(int(round(rx_gy / dpf)), 1)))
+    # Defects #4 and #5. The prescription used to fall back to the DVH maximum and the dose per
+    # fraction to a flat 2.0 Gy, both silently (a logged warning beside a written number is not a
+    # refusal). A DVH maximum is not a prescription: on a hot plan it overstates the dose the TCP
+    # model is given, and on a cold one it understates it, and 2 Gy/fraction is simply a guess
+    # about someone else's clinic. Neither is invented now. The caller may state them
+    # (``--rx-gy`` / ``--n-frac``); otherwise TCP is refused and NTCP still runs on physical dose.
+    tcp_refusal_reasons: list[str] = []
 
-    # "parsed" only when every input to the value was stated in the file; any default makes it "assumed".
-    dpf_parsed, nfrac_parsed = "dpf" in meta, "n_frac" in meta
-    total_dose_source = "parsed" if tpd_parsed else "assumed"
-    n_fractions_source = "parsed" if (nfrac_parsed or (tpd_parsed and dpf_parsed)) else "assumed"
-    dose_per_fraction_source = "parsed" if (dpf_parsed or (tpd_parsed and nfrac_parsed)) else "assumed"
-    assumed = [
-        f"{name}={val}"
-        for name, src, val in (
-            ("total_dose_gy", total_dose_source, f"{rx_gy:g}"),
-            ("n_fractions", n_fractions_source, n_frac),
-            ("dose_per_fraction_gy", dose_per_fraction_source, f"{rx_gy / n_frac:g}"),
-        )
-        if src == "assumed"
-    ]
-    if assumed:
+    rx_parsed = "tpd" in meta and float(meta["tpd"]) > 0
+    if rx_parsed:
+        rx_value = float(meta["tpd"])
+        total_dose_source = "parsed"
+    elif rx_gy is not None and float(rx_gy) > 0:
+        rx_value = float(rx_gy)
+        total_dose_source = "caller"
+    else:
+        rx_value = math.nan
+        total_dose_source = "missing"
+        tcp_refusal_reasons.append(RX_MISSING)
+
+    nfrac_parsed = "n_frac" in meta and int(meta["n_frac"]) > 0
+    dpf_parsed = "dpf" in meta and float(meta["dpf"]) > 0
+    if nfrac_parsed:
+        n_frac_value = int(meta["n_frac"])
+        n_fractions_source = "parsed"
+    elif n_frac is not None and int(n_frac) > 0:
+        n_frac_value = int(n_frac)
+        n_fractions_source = "caller"
+    elif dpf_parsed and math.isfinite(rx_value):
+        n_frac_value = max(int(round(rx_value / float(meta["dpf"]))), 1)
+        n_fractions_source = "derived"
+    elif default_dose_per_fraction_gy is not None and math.isfinite(rx_value):
+        # an explicit caller-supplied dose per fraction, not a hidden constant
+        n_frac_value = max(int(round(rx_value / float(default_dose_per_fraction_gy))), 1)
+        n_fractions_source = "caller"
+    else:
+        n_frac_value = 0
+        n_fractions_source = "missing"
+        tcp_refusal_reasons.append(FRACTIONATION_MISSING)
+
+    if dpf_parsed:
+        dpf = float(meta["dpf"])
+        dose_per_fraction_source = "parsed"
+    elif math.isfinite(rx_value) and n_frac_value > 0:
+        dpf = rx_value / n_frac_value
+        dose_per_fraction_source = "derived"
+    else:
+        dpf = math.nan
+        dose_per_fraction_source = "missing"
+
+    if tcp_refusal_reasons:
         logger.warning(
-            "%s: fractionation not stated in the file; ASSUMED %s (total dose falls back to the DVH "
-            "maximum, dose per fraction to the configured default). Results depend on these values.",
+            "%s: %s. TCP is refused for this export; NTCP still runs on physical dose. Supply "
+            "--rx-gy and --n-frac to compute TCP.",
             source_name,
-            ", ".join(assumed),
+            " and ".join(tcp_refusal_reasons),
         )
 
     if preserve_canonical:
@@ -269,12 +304,13 @@ def _parse_dvh_text(
 
     pid = str(meta.get("pid", fallback_name))
     plan_meta = {
-        "prescription_dose_gy": rx_gy,
-        "n_fractions": n_frac,
-        "dose_per_fraction_gy": rx_gy / n_frac,
+        "prescription_dose_gy": rx_value,
+        "n_fractions": n_frac_value,
+        "dose_per_fraction_gy": dpf,
         "total_dose_source": total_dose_source,
         "n_fractions_source": n_fractions_source,
         "dose_per_fraction_source": dose_per_fraction_source,
+        "tcp_refusal_reasons": tcp_refusal_reasons,
         "plan_label": organ_raw,
     }
 
@@ -294,9 +330,11 @@ def _parse_dvh_text(
 def parse_dvh_text_file(
     path: Path,
     *,
-    default_dose_per_fraction_gy: float = 2.0,
+    default_dose_per_fraction_gy: float | None = None,
     default_target_type: str | None = None,
     preserve_canonical: bool = False,
+    rx_gy: float | None = None,
+    n_frac: int | None = None,
 ) -> TxtDVHResult:
     """Parse one single-structure TPS DVH text export into a TxtDVHResult.
 
@@ -314,14 +352,18 @@ def parse_dvh_text_file(
         default_dose_per_fraction_gy=default_dose_per_fraction_gy,
         default_target_type=default_target_type,
         preserve_canonical=preserve_canonical,
+        rx_gy=rx_gy,
+        n_frac=n_frac,
     )
 
 
 def parse_multi_structure_dvh_text(
     path: Path,
     *,
-    default_dose_per_fraction_gy: float = 2.0,
+    default_dose_per_fraction_gy: float | None = None,
     preserve_canonical: bool = True,
+    rx_gy: float | None = None,
+    n_frac: int | None = None,
 ) -> list[TxtDVHResult]:
     """Parse a multi-structure DVH text export (all ROIs in one file, e.g. an Eclipse
     plan-level export) into one TxtDVHResult per structure.
@@ -353,6 +395,8 @@ def parse_multi_structure_dvh_text(
                 path,
                 default_dose_per_fraction_gy=default_dose_per_fraction_gy,
                 preserve_canonical=preserve_canonical,
+                rx_gy=rx_gy,
+                n_frac=n_frac,
             )
         ]
 
@@ -370,6 +414,8 @@ def parse_multi_structure_dvh_text(
                     fallback_name=struct_name,
                     default_dose_per_fraction_gy=default_dose_per_fraction_gy,
                     preserve_canonical=preserve_canonical,
+                    rx_gy=rx_gy,
+                    n_frac=n_frac,
                 )
             )
         except ValueError:
