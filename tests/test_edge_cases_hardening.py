@@ -77,7 +77,11 @@ def flat_likelihood_cohort() -> pd.DataFrame:
 
 def test_geud_on_degenerate_dvhs(empty_dvh, zero_dose_dvh, zero_volume_dvh, single_bin_dvh):
     assert math.isnan(compute_geud(empty_dvh, 1.0))
-    assert math.isnan(compute_geud(zero_dose_dvh, 1.0))  # no positive dose
+    # Defect #45: a structure that received no dose has gEUD 0 Gy. NaN claimed the value was
+    # uncomputable, which is a different statement and the wrong one -- and the same mask that
+    # produced it also dropped the unirradiated part of a partly covered target, reading its
+    # gEUD as the hot dose alone.
+    assert compute_geud(zero_dose_dvh, 1.0) == 0.0
     assert math.isnan(compute_geud(zero_volume_dvh, 1.0))  # zero total volume
     assert math.isnan(compute_geud(None, 1.0))
     assert math.isnan(compute_geud(single_bin_dvh, 0.0))  # a=0 undefined
