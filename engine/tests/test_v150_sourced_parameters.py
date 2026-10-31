@@ -417,3 +417,60 @@ def test_the_shipped_yaml_still_loads_for_every_site() -> None:
     for site in SITES:
         assert load_site_ntcp_params(site).organs, site
     assert pd.notna(load_site_ntcp_params("HN").organs["SpinalCord"].geud_a)
+
+
+# ------------------------------------------- the AI reference pack mirrors the same values
+
+
+def test_the_lkb_reference_pack_carries_the_real_citation() -> None:
+    """The pack used to cite the YAML itself, which told a reader nothing checkable.
+
+    It also drifted: when HN/SpinalCord moved from 45.0 to 66.5 Gy the pack still said 45.0, and
+    the repository's own guard caught it. ``scripts/generate_lkb_reference_pack.py`` now makes the
+    pack's ``generated_from`` claim mechanical.
+    """
+    import json
+    import pathlib
+
+    pack = json.loads(
+        (
+            pathlib.Path(__file__).resolve().parents[2]
+            / "rbgyanx"
+            / "ai"
+            / "reference_packs"
+            / "rbgyanx_lkb_defaults.json"
+        ).read_text(encoding="utf-8")
+    )
+    indexed = {
+        (e["site"], e["organ"], e["endpoint"], e["metric"]): e for e in pack["entries"]
+    }
+
+    cord = indexed[("HN", "SpinalCord", "LKB_probit parameter", "TD50_gy")]
+    assert cord["value"] == 66.5
+    assert "Burman 1991, Table 1, p. 125" in cord["citation"]
+    assert "Myelitis/necrosis" in cord["citation"]
+
+    larynx = indexed[("HN", "Larynx", "LKB_probit parameter", "TD50_gy")]
+    assert larynx["value"] == 47.3
+    assert "Rancati 2009, p. 919" in larynx["citation"]
+
+    parotid = indexed[("HN", "Parotid_L", "LKB_loglogit parameter", "TD50_gy")]
+    assert "no published source (illustrative)" in parotid["citation"]
+    assert "Deasy" in parotid["citation"]
+
+
+def test_the_reference_pack_generator_reports_no_drift() -> None:
+    """``--check`` is the guard that keeps the pack and the engine config in step."""
+    import pathlib
+    import subprocess
+    import sys
+
+    root = pathlib.Path(__file__).resolve().parents[2]
+    done = subprocess.run(
+        [sys.executable, "-I", str(root / "scripts" / "generate_lkb_reference_pack.py"), "--check"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        cwd=root,
+    )
+    assert done.returncode == 0, done.stderr or done.stdout
