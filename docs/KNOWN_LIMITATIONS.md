@@ -86,12 +86,13 @@ was fitted to, the dose basis, and what the structure was in the paper. `as_prin
 numbers exactly as the paper prints them, and `conversion` states every derivation; the only one
 used is `geud_a = 1/n`, the Kutcher–Burman DVH reduction the LKB probit model is defined on.
 
-Two papers were read for this release: **Burman et al., IJROBP 21:123–135 (1991), Table 1, p. 125**
-and **Rancati et al., IJROBP 75:915–923 (2009), p. 919**.
+Three papers were read for this release: **Burman et al., IJROBP 21:123–135 (1991), Table 1,
+p. 125**, **Rancati et al., IJROBP 75:915–923 (2009), p. 919**, and **Bakhshandeh et al., IJROBP
+85(2):514–521 (2013), Table 2, p. 517**.
 
 **Values with no published source are marked `illustrative: true`, and BASIC mode refuses them.**
 ADVANCED mode computes them and labels every row with `param_illustrative` and `param_source`.
-Twenty-one of fifty-seven organ entries are illustrative, in two groups.
+Twenty of fifty-seven organ entries are illustrative, in two groups.
 
 *Awaiting a paper the project has not yet obtained:*
 
@@ -99,7 +100,6 @@ Twenty-one of fifty-seven organ entries are illustrative, in two groups.
 |---|---|---|
 | HN `Parotid_L`, `Parotid_R` | `TD50 28.4 Gy`, `gamma50 0.6`, `geud_a 1` | Deasy JO et al., IJROBP 76(3 Suppl):S58–S63 (2010) — QUANTEC salivary glands |
 | PROSTATE `Rectum` | `TD50 76.9 Gy`, `m 0.14`, `n 0.12` | Michalski JM et al., IJROBP 76(3 Suppl):S123–S129 (2010) — QUANTEC rectum |
-| BREAST `Thyroid` | `TD50 37.7 Gy`, `gamma50 0.7` | A fit from Bakhshandeh et al., IJROBP 85(2):514–521 (2013) is proposed and awaiting approval |
 
 The parotid is the project's most-used organ, so note the consequence plainly: **in BASIC mode an
 HN run now reports no parotid NTCP** until that citation is in place. ADVANCED mode, which is what
@@ -110,6 +110,27 @@ the published cohort runs use, computes it and labels it illustrative.
 `Cochlea_L/R` at both brain sites; PROSTATE `Urethra`; LIVER `Duodenum`. Each one's provenance
 block says why. Two were deliberately *not* substituted from a near neighbour: Burman's "Small
 intestine" row is not the duodenum, and its "Ear (middle/external)" rows are not the cochlea.
+
+### The thyroid fit comes from a head-and-neck cohort, not from breast irradiation
+
+BREAST `Thyroid` carries the LKB probit and relative-seriality fits of Bakhshandeh et al., IJROBP
+85(2):514–521 (2013), Table 2, p. 517 — `TD50 44.3 Gy, m 0.25, n 0.92` and
+`D50 43.5 Gy, gamma 1.49, s 0.05`, for **any (clinical or subclinical) hypothyroidism within
+1 year**, fitted to the EUD of EQD2 histograms at α/β = 3 Gy.
+
+**The cohort it was fitted on is not the cohort it is applied to.** The patients were treated for
+head-and-neck cancer (65 of them, mean gland volume 14.84 mL), where the thyroid sits in or beside
+the target. Under this organ key it is applied to the incidental dose a breast plan delivers
+through a supraclavicular field, which is a different distribution. These are the best published
+parameters for this gland and this endpoint, and the transfer is recorded on the value itself
+rather than left for a reader to notice.
+
+The same table's **Table 4, p. 519** fits the narrower endpoint of *clinical* hypothyroidism only —
+`n 0.49, m 0.24, D50 60 Gy` — which is more tolerant and more conservative. It is recorded in the
+value's `alternative_fit` field, not adopted: Table 2's endpoint includes subclinical disease,
+which is what a DVH-based risk estimate is usually wanted for, and it is the fit with the larger
+event count. Override the organ in `site_params_ntcp_user.yaml`, with its own provenance block, to
+use Table 4 instead.
 
 ### The esophagus NTCP models stricture and perforation, not acute esophagitis
 

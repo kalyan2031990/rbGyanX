@@ -14,11 +14,14 @@
 #     analytic function. IJROBP 21:123-135 (1991). Table 1, p. 125.
 #   Rancati T, Fiorino C, Fellin G, et al. NTCP modeling of subacute/late laryngeal edema scored
 #     by fiberoptic examination. IJROBP 75:915-923 (2009). p. 919.
+#   Bakhshandeh M, Hashemi B, Mahdavi SRM, et al. Normal tissue complication probability modeling
+#     of radiation-induced hypothyroidism after head-and-neck radiation therapy. IJROBP
+#     85(2):514-521 (2013). Table 2, p. 517.
 #
 # Override anything here in site_params_ntcp_user.yaml.
 #
-# GENERATED, then committed. The transcription table lives in the v1.5.0 parameter review:
-# see rbGyanX-papers/V1_5_0_DEFAULT_PARAMETERS_FOR_APPROVAL.md.
+# Maintained by hand. Each value's own `provenance` block is the record of where it came from, so
+# the transcription is checkable from this file alone without any external document.
 
 HN:
   organs:
@@ -589,23 +592,56 @@ BREAST:
           replaces: "LKB_loglogit TD50_gy 34.0, gamma50 0.7 (unsourced)"
           illustrative: false
     Thyroid:
-      geud_a: 3
+      geud_a: 1.087
       alpha_beta_gy: 3
-      LKB_loglogit: {TD50_gy: 37.7, gamma50: 0.7}
-      illustrative: true
+      LKB_probit: {TD50_gy: 44.3, m: 0.25, n: 0.92}
+      RS: {D50_gy: 43.5, gamma: 1.49, s: 0.05}
+      illustrative: false
       provenance:
-        LKB_loglogit:
-          source: "unsourced"
-          table_page: ""
-          endpoint: "not stated"
-          fractionation_basis: "not stated"
-          structure_definition: "not stated"
-          as_printed: {}
-          conversion: ""
-          note: >-
-            Bakhshandeh et al., IJROBP 85(2):514-521 (2013) gives a thyroid fit for hypothyroidism
-            (Table 2 p. 517, Table 4 p. 519) and is proposed separately; not applied pending approval
-          illustrative: true
+        LKB_probit:
+          source: "Bakhshandeh M, Hashemi B, Mahdavi SRM, et al. IJROBP 85(2):514-521 (2013)"
+          table_page: "Bakhshandeh 2013, Table 2, p. 517 (Lyman EUD row)"
+          endpoint: "any (clinical or subclinical) hypothyroidism within 1 year"
+          fractionation_basis: "EQD2, alpha/beta 3 Gy"
+          structure_definition: >-
+            thyroid gland. The fit is derived from a head-and-neck cohort (65 patients, mean gland
+            volume 14.84 mL) and is applied here to the incidental irradiation a breast plan
+            delivers, which is a different dose distribution. The parameters are the best published
+            ones for this gland and endpoint; the cohort they came from is not the cohort they are
+            applied to.
+          as_printed: {n: 0.92, m: 0.25, TD50_gy: 44.3}
+          as_printed_ci_95: {n: "0.45-3", m: "0.16-0.42", TD50_gy: "40.3-48.3"}
+          conversion: >-
+            none on the fitted values; geud_a = 1/n = 1.087 (1/0.92), the Kutcher-Burman reduction
+            the LKB probit model is defined on. n close to 1 means the response is close to a
+            mean-dose one, which is the parallel architecture the authors conclude for the gland.
+          replaces: "LKB_loglogit TD50_gy 37.7, gamma50 0.7 (unsourced)"
+          alternative_fit: >-
+            Table 4, p. 519 of the same paper fits the narrower endpoint of CLINICAL hypothyroidism
+            only, giving n 0.49, m 0.24, D50 60 Gy (95% CI 56-70). That is the more tolerant and
+            more conservative choice. Table 2 is the default here because its endpoint includes
+            subclinical disease, which is what a DVH-based risk estimate is usually wanted for, and
+            because it is the fit with the larger event count. Switch by overriding this organ in
+            site_params_ntcp_user.yaml with its own provenance block.
+          illustrative: false
+        RS:
+          source: "Bakhshandeh M, Hashemi B, Mahdavi SRM, et al. IJROBP 85(2):514-521 (2013)"
+          table_page: "Bakhshandeh 2013, Table 2, p. 517 (Relative seriality row)"
+          endpoint: "any (clinical or subclinical) hypothyroidism within 1 year"
+          fractionation_basis: "EQD2, alpha/beta 3 Gy"
+          structure_definition: >-
+            thyroid gland. Same cohort and caveat as the LKB probit block above: a head-and-neck
+            cohort of 65 patients, mean gland volume 14.84 mL, applied here to incidental
+            irradiation in breast plans.
+          as_printed: {s: 0.05, gamma: 1.49, D50_gy: 43.5}
+          as_printed_ci_95: {s: "0.04-0.07", gamma: "0.88-2.35", D50_gy: "39.5-48.5"}
+          conversion: >-
+            none. The engine's RS block takes {D50_gy, gamma, s}, which is exactly the paper's
+            relative-seriality parameterisation, so the values transfer as printed. s = 0.05
+            indicates an almost fully parallel organ, consistent with the LKB n of 0.92.
+          alternative_fit: >-
+            Table 4, p. 519 fits clinical hypothyroidism only: s 0.33, gamma 1.48, D50 60 Gy.
+          illustrative: false
     BrachialPlexus:
       geud_a: 33.3333
       alpha_beta_gy: 3

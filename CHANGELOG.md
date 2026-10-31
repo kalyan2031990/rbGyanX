@@ -15,9 +15,10 @@ them and `conversion` states every derivation; the only derivation used is `geud
 Kutcher-Burman DVH reduction the LKB probit model is defined on. **Default parameter values change,
 so NTCP written by v1.4.0 and earlier is not comparable with v1.5.0 output.**
 
-Two sources were read and transcribed: **Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP
-21:123-135 (1991), Table 1, p. 125** and **Rancati T, Fiorino C, Fellin G, et al. IJROBP
-75:915-923 (2009), p. 919**.
+Three sources were read and transcribed: **Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP
+21:123-135 (1991), Table 1, p. 125**, **Rancati T, Fiorino C, Fellin G, et al. IJROBP
+75:915-923 (2009), p. 919**, and **Bakhshandeh M, Hashemi B, Mahdavi SRM, et al. IJROBP
+85(2):514-521 (2013), Table 2, p. 517**.
 
 ### Changed — parameters now carry a citation
 
@@ -51,6 +52,18 @@ Two sources were read and transcribed: **Burman C, Kutcher GJ, Emami B, Goitein 
 - **Liver** `n` 0.97 -> **0.32** and `geud_a` 0.97 -> **3.125** (Burman, liver failure). TD50 and m
   already matched Burman; `geud_a` had been set to `n` rather than `1/n`, so the DVH reduction used
   the wrong quantity.
+- **Thyroid.** The unsourced log-logistic fit (`TD50` 37.7, `gamma50` 0.7) is replaced by
+  **Bakhshandeh's LKB probit fit: `TD50` 44.3 Gy, `m` 0.25, `n` 0.92**, `geud_a` 3.0 -> 1.087, and
+  the **relative-seriality fit from the same table is added: `D50` 43.5 Gy, `gamma` 1.49,
+  `s` 0.05**, which needs no conversion because the engine's RS block is the paper's own
+  parameterisation. The endpoint is any (clinical or subclinical) hypothyroidism within 1 year,
+  fitted to the EUD of EQD2 histograms at alpha/beta 3 Gy, which is this organ's own alpha/beta.
+  `n` 0.92 and `s` 0.05 agree with each other: an almost fully parallel organ. The organ is no
+  longer illustrative, so **BASIC mode now computes it**. Two things are recorded on the value
+  rather than left implicit: the fit comes from a head-and-neck cohort and is applied here to the
+  incidental irradiation a breast plan delivers, a different dose distribution; and the same
+  paper's Table 4 offers a more conservative fit for *clinical* hypothyroidism only
+  (`n` 0.49, `m` 0.24, `D50` 60 Gy), kept in `alternative_fit` as the documented alternative.
 - **Heart, lungs, normal brain and bladder** keep their TD50, which already equalled Burman's, and
   gain the `m` and `n` the log-logistic form cannot carry: heart 48.0 / 0.10 / 0.35, lung
   24.5 / 0.18 / 0.87 (`geud_a` 1.149, close to mean dose, as accepted for lung), brain
@@ -64,7 +77,7 @@ pair anywhere in the library.
 
 ### Added — `illustrative`, and BASIC mode refuses it
 
-Twenty-one of fifty-seven organ entries have no citable source and are marked
+Twenty of fifty-seven organ entries have no citable source and are marked
 `illustrative: true`. **BASIC mode refuses them**: the column is NaN and the row carries
 `ILLUSTRATIVE_PARAMS_IN_BASIC_MODE`. ADVANCED mode computes them and labels every row with
 `param_source` and `param_illustrative`. The refusal is per model, so an organ with a sourced
@@ -90,9 +103,9 @@ were filled from Burman.
 ### Changed — ntcp_results.csv
 
 Four columns are added, per model row: `param_source`, `param_illustrative`, `param_endpoint`,
-`param_table_page`. Three organs lose their `NTCP_LKB_loglogit` value, which becomes NaN, because
-the unsourced log-logistic block was replaced by a sourced probit fit: HN `Larynx`, HN `Mandible`
-and `Esophagus` at all four sites.
+`param_table_page`. Four organs lose their `NTCP_LKB_loglogit` value, which becomes NaN, because
+the unsourced log-logistic block was replaced by a sourced probit fit: HN `Larynx`, HN `Mandible`,
+BREAST `Thyroid`, and `Esophagus` at all four sites.
 
 ### What a parameter change does to a reported NTCP
 
@@ -107,12 +120,17 @@ software, and is reported in the accompanying evidence package rather than here.
 
 ### Tests
 
-`engine/tests/test_v150_sourced_parameters.py` (51): the schema (every model block has provenance,
+`engine/tests/test_v150_sourced_parameters.py` (58): the schema (every model block has provenance,
 every provenance block declares all required fields, a sourced block names a page and an endpoint,
 `as_printed` matches the shipped value, `geud_a == 1/n` for every sourced probit fit), the
-transcription of 22 Burman values and the Rancati fit, the pinned illustrative inventory, the
-BASIC-mode refusal including the per-model and user-override cases, and the agreement of the AI
-reference pack with the engine config.
+transcription of 22 Burman values, the Rancati fit and both Bakhshandeh blocks with their 95%
+confidence intervals, the pinned illustrative inventory, the BASIC-mode refusal including the
+per-model and user-override cases, and the agreement of the AI reference pack with the engine
+config.
+
+`engine/config/site_params_ntcp_default.yaml` no longer claims to be generated, and no longer
+points at a path outside the repository: each value's own `provenance` block is the record, so the
+transcription is checkable from that file alone.
 
 ## [Unreleased] — Tier A: the defects that change written numbers
 
