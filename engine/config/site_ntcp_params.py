@@ -12,6 +12,37 @@ _DEFAULT = Path(__file__).resolve().parent / "site_params_ntcp_default.yaml"
 _USER = Path(__file__).resolve().parent / "site_params_ntcp_user.yaml"
 
 
+#: The three model blocks an organ may carry, as spelled in the YAML.
+MODEL_KEYS = ("LKB_loglogit", "LKB_probit", "RS")
+
+#: The provenance fields every model block must declare.
+PROVENANCE_REQUIRED = (
+    "source",
+    "table_page",
+    "endpoint",
+    "fractionation_basis",
+    "structure_definition",
+    "illustrative",
+)
+
+#: Reason written on a row whose parameters have no published source and whose run is BASIC.
+ILLUSTRATIVE_PARAMS_IN_BASIC_MODE = "ILLUSTRATIVE_PARAMS_IN_BASIC_MODE"
+
+
+def _unsourced_provenance(note: str) -> dict:
+    return {
+        "source": "unsourced",
+        "table_page": "",
+        "endpoint": "not stated",
+        "fractionation_basis": "not stated",
+        "structure_definition": "not stated",
+        "as_printed": {},
+        "conversion": "",
+        "illustrative": True,
+        "note": note,
+    }
+
+
 @dataclass
 class OrganNTCPParams:
     canonical: str
@@ -20,6 +51,30 @@ class OrganNTCPParams:
     lkb_loglogit: dict[str, float] | None = None
     lkb_probit: dict[str, float] | None = None
     rs: dict[str, float] | None = None
+    #: Per-model provenance, keyed by the model names in ``MODEL_KEYS``. A model with no entry is
+    #: treated as unsourced, so nothing is published as sourced by omission.
+    provenance: dict[str, dict] = field(default_factory=dict)
+    #: True when NO model of this organ has a published source. BASIC mode refuses those.
+    illustrative: bool = True
+
+    def model_provenance(self, model: str) -> dict:
+        """Provenance for one model, defaulting to unsourced rather than to nothing."""
+        entry = self.provenance.get(model)
+        if isinstance(entry, dict):
+            return entry
+        return _unsourced_provenance("no provenance block for this model in the parameter YAML")
+
+    def model_is_illustrative(self, model: str) -> bool:
+        return bool(self.model_provenance(model).get("illustrative", True))
+
+    @property
+    def source(self) -> str:
+        """The citation of the first sourced model, or ``"unsourced"``."""
+        for model in MODEL_KEYS:
+            entry = self.provenance.get(model)
+            if isinstance(entry, dict) and not entry.get("illustrative", True):
+                return str(entry.get("source", "unsourced"))
+        return "unsourced"
 
 
 @dataclass
@@ -30,6 +85,20 @@ class SiteNTCPParams:
 
 
 def _parse_organ(name: str, raw: dict[str, Any]) -> OrganNTCPParams:
+    provenance = {
+        model: block
+        for model, block in (raw.get("provenance") or {}).items()
+        if isinstance(block, dict)
+    }
+    present = [m for m in MODEL_KEYS if raw.get(m)]
+    declared = raw.get("illustrative")
+    if declared is None:
+        # No declaration means no source was asserted, so the safe reading is illustrative.
+        illustrative = all(
+            provenance.get(m, {}).get("illustrative", True) for m in present
+        ) if present else True
+    else:
+        illustrative = bool(declared)
     return OrganNTCPParams(
         canonical=name,
         geud_a=float(raw.get("geud_a", 3.0)),
@@ -37,6 +106,8 @@ def _parse_organ(name: str, raw: dict[str, Any]) -> OrganNTCPParams:
         lkb_loglogit=raw.get("LKB_loglogit"),
         lkb_probit=raw.get("LKB_probit"),
         rs=raw.get("RS"),
+        provenance=provenance,
+        illustrative=illustrative,
     )
 
 
@@ -58,7 +129,26 @@ def load_site_ntcp_params(
         user_site = _load_yaml(user_path).get(site_key, {})
         for organ, params in (user_site.get("organs") or {}).items():
             base_organs = merged.setdefault("organs", {})
-            base_organs[organ] = {**(base_organs.get(organ) or {}), **params}
+            base = dict(base_organs.get(organ) or {})
+            combined = {**base, **params}
+            # A user who supplies their own numbers must not inherit the shipped provenance: it
+            # describes a different value. Any model the user overrides without also giving its
+            # provenance becomes unsourced, so BASIC mode refuses it rather than vouching for it.
+            overridden = [m for m in MODEL_KEYS if m in params]
+            if overridden:
+                prov = dict(combined.get("provenance") or {})
+                user_prov = (params.get("provenance") or {})
+                for model in overridden:
+                    if model not in user_prov:
+                        prov[model] = _unsourced_provenance(
+                            f"overridden in {user_path.name} without a provenance block"
+                        )
+                combined["provenance"] = prov
+                if "illustrative" not in params and any(
+                    prov.get(m, {}).get("illustrative", True) for m in overridden
+                ):
+                    combined["illustrative"] = True
+            base_organs[organ] = combined
 
     organs_raw = merged.get("organs") or {}
     organs = {k: _parse_organ(k, v) for k, v in organs_raw.items()}

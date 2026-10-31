@@ -5,6 +5,119 @@ All notable changes to this project are documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — sourced default NTCP parameters
+
+**The scientific change of v1.5.0, kept separate from the code fixes on purpose.** Every value in
+`engine/config/site_params_ntcp_default.yaml` now carries a per-model `provenance` block naming its
+source, the table and page it was transcribed from, the endpoint it was fitted to, its dose basis,
+and what the structure was in the paper. `as_printed` holds the numbers exactly as the paper prints
+them and `conversion` states every derivation; the only derivation used is `geud_a = 1/n`, the
+Kutcher-Burman DVH reduction the LKB probit model is defined on. **Values change. Numbers written
+with v1.4.0 and earlier are not comparable with v1.5.0 output.**
+
+Two papers were read and transcribed: **Burman et al., IJROBP 21:123-135 (1991), Table 1, p. 125**
+and **Rancati et al., IJROBP 75:915-923 (2009), p. 919**.
+
+### Changed — parameters now carry a citation
+
+- **Spinal cord, at five sites.** `TD50` 45.0 → **66.5 Gy**, `m` 0.18 → 0.175 (Burman, myelitis /
+  necrosis). The 45 Gy was a planning constraint, not a fit. `LUNG` and `PROSTATE` had no cord
+  entry at all and now have one. `LIVER` already used 66.5 and gains the probit form, so all five
+  sites finally agree.
+- **Brain stem, at three sites.** `TD50` 53.0 → **65.0 Gy**, `m` 0.18 → 0.14, `n` 0.05 → **0.16**,
+  `geud_a` 20.0 → 6.25. A threefold change in the volume effect, not only in TD50.
+- **Larynx.** The unsourced log-logistic fit (`TD50` 44.0, `gamma50` 0.7) is replaced by
+  **Rancati's LKB fit: `TD50` 47.3 Gy, `m` 0.23, `n` 1.17**, `geud_a` 0.855, for subacute/late
+  grade >= 2 laryngeal edema scored by fiberoptic examination. Rancati fitted the EUD of EQD2 DVHs
+  at alpha/beta 3 Gy, which is this organ's `alpha_beta_gy`, so the engine's EQD2 transform matches
+  the fit.
+- **Mandible.** Replaced by Burman's **TD50 72.0 Gy, m 0.10, n 0.07**. Read the endpoint before
+  using it: the row is "TM joint and mandible" and the endpoint is **marked limitation of joint
+  function**, not osteoradionecrosis. Both facts are on the value.
+- **Esophagus, at four sites.** `TD50` 34.0 → **68.0 Gy**, with `m` 0.11, `n` 0.06 (Burman,
+  clinical stricture / perforation). The old 34 Gy had no source and is about half Burman's, which
+  is consistent with an acute-esophagitis threshold - **a different endpoint, and one v1.5.0 does
+  not model.** `LIVER` had no esophagus entry and now has one.
+- **Optic chiasm** `TD50` 55.0 → 65.0, **optic nerves** 54.0 → 65.0, both with `m` 0.14,
+  `n` 0.25, `geud_a` 20.0 → 4.0 (Burman, blindness).
+- **Brachial plexus** `TD50` 54.0 → 75.0, `m` 0.12, `n` 0.03, `geud_a` 33.33 (Burman, clinically
+  apparent nerve damage).
+- **Femoral heads** `TD50` 52.0 → 65.0, `m` 0.12, `n` 0.25 (Burman, necrosis; the structure is the
+  femoral head **and neck**).
+- **Rib** `TD50` 50.0 → 68.0, `m` 0.21, `n` 0.10, `geud_a` 20.0 → 10.0 (Burman, pathologic
+  fracture; the reference volume is **one third of the rib cage**, not a single rib).
+- **Stomach** `TD50` 68.0 → 65.0 with `m` 0.14, `n` 0.15 (Burman, ulceration / perforation).
+- **Liver** `n` 0.97 → **0.32** and `geud_a` 0.97 → **3.125** (Burman, liver failure). TD50 and m
+  already matched Burman; `geud_a` had been set to `n` rather than `1/n`, so the DVH reduction used
+  the wrong quantity - registered as defect **#47**, found by the transcription itself.
+- **Heart, lungs, normal brain and bladder** keep their TD50, which already equalled Burman's, and
+  gain the `m` and `n` the log-logistic form cannot carry: heart 48.0 / 0.10 / 0.35, lung
+  24.5 / 0.18 / 0.87 (`geud_a` 1.149, close to mean dose, as accepted for lung), brain
+  60.0 / 0.15 / 0.25, bladder 80.0 / 0.11 / 0.5. `BRAIN_METS` had no normal-brain entry and now
+  has one.
+
+**Five probit blocks used to share the identical `m = 0.18, n = 0.05`** across SpinalCord,
+BrainStem, BrachialPlexus, OpticChiasm and OpticNerve, at four sites. Five organs cannot share one
+volume effect; Burman gives 0.05, 0.16, 0.03 and 0.25 for the same four. A test now refuses that
+pair anywhere in the library.
+
+### Added — `illustrative`, and BASIC mode refuses it
+
+Twenty-one of fifty-seven organ entries have no citable source and are marked
+`illustrative: true`. **BASIC mode refuses them**: the column is NaN and the row carries
+`ILLUSTRATIVE_PARAMS_IN_BASIC_MODE`. ADVANCED mode computes them and labels every row with
+`param_source` and `param_illustrative`. The refusal is per model, so an organ with a sourced
+probit fit and an unsourced relative-seriality block keeps the first and loses the second.
+
+**Note the consequence for the parotid**, which is the project's most-used organ: it keeps its
+QUANTEC-consistent values (`TD50 28.4`, `geud_a 1`) but stays illustrative until Deasy et al. 2010
+can be cited with a page, so **a BASIC-mode HN run reports no parotid NTCP**. The published cohort
+runs use ADVANCED mode, where it is computed and labelled.
+
+`site_params_ntcp_user.yaml` overrides are handled the same way: a model supplied without its own
+provenance becomes unsourced, because the shipped citation described a different number.
+
+### Changed — PELVIS P+ is refused as unsupported
+
+`UTCP_OAR_MAP["PELVIS"]` lists six OARs and there is no `PELVIS` NTCP block at all, so none can be
+scored. P+ for PELVIS is refused with the new reason **`UTCP_SITE_UNSUPPORTED`**, which
+`allow_partial=True` deliberately does not override: a partial product means "score the organs I
+have", and here there are none. Every other site in the map is now fully scorable - the five gaps
+reported in the Tier A notes (LUNG and PROSTATE SpinalCord, BRAIN_METS NormalBrain, LIVER
+Esophagus) were filled from Burman.
+
+### Changed — ntcp_results.csv
+
+Four columns are added, per model row: `param_source`, `param_illustrative`, `param_endpoint`,
+`param_table_page`. Three organs lose their `NTCP_LKB_loglogit` value, which becomes NaN, because
+the unsourced log-logistic block was replaced by a sourced probit fit: HN `Larynx`, HN `Mandible`
+and `Esophagus` at all four sites.
+
+### Measured on the HN cohort
+
+At a uniform dose equal to each organ's own median mean dose in the TCIA2 head-and-neck cohort
+(VMAT 4-arc arm, n = 116 patients, as recorded in the v1.3.0 run), which isolates the parameter
+change from the DVH shape:
+
+| Organ | median Dmean | NTCP before | NTCP after |
+|---|---|---|---|
+| Larynx | 34.6 Gy | 0.337 | **0.121** |
+| Mandible | 33.6 Gy | 0.188 | **~0.000** |
+| Esophagus | 5.2 Gy | 0.0052 | ~0.000 |
+| SpinalCord | 14.7 Gy | 0.00009 | ~0.000 |
+| BrainStem | 5.3 Gy | ~0.000 | ~0.000 |
+
+The direction is consistent: the unsourced values were markedly more pessimistic than the published
+fits. The per-patient cohort comparison over real DVHs comes with the v1.5.0 re-run.
+
+### Tests
+
+`engine/tests/test_v150_sourced_parameters.py` (49): the schema (every model block has provenance,
+every provenance block declares all required fields, a sourced block names a page and an endpoint,
+`as_printed` matches the shipped value, `geud_a == 1/n` for every sourced probit fit), the
+transcription of 22 Burman values and the Rancati fit, the pinned illustrative inventory, and the
+BASIC-mode refusal including the per-model case and the user-override case.
+
 ## [Unreleased] — Tier A: the defects that change written numbers
 
 Thirteen output-affecting defects in `engine/`, each with a test that fails at v1.4.0 (`ffd69ef`)

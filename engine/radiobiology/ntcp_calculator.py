@@ -8,7 +8,11 @@ from typing import Any
 
 import pandas as pd
 
-from config.site_ntcp_params import OrganNTCPParams
+from config.site_ntcp_params import (
+    ILLUSTRATIVE_PARAMS_IN_BASIC_MODE,
+    MODEL_KEYS,
+    OrganNTCPParams,
+)
 from radiobiology import dvh_object_to_dataframe
 from radiobiology.bdvh import compute_eqd2_dvh, get_alpha_beta_for_organ
 from radiobiology.geud_tcp import compute_geud
@@ -20,6 +24,9 @@ from radiobiology.ntcp import (
 )
 
 logger = logging.getLogger(__name__)
+
+#: Which attribute of OrganNTCPParams holds each model's values.
+_MODEL_ATTR = {"LKB_loglogit": "lkb_loglogit", "LKB_probit": "lkb_probit", "RS": "rs"}
 
 
 def _volume_column(dvh_df: pd.DataFrame) -> str:
@@ -59,7 +66,14 @@ class NTCPCalculator:
         plan_metadata: dict,
         organ_params: OrganNTCPParams,
         site_key: str,
+        mode: str = "advanced",
     ) -> dict:
+        """Classical NTCP for one OAR.
+
+        ``mode`` is the run mode. In ``"basic"`` a model whose parameters have no published
+        source is refused rather than computed: the column is NaN and the row carries
+        ``ILLUSTRATIVE_PARAMS_IN_BASIC_MODE``. ADVANCED computes it and labels it.
+        """
         dvh_df = dvh_object_to_dataframe(getattr(dvh_result, "dvh_object", None))
         canonical = getattr(dvh_result, "canonical_name", organ_params.canonical)
         n_fractions_plan = int(plan_metadata.get("n_fractions", 1) or 1)
@@ -144,6 +158,36 @@ class NTCPCalculator:
                 getattr(organ_params, "name", "")
             )
             row.update(compute_dvh_shape_features(dvh_for_ntcp, organ_name))
+        row["param_illustrative"] = bool(organ_params.illustrative)
+        row["param_source"] = organ_params.source
+        row["param_provenance"] = {
+            model: organ_params.model_provenance(model)
+            for model in MODEL_KEYS
+            if getattr(organ_params, _MODEL_ATTR[model], None)
+        }
+
+        if str(mode).lower() == "basic":
+            refused = []
+            for model in MODEL_KEYS:
+                if not getattr(organ_params, _MODEL_ATTR[model], None):
+                    continue
+                if organ_params.model_is_illustrative(model):
+                    row[f"NTCP_{model}"] = math.nan
+                    refused.append(model)
+            if refused:
+                row["ntcp_refusal_reason"] = ILLUSTRATIVE_PARAMS_IN_BASIC_MODE
+                row["ntcp_refused_models"] = ";".join(refused)
+                if organ_params.illustrative:
+                    row["definition_ok"] = False
+                logger.warning(
+                    "BASIC mode: %s/%s refused for %s - those parameters have no published "
+                    "source (%s). Run in ADVANCED mode to compute them, labelled.",
+                    site_key,
+                    canonical,
+                    ", ".join(refused),
+                    ILLUSTRATIVE_PARAMS_IN_BASIC_MODE,
+                )
+
         for model_name, model_instance in iter_ntcp_models().items():
             try:
                 ext = model_instance.compute_ntcp_dvh(dvh_for_ntcp, organ_params, n_fractions_plan)

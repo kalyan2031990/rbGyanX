@@ -38,6 +38,8 @@ COHORT_CSVS: dict[str, list[str]] = {
     "tcp_results.csv": ["pseudonym", "structure", "model", "tcp"],
     "ntcp_results.csv": ["pseudonym", "structure", "model", "ntcp", "site_params_key",
                          "definition_ok", "reason_codes",
+                         "param_source", "param_illustrative", "param_endpoint",
+                         "param_table_page",
                          "uNTCP_mean", "uNTCP_sd", "uNTCP_p5", "uNTCP_p95", "uNTCP_n"],
     "plan_quality.csv": ["pseudonym", "target", "HI", "CI", "GI_pct"],
     "site_detection.csv": ["pseudonym", "site", "confidence", "evidence"],
@@ -421,6 +423,25 @@ def _accumulate(cfg: RunnerConfig, pseudonym: str, rec: PatientRecord, harvest: 
             accum["ntcp_results.csv"].append({"pseudonym": pseudonym, "structure": struct,
                 "model": model, "ntcp": r.get(key, ""), "site_params_key": r.get("site_params_key", ""),
                 "definition_ok": definition_ok, "reason_codes": codes,
+                # Per-model parameter provenance (v1.5.0): this CSV is already one row per
+                # (structure, model), so the source and the illustrative flag belong per row
+                # rather than per organ.
+                "param_source": str(
+                    (r.get("param_provenance") or {}).get(model, {}).get(
+                        "source", r.get("param_source", "")
+                    )
+                ),
+                "param_illustrative": bool(
+                    (r.get("param_provenance") or {}).get(model, {}).get(
+                        "illustrative", r.get("param_illustrative", True)
+                    )
+                ),
+                "param_endpoint": str(
+                    (r.get("param_provenance") or {}).get(model, {}).get("endpoint", "")
+                ),
+                "param_table_page": str(
+                    (r.get("param_provenance") or {}).get(model, {}).get("table_page", "")
+                ),
                 "uNTCP_mean": u.get("mean", ""), "uNTCP_sd": u.get("sd", ""),
                 "uNTCP_p5": u.get("p5", ""), "uNTCP_p95": u.get("p95", ""),
                 "uNTCP_n": u.get("n_valid", "")})

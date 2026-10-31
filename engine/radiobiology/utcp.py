@@ -122,6 +122,22 @@ _UTCP_SITE_ALIASES = {
 #: Reason written when P+ cannot be formed because a listed OAR was never scored (#20).
 UTCP_INCOMPLETE_OAR_SET = "UTCP_INCOMPLETE_OAR_SET"
 
+#: Reason written when the site has no NTCP parameter block at all, so no OAR of it can ever be
+#: scored and P+ is undefined rather than merely incomplete. PELVIS is the one shipped example:
+#: its UTCP map lists six OARs and site_params_ntcp_default.yaml has no PELVIS block. Inventing
+#: parameters for them is a scientific decision, not a code fix.
+UTCP_SITE_UNSUPPORTED = "UTCP_SITE_UNSUPPORTED"
+
+
+def site_has_ntcp_parameters(site_key: str) -> bool:
+    """Whether the NTCP parameter library has any organ for this site."""
+    from config.site_ntcp_params import load_site_ntcp_params
+
+    try:
+        return bool(load_site_ntcp_params(site_key).organs)
+    except Exception:  # pragma: no cover - a missing block is the answer, not an error
+        return False
+
 
 def normalize_utcp_site(site_key: str) -> str:
     """Map TCP/NTCP site_params_key to UTCP_OAR_MAP key."""
@@ -271,10 +287,19 @@ def compute_utcp(
         warns.append(
             "No UTCP OAR map for site " + str(site_key) + "; P+ is undefined without an OAR set."
         )
+    elif missing_oars and not site_has_ntcp_parameters(site_norm):
+        # The site has an OAR map but no NTCP parameters at all, so no amount of data would fill
+        # the product. That is a different statement from "this patient was missing an organ".
+        reason = UTCP_SITE_UNSUPPORTED
+        warns.append(
+            "Site " + str(site_key) + " has no NTCP parameter block, so none of its OARs can be "
+            "scored and P+ is undefined. allow_partial does not apply."
+        )
     elif missing_oars:
         reason = UTCP_INCOMPLETE_OAR_SET
 
-    if math.isnan(tcp_val) or (reason and not allow_partial):
+    unsupported = reason == UTCP_SITE_UNSUPPORTED
+    if math.isnan(tcp_val) or unsupported or (reason and not allow_partial):
         utcp = utcp_w = math.nan
     else:
         utcp = float(tcp_val * ntcp_product)
