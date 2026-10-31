@@ -220,8 +220,8 @@ def _validate_default_organ_keys_reachable() -> None:
 
     Defect #22: on its own this is a self-consistency check, not a reachability check. It compares
     the alias table with itself, so it passes however far the table has drifted from the names a
-    treatment planning system actually writes -- "PharynxConst", exported by 135 of 135 patients
-    in the TCIA2 cohort, went unmapped while this check was green. Reachability against real
+    treatment planning system actually writes -- "PharynxConst", a common export spelling for the
+    pharyngeal constrictors, went unmapped while this check was green. Reachability against real
     names lives in ``organ_key_corpus_reachability()`` and is asserted by
     engine/tests/test_v150_organ_key_reachability.py, because the corpus is part of the test
     fixtures and is not shipped in the wheel.

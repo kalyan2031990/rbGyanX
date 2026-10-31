@@ -438,8 +438,8 @@ def collect_dicom_ntcp(
         row["AnonPatientID"] = anon_id
         # Identity of the ROI behind this row. Without it an organ and its own PRV expansion
         # arrive as two rows with the same `structure` label and no field distinguishes them:
-        # measured on TCIA2, BrainStem/BrainStem_03 and SpinalCord/SpinalCord_05 collide in
-        # 121/121 patients, and SpinalCord NTCP differs 7-fold between the two (defect #19).
+        # BrainStem/BrainStem_03 and SpinalCord/SpinalCord_05 collide, and a PRV's NTCP differs
+        # materially from its organ's because its DVH is colder and larger (defect #19).
         # The TCP path has carried raw_name and roi_number all along; this one did not.
         row["raw_name"] = dvh_r.raw_name
         row["roi_number"] = dvh_r.roi_number

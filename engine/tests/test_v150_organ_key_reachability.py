@@ -20,26 +20,26 @@ from dicom_io.structure_mapper import canon_target
 def test_defect_22_the_corpus_exists_and_holds_real_names() -> None:
     names = read_contour_name_corpus()
     assert len(names) > 400, len(names)
-    # harvested from recorded run provenance, so the spellings are ones a TPS really wrote
+    # spellings a planning system really writes, not the canonical forms
     assert "PharynxConst" in names
     assert "SpinalCord_05" in names
     assert "Chiasm" in names
 
 
 def test_defect_22_pharynxconst_resolves_to_the_constrictor() -> None:
-    """#22: the name 135 of 135 TCIA2 patients export. Delete its alias and this must fail."""
+    """#22: a common export spelling for the constrictors. Delete its alias and this must fail."""
     mapped = canon_target("PharynxConst")
     assert mapped["canonical"] == "PharynxConstrictor"
     assert mapped["category"] == "OAR"
     assert "PharynxConstrictor" in default_organ_keys()["HN"]
 
 
-#: Organ keys the corpus cannot reach, and why. The corpus covers head-and-neck (TCIA2) and
-#: prostate (SPARK / parotid validation) only, so a thoracic, hepatic or deep-brain organ simply
-#: does not appear in it; that is a gap in the corpus. The salivary glands are different: the
-#: cohort contoured them side-lessly ("Parotid", "Parotids", "Submandibular"), and a side-less
-#: name must NOT be given a side -- doing so is what defect #21 was. Those four keys are
-#: unreachable in this data because the data has no sided gland, which is the correct outcome
+#: Organ keys the corpus cannot reach, and why. The corpus is weighted towards head-and-neck and
+#: pelvic structure names, so a thoracic, hepatic or deep-brain organ simply does not appear in
+#: it; that is a gap in the corpus, not in the alias table. The salivary glands are a different
+#: case: the corpus holds only side-less and bilateral spellings for them ("Parotid", "Parotids",
+#: "Submandibular"), and a side-less name must NOT be given a side -- doing so is what defect #21
+#: was. Those four keys are unreachable from such names by design, which is the correct outcome
 #: and not something an alias can fix.
 NOT_IN_CORPUS_SITE_NOT_COVERED = {
     "ChestWall",
@@ -96,7 +96,7 @@ def test_defect_22_named_variants_from_the_corpus_reach_their_organ(name: str, k
 
 
 def test_defect_22_a_sideless_gland_is_still_not_given_a_side() -> None:
-    """The corpus contains these; giving them a side would reintroduce defect #21."""
+    """The corpus contains these spellings; giving them a side would reintroduce defect #21."""
     for name in ("Parotid", "Parotids", "Submandibular"):
         mapped = canon_target(name)
         assert mapped["canonical"] not in {
@@ -137,8 +137,8 @@ def test_defect_22_the_import_time_check_now_also_rejects_a_prv_key() -> None:
 def test_defect_9_19_a_prv_gets_its_own_key(name: str, canonical: str, organ: str) -> None:
     """#9/#19: SpinalCord_05 and BrainStem_03 came back as the organ itself.
 
-    Measured on TCIA2 the organ and its PRV collided in 121/121 patients, and SpinalCord NTCP
-    differed sevenfold between them, so which one was scored changed the written number.
+    The organ and its PRV then share one ``structure`` label, so which of them was scored changed
+    the written number: a PRV's DVH is colder and larger than its organ's.
     """
     mapped = canon_target(name)
     assert mapped["canonical"] == canonical, mapped
