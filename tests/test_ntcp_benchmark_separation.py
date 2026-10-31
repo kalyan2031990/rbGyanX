@@ -100,8 +100,8 @@ def test_mle_refit_is_bounded_and_flags_unidentifiable_fits():
     """With no dose-response the likelihood is flat; the refit must NOT run away.
 
     Regression guard: an unbounded optimiser produced TD50 ~ 1e16 Gy and a calibration slope
-    of ~-1e14 on a real cohort — numbers that are meaningless and would be indefensible in a
-    manuscript. The fit is now bounded to the data-supported dose range and reports
+    of ~-1e14 on data with no dose-response — numbers that are meaningless and must never be
+    reported as a fit. The fit is now bounded to the data-supported dose range and reports
     ``plausible=False`` when it cannot be identified.
     """
     rng = np.random.default_rng(11)
