@@ -7,13 +7,25 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pydicom
 from pydicom.dataset import Dataset, FileMetaDataset
 from pydicom.uid import ExplicitVRLittleEndian, generate_uid
 
 from dicom_io.cohort_discovery import discover_cohort
 
 _FOR = generate_uid()
+
+
+def _save_dataset(ds: Dataset, dst) -> None:
+    """Write a Part-10 DICOM file on pydicom 2.x and 3.x alike.
+
+    Same two-branch form as ``tests/synthetic/dicom_rt_factory.save_dataset``; duplicated rather
+    than imported because ``tests`` is not an importable package from ``engine/tests`` under
+    pytest's importlib mode. ``enforce_file_format`` alone fails on CI, which runs pydicom 2.
+    """
+    try:
+        ds.save_as(dst, write_like_original=False)  # pydicom <3.0
+    except TypeError:
+        ds.save_as(dst, enforce_file_format=True)  # pydicom >=3.0
 
 
 def _write_plan(
@@ -51,7 +63,7 @@ def _write_plan(
 
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / f"RTPLAN_{label}.dcm"
-    pydicom.dcmwrite(path, ds, enforce_file_format=False)
+    _save_dataset(ds, path)
     return path
 
 
@@ -71,7 +83,7 @@ def _write_struct_and_dose(folder: Path) -> None:
         meta.MediaStorageSOPInstanceUID = ds.SOPInstanceUID
         meta.TransferSyntaxUID = ExplicitVRLittleEndian
         ds.file_meta = meta
-        pydicom.dcmwrite(folder / f"{modality}.dcm", ds, enforce_file_format=False)
+        _save_dataset(ds, folder / f"{modality}.dcm")
 
 
 def test_defect_18_two_indistinguishable_plans_are_refused(tmp_path: Path) -> None:
