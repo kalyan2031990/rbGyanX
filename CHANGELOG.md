@@ -95,20 +95,30 @@ and `Esophagus` at all four sites.
 
 ### Measured on the HN cohort
 
-At a uniform dose equal to each organ's own median mean dose in the TCIA2 head-and-neck cohort
-(VMAT 4-arc arm, n = 116 patients, as recorded in the v1.3.0 run), which isolates the parameter
-change from the DVH shape:
+Each patient's NTCP evaluated at their own recorded mean dose, with the whole volume at that dose.
+For a uniform DVH gEUD equals that dose for every value of a, so this isolates the parameter change
+from the DVH shape while still using real doses. TCIA2 head-and-neck cohort, VMAT 4-arc arm, as
+recorded in the v1.3.0 run.
 
-| Organ | median Dmean | NTCP before | NTCP after |
-|---|---|---|---|
-| Larynx | 34.6 Gy | 0.337 | **0.121** |
-| Mandible | 33.6 Gy | 0.188 | **~0.000** |
-| Esophagus | 5.2 Gy | 0.0052 | ~0.000 |
-| SpinalCord | 14.7 Gy | 0.00009 | ~0.000 |
-| BrainStem | 5.3 Gy | ~0.000 | ~0.000 |
+| Organ | n | median NTCP before | median NTCP after | median change | range of change | lower risk / higher risk |
+|---|---|---|---|---|---|---|
+| **Larynx** | 116 | 0.337 | 0.121 | **−0.077** | −0.216 to **+0.201** | 82 / **34** |
+| **Mandible** | 116 | 0.188 | ~0.000 | **−0.188** | −0.373 to −0.00003 | 116 / 0 |
+| Esophagus | 54 | 0.0052 | ~0.000 | −0.0052 | −0.153 to ~0 | 53 / 0 |
+| SpinalCord | 116 | 0.00009 | ~0.000 | −0.00009 | −0.0074 to ~0 | 116 / 0 |
+| BrainStem | 116 | ~0.000 | ~0.000 | ~0.000 | −0.145 to ~0 | 116 / 0 |
+| OralCavity | 116 | 0.498 | 0.498 | 0 | — | 0 / 0 (now illustrative) |
+| PharynxConstrictor | 116 | 0.513 | 0.513 | 0 | — | 0 / 0 (now illustrative) |
 
-The direction is consistent: the unsourced values were markedly more pessimistic than the published
-fits. The per-patient cohort comparison over real DVHs comes with the v1.5.0 re-run.
+**The larynx does not move in one direction, and that matters.** Rancati's fit is shallower than
+the log-logistic curve it replaced (m 0.23 against gamma50 0.7), so the two cross: **34 of 116
+patients get a HIGHER predicted risk**, by up to +0.20, while 82 get a lower one. For the other
+organs the change is one-directional and downward, i.e. the unsourced values were more pessimistic
+than the published fits. Do not summarise this release as "NTCP went down".
+
+Per-organ and per-patient tables: `rbGyanX-papers/02_v1_5_0_parameter_change/`. The comparison over
+real, non-uniform DVHs — where the changed `geud_a` also re-weights the shape — comes with the
+v1.5.0 re-run.
 
 ### Tests
 
