@@ -75,7 +75,8 @@ def fit_mvl_tcp(
     n_samples, n_features = X_arr.shape
     fname = feature_names or [f"feat_{i}" for i in range(n_features)]
 
-    epv_result = compute_epv(y_arr, n_features, epv_threshold)
+    # y is coded 1 = local control, 0 = recurrence; the event is the recurrence (#36).
+    epv_result = compute_epv(y_arr, n_features, event_label=0, threshold=epv_threshold)
     warns: list[str] = []
     if not epv_result.passes:
         raise ValueError(epv_result.warning_message)

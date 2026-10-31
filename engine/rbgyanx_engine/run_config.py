@@ -24,6 +24,11 @@ class RunConfig:
     outcome_csv: Path | None = None
     site: str | None = None
     n_mc: int = 1000
+    # Defect #6: the seed that actually drives the Monte-Carlo draws. RunnerConfig.seed was
+    # recorded in run_manifest.json but never reached ParamUncertaintyConfig or
+    # NTCPUncertaintyConfig, which both hard-coded 42 — so the manifest described a seed the
+    # run had not used. It is threaded through now and the manifest is true.
+    seed: int = 42
     enable_ml: bool = False  # opt-in explicitly; engine_bridge sets True for advanced+outcome
     mode: RunMode = "basic"
     user_config: Path | None = None
@@ -32,9 +37,20 @@ class RunConfig:
     # TPS-text OAR support: keep the ROI's true canonical (Parotid_R, Rectum, ...) instead of
     # coercing to a target type, so classical NTCP can match an organ. Default off = legacy.
     preserve_txt_canonical: bool = False
-    dose_per_fraction: float = 2.0
+    # Defects #4 and #5: this used to default to 2.0 Gy, so a TPS export that stated no
+    # fractionation was silently given someone else's. None means "not stated"; state it
+    # with --dose-per-fraction, or give --rx-gy and --n-frac, or TCP is refused.
+    dose_per_fraction: float | None = None
+    # Defects #4 and #5: a TPS text export that states neither a prescription nor a
+    # fractionation refuses TCP rather than falling back to the DVH maximum and 2 Gy/fx.
+    # These two state them explicitly when the header cannot.
+    rx_gy: float | None = None
+    n_frac: int | None = None
     cohort: bool = False
     no_uncertainty: bool = False
+    # Defect #10: a dose per fraction outside the site's LQ validity range refuses TCP.
+    # Setting this to True computes it anyway and flags the row as an extrapolation.
+    allow_lq_extrapolation: bool = False
     no_ml_augment: bool = False
     figures: bool = False
     verbose: bool = False

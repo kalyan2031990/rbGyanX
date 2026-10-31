@@ -63,11 +63,22 @@ class NTCPCalculator:
         dvh_df = dvh_object_to_dataframe(getattr(dvh_result, "dvh_object", None))
         canonical = getattr(dvh_result, "canonical_name", organ_params.canonical)
         n_fractions_plan = int(plan_metadata.get("n_fractions", 1) or 1)
-        dpf_plan = float(plan_metadata.get("dose_per_fraction_gy", 2.0) or 2.0)
+        # Defect #4/#5: this used to default to 2.0 Gy/fraction when the export said nothing,
+        # which quietly decided that no EQD2 conversion was needed. An unstated fractionation is
+        # now NaN, so the EQD2 transform is skipped and the NTCP is reported on physical dose,
+        # with bdvh_applied False and the reason on the row.
+        dpf_raw = plan_metadata.get("dose_per_fraction_gy")
+        dpf_plan = float(dpf_raw) if dpf_raw is not None else math.nan
+        fractionation_known = math.isfinite(dpf_plan) and dpf_plan > 0
 
         bdvh_applied = False
         dvh_for_ntcp = dvh_df
-        if abs(dpf_plan - 2.0) > 0.3 and n_fractions_plan >= 1 and not dvh_df.empty:
+        if (
+            fractionation_known
+            and abs(dpf_plan - 2.0) > 0.3
+            and n_fractions_plan >= 1
+            and not dvh_df.empty
+        ):
             alpha_beta_oar = get_alpha_beta_for_organ(
                 canonical, organ_params_alpha_beta=organ_params.alpha_beta_gy
             )
@@ -93,6 +104,14 @@ class NTCPCalculator:
             "bdvh_applied": bdvh_applied,
             "n_fractions_plan": n_fractions_plan,
             "dose_per_fraction_plan_gy": dpf_plan,
+            # "physical" when the export did not state its fractionation, so no EQD2 transform
+            # could be applied (#4/#5); "eqd2" when it was, "physical_2gy_equivalent" when the
+            # plan is already at 2 Gy/fraction and the transform would be the identity.
+            "ntcp_dose_basis": (
+                "eqd2"
+                if bdvh_applied
+                else ("physical_2gy_equivalent" if fractionation_known else "physical")
+            ),
         }
 
         if organ_params.lkb_loglogit and not math.isnan(geud):

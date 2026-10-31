@@ -221,7 +221,9 @@ STRUCTURE_ALIASES: dict[str, list[str]] = {
     "Kidney_R": ["kidney_r", "rein_d", "rightkidney"],
     "KidneysTotal": ["kidneys", "kidneys_total", "bothkidneys"],
     "SpinalCord": ["spinalcord", "cord", "sc", "spinal"],
-    "PRV_Cord": ["prvcord", "cordprv", "prvsc", "scprv"],
+    # #9/#19: the cord PRV keeps its own canonical key, now spelled consistently with
+    # the generic <Organ>_PRV form that canon_target() produces.
+    "SpinalCord_PRV": ["prvcord", "cordprv", "prvsc", "scprv"],
     "Heart": ["heart", "cor", "cardiac", "wholeheart"],
     "BODY": ["body", "external", "patient", "skin", "outline"],
     "COUCH": [
@@ -244,8 +246,19 @@ STRUCTURE_ALIASES: dict[str, list[str]] = {
 # merged/bilateral names (e.g. "parotids") to single-sided canonicals — those must stay unmapped so the
 # NTCP definition guard (radiobiology.ntcp_applicability) can flag them.
 _PHASE3_EXTRA_ALIASES = {
-    "PRV_Cord": ["spinalcordprv", "prvspinalcord", "scprv3", "scprv5", "cordprv3", "cordprv5"],
-    "Brainstem": ["brainstemprv", "bstem", "prvbrainstem"],
+    "SpinalCord_PRV": [
+        "spinalcordprv",
+        "prvspinalcord",
+        "scprv3",
+        "scprv5",
+        "cordprv3",
+        "cordprv5",
+    ],
+    # #19: "brainstemprv" and "prvbrainstem" used to resolve to the organ itself, so a
+    # brainstem PRV was scored with brainstem parameters. They are gone; canon_target()
+    # now routes any prv-marked name to <Organ>_PRV.
+    "Brainstem": ["bstem"],
+    "BrainStem_PRV": ["brainstemprv", "prvbrainstem"],
     "PharynxConstrictor": ["pcm", "constrictors", "pharyngealconstrictor", "constrictormuscle",
                             # TCIA2 / AIRTP spells it "PharynxConst" in 135/135 patients; the
                             # fuzzy ratio is 0.80, under the 0.88 cutoff, so it never resolved.

@@ -18,6 +18,9 @@ from radiobiology.zaider_minerbo import ZMTCPCalculator
 
 logger = logging.getLogger(__name__)
 
+#: Coverage of the p5-p95 interval these aggregates report (defect #7).
+BAND_LEVEL = 0.90
+
 
 @dataclass
 class ParamUncertaintyConfig:
@@ -58,7 +61,16 @@ def _lognormal_samples(
 
 
 def _aggregate_mc(samples: np.ndarray) -> dict:
-    """Compute mean, SD, P5, P95 from a 1-D array of TCP values."""
+    """Summarise MC draws as mean, SD and a p5-p95 interval.
+
+    ``band_level`` names the coverage of that interval explicitly: 0.90, because p5-p95 is a 90%
+    interval, not 95% (defect #7). ``utils/uncertainty_models.py`` reports a genuine parametric
+    95% CI (p2.5-p97.5, configurable via ``confidence_level``) on a different code path. The two
+    conventions are not interchangeable and a band from one must never be compared with a band
+    from the other without reading ``band_level`` first. Column names are unchanged on purpose:
+    only the level is now stated rather than implied.
+    See docs/KNOWN_LIMITATIONS.md ("Two interval conventions, one word: 'band'").
+    """
     valid = samples[np.isfinite(samples)]
     if len(valid) == 0:
         return {
@@ -67,6 +79,7 @@ def _aggregate_mc(samples: np.ndarray) -> dict:
             "p5": math.nan,
             "p95": math.nan,
             "n_valid": 0,
+            "band_level": BAND_LEVEL,
         }
     return {
         "mean": float(np.mean(valid)),
@@ -74,6 +87,7 @@ def _aggregate_mc(samples: np.ndarray) -> dict:
         "p5": float(np.percentile(valid, 5)),
         "p95": float(np.percentile(valid, 95)),
         "n_valid": int(len(valid)),
+        "band_level": BAND_LEVEL,
     }
 
 

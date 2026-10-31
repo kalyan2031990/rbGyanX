@@ -17,7 +17,14 @@ Selection rules (deterministic; ties broken by SOPInstanceUID string order):
 
 Reason codes (machine-readable, stable): MISSING_RTPLAN, MISSING_RTDOSE, MISSING_RTSTRUCT, MISSING_CT,
 MULTIPLE_RTPLAN, MULTIPLE_RTDOSE, MULTIPLE_RTSTRUCT, DOSE_NOT_PLAN_LINKED, STRUCT_NOT_PLAN_LINKED,
-FRAME_OF_REFERENCE_MISMATCH, UNREADABLE_FILES, NO_PATIENT_ID.
+FRAME_OF_REFERENCE_MISMATCH, UNREADABLE_FILES, NO_PATIENT_ID, AMBIGUOUS_PLAN_SELECTION.
+
+Defect #18: the RTPLAN rule above is deterministic but not always *meaningful*. When several plans
+are all UNAPPROVED, carry the same prescription and the same (or no) plan date, the only thing left
+to separate them is SOPInstanceUID string order -- an accident of the archive, not a clinical fact,
+and a different export of the same study can reorder it. Such a patient is now refused with
+AMBIGUOUS_PLAN_SELECTION rather than silently scored against whichever plan sorted first. Name the
+plan with ``plan_label=`` (matched against RTPlanLabel) or per patient with ``plan_overrides=``.
 """
 
 from __future__ import annotations
@@ -81,6 +88,34 @@ def _approved_key(ds) -> int:
     return 1 if _s(ds, "ApprovalStatus").upper() == "APPROVED" else 0
 
 
+def _plan_prescription_key(ds) -> str:
+    """Prescribed dose and fraction count as a comparable string, or "" when unstated.
+
+    Read straight from the dataset rather than through DicomPlanReader, because this runs on
+    header-only reads during discovery and must never raise.
+    """
+    doses: list[str] = []
+    for item in getattr(ds, "DoseReferenceSequence", []) or []:
+        value = getattr(item, "TargetPrescriptionDose", None)
+        if value is not None:
+            doses.append(f"{float(value):.4f}")
+    fractions: list[str] = []
+    for item in getattr(ds, "FractionGroupSequence", []) or []:
+        value = getattr(item, "NumberOfFractionsPlanned", None)
+        if value is not None:
+            fractions.append(str(int(value)))
+    return "|".join(sorted(doses)) + "#" + "|".join(sorted(fractions))
+
+
+def _plans_are_indistinguishable(a, b) -> bool:
+    """True when nothing clinical separates two plans, so the order is an archive accident (#18)."""
+    return (
+        _approved_key(a) == _approved_key(b) == 0
+        and _plan_datetime_key(a) == _plan_datetime_key(b)
+        and _plan_prescription_key(a) == _plan_prescription_key(b)
+    )
+
+
 def _referenced_sop(seq_owner, seq_name: str) -> set[str]:
     out: set[str] = set()
     for item in getattr(seq_owner, seq_name, []) or []:
@@ -132,12 +167,29 @@ def _struct_for_uid(ds) -> str:
     return _s(ds, "FrameOfReferenceUID")
 
 
-def _select_for_patient(patient_key: str, insts: list[_Instance], unreadable: int) -> PatientManifest:
+def _select_for_patient(
+    patient_key: str,
+    insts: list[_Instance],
+    unreadable: int,
+    plan_label: str | None = None,
+    plan_overrides: dict[str, str] | None = None,
+) -> PatientManifest:
     plans = sorted(
         [i for i in insts if i.modality == "RTPLAN"],
         key=lambda i: (_approved_key(i.ds), _plan_datetime_key(i.ds), i.sop_uid),
         reverse=True,
     )
+
+    # #18: an operator-named plan wins outright, and names the reason it won.
+    wanted = (plan_overrides or {}).get(patient_key) or plan_label
+    chosen_by_label: _Instance | None = None
+    if wanted and plans:
+        wanted_norm = str(wanted).strip().casefold()
+        chosen_by_label = next(
+            (i for i in plans if _s(i.ds, "RTPlanLabel").strip().casefold() == wanted_norm), None
+        )
+        if chosen_by_label is not None:
+            plans = [chosen_by_label] + [i for i in plans if i is not chosen_by_label]
     doses = sorted([i for i in insts if i.modality == "RTDOSE"], key=lambda i: i.sop_uid, reverse=True)
     structs = sorted([i for i in insts if i.modality == "RTSTRUCT"], key=lambda i: i.sop_uid, reverse=True)
     cts = [i for i in insts if i.modality == "CT"]
@@ -158,11 +210,34 @@ def _select_for_patient(patient_key: str, insts: list[_Instance], unreadable: in
         m.frame_of_reference = plan.for_uid
         if len(plans) > 1:
             m.add_reason("MULTIPLE_RTPLAN")
-            m.selection_notes["RTPLAN"] = (
-                f"{len(plans)} plans; chose {'APPROVED ' if _approved_key(plan.ds) else ''}latest "
-                f"(sop …{plan.sop_uid[-8:]})"
+            if chosen_by_label is not None:
+                m.selection_notes["RTPLAN"] = (
+                    f"{len(plans)} plans; chose the plan named {wanted!r} "
+                    f"(sop …{plan.sop_uid[-8:]})"
+                )
+            else:
+                m.selection_notes["RTPLAN"] = (
+                    f"{len(plans)} plans; chose "
+                    f"{'APPROVED ' if _approved_key(plan.ds) else ''}latest "
+                    f"(sop …{plan.sop_uid[-8:]})"
+                )
+        # #18: refuse an arbitrary tie-break. Only the plans that tie with the winner matter;
+        # a clearly-worse third plan does not make the choice ambiguous.
+        tied = [i for i in plans[1:] if _plans_are_indistinguishable(plan.ds, i.ds)]
+        if tied and chosen_by_label is None:
+            m.add_reason("AMBIGUOUS_PLAN_SELECTION")
+            m.selection_notes["RTPLAN_AMBIGUITY"] = (
+                f"{len(tied) + 1} plans are all UNAPPROVED with the same prescription and date; "
+                "only SOPInstanceUID order separated them. Name one with plan_label / "
+                "plan_overrides. Labels: "
+                + ", ".join(
+                    sorted(
+                        repr(_s(i.ds, "RTPlanLabel")) for i in [plan, *tied]
+                    )
+                )
             )
-        m.rtplan_path = plan.path
+        else:
+            m.rtplan_path = plan.path
 
     plan_sop = plan.sop_uid if plan else None
     struct_refs = _referenced_sop(plan.ds, "ReferencedStructureSetSequence") if plan else set()
@@ -226,11 +301,18 @@ def _select_for_patient(patient_key: str, insts: list[_Instance], unreadable: in
     return m
 
 
-def discover_cohort(root: str | Path) -> list[PatientManifest]:
+def discover_cohort(
+    root: str | Path,
+    plan_label: str | None = None,
+    plan_overrides: dict[str, str] | None = None,
+) -> list[PatientManifest]:
     """Discover and deterministically select modalities for every patient under ``root``.
 
     Groups by PatientID (empty IDs grouped by FrameOfReferenceUID as a fallback). Returns one
     ``PatientManifest`` per patient, sorted by patient_key, each with reason codes. Never raises.
+
+    ``plan_label`` names the RTPlanLabel to use for every patient and ``plan_overrides`` does so
+    per patient key; either resolves an AMBIGUOUS_PLAN_SELECTION refusal (defect #18).
     """
     root = Path(root)
     if not root.exists():
@@ -245,7 +327,13 @@ def discover_cohort(root: str | Path) -> list[PatientManifest]:
         groups.setdefault(key, []).append(inst)
 
     manifests = [
-        _select_for_patient("" if k.startswith("__NOID__") else k, insts, unreadable)
+        _select_for_patient(
+            "" if k.startswith("__NOID__") else k,
+            insts,
+            unreadable,
+            plan_label=plan_label,
+            plan_overrides=plan_overrides,
+        )
         for k, insts in groups.items()
     ]
     manifests.sort(key=lambda m: (m.patient_key or "~", m.frame_of_reference))

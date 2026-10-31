@@ -1,4 +1,11 @@
+"""UTCP (P+) behaviour.
 
+Several tests here score only one to three of HN's eight OARs. Since defect #20, P+ over a
+partial OAR set is refused -- dropping an OAR raises the product, so the number would be an
+overestimate. Those tests ask for the partial product explicitly with ``allow_partial=True``,
+because what they are testing is the formula and the weighting, not completeness; the refusal
+itself is covered by engine/tests/test_v150_utcp_oar_set.py.
+"""
 
 
 def _make_tcp(pid="PT001", tcp_poisson=0.85):
@@ -18,7 +25,7 @@ def test_utcp_uses_all_scored_oars_not_just_serial():
 
     tcp_r = _make_tcp(tcp_poisson=0.85)
     ntcp_r = [_make_ntcp("Parotid_L", 0.60)]
-    result = compute_utcp(tcp_r, ntcp_r, "HN")
+    result = compute_utcp(tcp_r, ntcp_r, "HN", allow_partial=True)  # 1 of 8 OARs (#20)
     assert result.UTCP < 0.85
 
 
@@ -35,18 +42,22 @@ def test_utcp_standard_product_formula():
         _make_ntcp("Parotid_L", ntcp_parl),
         _make_ntcp("Parotid_R", ntcp_parr),
     ]
-    result = compute_utcp(tcp_r, ntcp_r, "HN")
+    result = compute_utcp(tcp_r, ntcp_r, "HN", allow_partial=True)  # 3 of 8 OARs (#20)
     expected = tcp_val * (1 - ntcp_cord) * (1 - ntcp_parl) * (1 - ntcp_parr)
     assert abs(result.UTCP - expected) < 1e-9
+    assert result.reason == "UTCP_INCOMPLETE_OAR_SET"
 
 
 def test_utcp_equals_tcp_when_all_ntcp_zero():
     from radiobiology.utcp import compute_utcp
 
     tcp_r = _make_tcp(tcp_poisson=0.85)
-    ntcp_r = [_make_ntcp("SpinalCord", 0.0), _make_ntcp("Brainstem", 0.0)]
-    result = compute_utcp(tcp_r, ntcp_r, "HN")
+    # "Brainstem" is how the map used to spell it; the canonical key, and what an NTCP row
+    # actually carries, is "BrainStem" (#20).
+    ntcp_r = [_make_ntcp("SpinalCord", 0.0), _make_ntcp("BrainStem", 0.0)]
+    result = compute_utcp(tcp_r, ntcp_r, "HN", allow_partial=True)  # 2 of 8 OARs (#20)
     assert abs(result.UTCP - 0.85) < 1e-9
+    assert "BrainStem" in result.scored_OAR_names
 
 
 def test_utcp_weighted_less_than_standard_when_w_less_1():
@@ -54,7 +65,7 @@ def test_utcp_weighted_less_than_standard_when_w_less_1():
 
     tcp_r = _make_tcp(tcp_poisson=0.80)
     ntcp_r = [_make_ntcp("Parotid_L", 0.50)]
-    result = compute_utcp(tcp_r, ntcp_r, "HN")
+    result = compute_utcp(tcp_r, ntcp_r, "HN", allow_partial=True)  # 1 of 8 OARs (#20)
     assert result.UTCP_weighted > result.UTCP
 
 
@@ -81,6 +92,13 @@ def test_utcp_hn_includes_parotid():
     hn_oars = [e["oar"] for e in UTCP_OAR_MAP.get("HN", [])]
     assert "Parotid_L" in hn_oars
     assert "Parotid_R" in hn_oars
+
+
+def test_utcp_hn_brainstem_is_reachable_after_resolution():
+    """#20: the map's own spelling is "Brainstem"; resolution gives the canonical "BrainStem"."""
+    from radiobiology.utcp import UTCP_OAR_MAP, resolve_oar_map
+
+    assert "BrainStem" in {e["oar"] for e in resolve_oar_map(UTCP_OAR_MAP["HN"])}
 
 
 def test_utcp_brain_mets_includes_hippocampus_and_cochlea():

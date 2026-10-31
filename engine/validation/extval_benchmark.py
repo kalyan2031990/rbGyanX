@@ -33,7 +33,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedGroupKFold
 from sklearn.preprocessing import StandardScaler
 
-from statistical_models.epv_guard import EPV_MINIMUM
+from statistical_models.epv_guard import EPV_MINIMUM, compute_epv
 from validation.validation_metrics import (
     calibration_slope,
     compute_auc,
@@ -247,9 +247,11 @@ def _run_c2(
 ) -> ModelResult:
     feats = _clinical_features(df)
     n_pred = feats.shape[1]
-    # EPV = minority-outcome count / predictors (endpoint-agnostic; event may be y==1).
-    n_events = int(min(int((y == 1).sum()), int((y == 0).sum())))
-    epv_val = n_events / max(n_pred, 1)
+    # Defect #36: this used to take the minority class as the event, which disagrees with the
+    # ``events`` count this module reports (``y.sum()``) whenever the event is the majority.
+    # The endpoint column is coded 1 = event, so that is stated rather than inferred.
+    epv_result = compute_epv(y.astype(int), max(n_pred, 1), event_label=1)
+    epv_val = epv_result.epv
     if epv_val < EPV_MINIMUM:
         nanm = dict.fromkeys(
             [
@@ -270,13 +272,13 @@ def _run_c2(
             "C2.T3",
             **nanm,
             refused=True,
-            note=f"EPV refused ({epv_val:.1f} < {EPV_MINIMUM})",
+            note=f"EPV refused ({epv_val:.3g} < {EPV_MINIMUM})",
         )
     X = feats.to_numpy(dtype=float)
     p_app = _PipelineLR().fit(X, y).predict_proba(X)[:, 1]
     p_cv = _cv_predict(lambda: _PipelineLR(), X, y, groups, n_splits, seed)
     m = _metrics(y, p_app, p_cv, seed=seed)
-    return ModelResult("clinical_logistic", "C2.T3", **m, note=f"EPV={epv_val:.1f}")
+    return ModelResult("clinical_logistic", "C2.T3", **m, note=f"EPV={epv_val:.3g}")
 
 
 def _run_c3(

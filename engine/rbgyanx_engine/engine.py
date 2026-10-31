@@ -133,6 +133,7 @@ def _config_to_namespace(cfg: RunConfig) -> argparse.Namespace:
         user_config=cfg.user_config,
         outcome_csv=cfg.outcome_csv,
         n_mc=cfg.n_mc,
+        seed=cfg.seed,
         no_uncertainty=cfg.no_uncertainty,
         no_ml=not cfg.enable_ml or cfg.endpoint == "ntcp",
         no_ml_augment=cfg.no_ml_augment or cfg.mode == "basic",
@@ -167,7 +168,12 @@ def run_analysis(cfg: RunConfig) -> EngineResult:
                 if cfg.endpoint in ("tcp", "both"):
                     tcp_results.extend(
                         collect_dicom_tcp(
-                            folder, site_override, anon_id, user_tcp, patient_id=pid_filter
+                            folder,
+                            site_override,
+                            anon_id,
+                            user_tcp,
+                            patient_id=pid_filter,
+                            allow_lq_extrapolation=cfg.allow_lq_extrapolation,
                         )
                     )
                 if cfg.endpoint in ("ntcp", "both"):
@@ -192,6 +198,9 @@ def run_analysis(cfg: RunConfig) -> EngineResult:
                 cfg.dvh_glob,
                 cfg.dose_per_fraction,
                 preserve_canonical=cfg.preserve_txt_canonical,
+                allow_lq_extrapolation=cfg.allow_lq_extrapolation,
+                rx_gy=cfg.rx_gy,
+                n_frac=cfg.n_frac,
             )
         if cfg.endpoint in ("ntcp", "both"):
             ntcp_results = collect_txt_ntcp(
@@ -202,6 +211,8 @@ def run_analysis(cfg: RunConfig) -> EngineResult:
                 cfg.dvh_glob,
                 cfg.dose_per_fraction,
                 preserve_canonical=cfg.preserve_txt_canonical,
+                rx_gy=cfg.rx_gy,
+                n_frac=cfg.n_frac,
             )
 
     all_for_site = tcp_results or ntcp_results
@@ -244,7 +255,7 @@ def run_analysis(cfg: RunConfig) -> EngineResult:
             )
 
     if tcp_results and not cfg.no_uncertainty:
-        apply_uncertainty_and_hypoxia(tcp_results, user_tcp, cfg.n_mc)
+        apply_uncertainty_and_hypoxia(tcp_results, user_tcp, cfg.n_mc, seed=cfg.seed)
 
     quantec_csv: Path | None = None
     quantec_df: pd.DataFrame | None = None
@@ -253,7 +264,7 @@ def run_analysis(cfg: RunConfig) -> EngineResult:
     if ntcp_results:
         if not cfg.no_uncertainty:
             site_for_ntcp = site_override or _dominant_params_site(ntcp_results)
-            apply_ntcp_uncertainty(ntcp_results, site_for_ntcp, user_ntcp, cfg.n_mc)
+            apply_ntcp_uncertainty(ntcp_results, site_for_ntcp, user_ntcp, cfg.n_mc, seed=cfg.seed)
         from validation.quantec_checker import check_cohort_quantec
 
         quantec_df = check_cohort_quantec(ntcp_results)

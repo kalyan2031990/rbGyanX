@@ -146,15 +146,15 @@ def run_safety_checks(
                 False,
                 epv,
                 10.0,
-                f"EPV={epv:.1f} < 5: critically underpowered.",
+                f"EPV={epv:.3g} < 5: critically underpowered.",
                 "FAIL",
             )
         elif epv < 10.0:
             _add(
-                "EPV", True, epv, 10.0, f"EPV={epv:.1f}: borderline (5–10).", "WARN"
+                "EPV", True, epv, 10.0, f"EPV={epv:.3g}: borderline (5–10).", "WARN"
             )
         else:
-            _add("EPV", True, epv, 10.0, f"EPV={epv:.1f}: sufficient.", "INFO")
+            _add("EPV", True, epv, 10.0, f"EPV={epv:.3g}: sufficient.", "INFO")
 
     if n_patients < 20:
         _add(

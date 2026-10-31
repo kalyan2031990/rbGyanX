@@ -136,7 +136,7 @@ def run_four_tier_harness(
     if clinical_features is not None and len(clinical_features.columns) > 0:
         X = clinical_features.fillna(0.0).values
         n_feat = X.shape[1]
-        epv = compute_epv(y, n_feat, threshold=EPV_MINIMUM)
+        epv = compute_epv(y, n_feat, event_label=1, threshold=EPV_MINIMUM)
         if not epv.passes:
             results["T3"] = TierResult(
                 tier="T3",

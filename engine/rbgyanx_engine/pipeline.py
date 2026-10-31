@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import re
 from collections import defaultdict
 from collections.abc import Iterator
 from pathlib import Path
@@ -16,9 +17,17 @@ import numpy as np
 import pandas as pd
 import pydicom
 
-from config.site_ntcp_params import allowed_oar_names, load_site_ntcp_params
+from config.site_ntcp_params import (
+    OrganNTCPParams,
+    allowed_oar_names,
+    load_site_ntcp_params,
+)
 from config.site_params import load_site_params
-from dicom_io.dicom_reader import DicomPlanReader
+from dicom_io.dicom_reader import (
+    SIB_LEVEL_UNKNOWN,
+    DicomPlanReader,
+    dose_level_from_target_name,
+)
 from dicom_io.dvh_extractor import DVHExtractor
 from dicom_io.site_detector import (
     detect_site,
@@ -48,6 +57,101 @@ FEATURE_COLS = [
 ]
 
 MIN_ML_COHORT = 30
+
+
+#: Reason written on an NTCP row for a site that has TCP parameters but no NTCP block (#11).
+NO_NTCP_PARAMS_FOR_SITE = "NO_NTCP_PARAMS_FOR_SITE"
+
+
+def _mark_no_ntcp_params(row: dict) -> dict:
+    """Stamp an NTCP row as refused because the site has no NTCP parameter block (#11).
+
+    PROSTATE_SBRT and LUNG_SBRT have TCP parameters but no organs in
+    ``site_params_ntcp_default.yaml``. The NTCP collectors used to return an empty list, so a
+    run produced no NTCP rows at all and nothing said why: indistinguishable from a patient with
+    no OAR contours. The rows now exist, carry NaN for every model, and say what is missing.
+    """
+    row["definition_ok"] = False
+    row["ntcp_refusal_reason"] = NO_NTCP_PARAMS_FOR_SITE
+    row["reason_codes"] = [NO_NTCP_PARAMS_FOR_SITE]
+    return row
+
+
+def _target_plan_metadata(meta: dict, dvh_r) -> dict:
+    """Plan metadata for ONE target, with that target's own prescription level (defect #25).
+
+    A plan carries one ``prescription_dose_gy``, so on a simultaneous integrated boost every
+    target was scored against the highest level: a PTV56 was given 70 Gy, which overstates its
+    TCP. The level is taken from the ``DoseReferenceSequence`` item that names or references this
+    ROI, else from the target's own name (``PTV63``), else -- when the plan states several levels
+    and nothing ties one to this target -- TCP is refused with ``SIB_LEVEL_UNKNOWN``.
+    """
+    levels = list(meta.get("dose_levels") or [])
+    raw_name = str(getattr(dvh_r, "raw_name", "") or "")
+    roi_number = getattr(dvh_r, "roi_number", None)
+
+    chosen: float | None = None
+    source = ""
+    by_roi = next(
+        (lv for lv in levels if roi_number is not None and lv.get("roi_number") == roi_number),
+        None,
+    )
+    if by_roi is not None:
+        chosen, source = by_roi["dose_gy"], "DoseReferenceSequence.ReferencedROINumber"
+    else:
+        normalised = _normalise_for_match(raw_name)
+        by_description = next(
+            (
+                lv
+                for lv in levels
+                if lv.get("description")
+                and _normalise_for_match(lv["description"]) == normalised
+            ),
+            None,
+        )
+        if by_description is not None:
+            chosen, source = (
+                by_description["dose_gy"],
+                "DoseReferenceSequence.DoseReferenceDescription",
+            )
+
+    if chosen is None:
+        from_name = dose_level_from_target_name(raw_name)
+        if from_name is not None:
+            chosen, source = from_name, "target name"
+
+    if chosen is None and len(levels) == 1:
+        chosen, source = levels[0]["dose_gy"], "single plan level"
+    if chosen is None and not levels and meta.get("prescription_dose_gy"):
+        chosen, source = float(meta["prescription_dose_gy"]), "plan prescription"
+
+    target_meta = dict(meta)
+    reasons = [str(r) for r in (meta.get("tcp_refusal_reasons") or []) if r]
+    if chosen is None:
+        target_meta["tcp_refusal_reasons"] = [*reasons, SIB_LEVEL_UNKNOWN]
+        target_meta["dose_level_source"] = "unknown"
+        logger.warning(
+            "%s: the plan states %d prescription levels and none can be tied to this target; "
+            "TCP refused (%s). Rename the ROI with its level (PTV63) or give the plan a "
+            "DoseReferenceSequence that references the ROI.",
+            raw_name or "<unnamed target>",
+            len(levels),
+            SIB_LEVEL_UNKNOWN,
+        )
+        return target_meta
+
+    n_fractions = int(meta.get("n_fractions") or 0)
+    target_meta["prescription_dose_gy"] = chosen
+    target_meta["dose_level_gy"] = chosen
+    target_meta["dose_level_source"] = source
+    target_meta["tcp_refusal_reasons"] = reasons
+    if n_fractions > 0:
+        target_meta["dose_per_fraction_gy"] = chosen / n_fractions
+    return target_meta
+
+
+def _normalise_for_match(value: str) -> str:
+    return re.sub(r"[\s_\-/]+", "", str(value)).casefold()
 
 
 def _attach_site_metadata(row: dict, site_info: dict) -> None:
@@ -130,8 +234,13 @@ def collect_dicom_tcp(
     anon_id: str,
     user_config: Path | None,
     patient_id: str | None = None,
+    allow_lq_extrapolation: bool = False,
 ) -> list[dict]:
-    """Phase 1–2: DICOM load, DVH extraction, classical TCP."""
+    """Phase 1–2: DICOM load, DVH extraction, classical TCP.
+
+    ``allow_lq_extrapolation`` is the opt-in for defect #10: without it, a dose per fraction
+    outside the site's LQ validity range refuses TCP instead of extrapolating.
+    """
     reader = DicomPlanReader()
     dicom = reader.load_patient_dicom(dicom_dir, patient_id=patient_id)
     meta = reader.extract_plan_metadata(dicom["rt_plan"])
@@ -157,7 +266,16 @@ def collect_dicom_tcp(
         t_type = dvh_r.canonical_name
         if t_type not in ("GTV", "CTV", "PTV"):
             continue
-        row = calc.compute_all(dvh_r, meta, site_params, target_type=t_type)
+        target_meta = _target_plan_metadata(meta, dvh_r)
+        row = calc.compute_all(
+            dvh_r,
+            target_meta,
+            site_params,
+            target_type=t_type,
+            allow_lq_extrapolation=allow_lq_extrapolation,
+        )
+        row["dose_level_gy"] = target_meta.get("dose_level_gy", float("nan"))
+        row["dose_level_source"] = target_meta.get("dose_level_source", "")
         row["AnonPatientID"] = anon_id
         row["site"] = params_key
         # Identity of the ROI behind this row, so structure_mapping.csv can tie canonical back to raw.
@@ -178,7 +296,13 @@ def collect_dicom_tcp(
     return results
 
 
-def _read_txt_structures(path: Path, default_dpf_gy: float, preserve_canonical: bool) -> list:
+def _read_txt_structures(
+    path: Path,
+    default_dpf_gy: float,
+    preserve_canonical: bool,
+    rx_gy: float | None = None,
+    n_frac: int | None = None,
+) -> list:
     """Read every ROI in a TPS DVH text export.
 
     Plan-level exports put ALL structures in one file. Always goes through the multi-structure
@@ -191,7 +315,11 @@ def _read_txt_structures(path: Path, default_dpf_gy: float, preserve_canonical: 
     discarded ones' dose/volume rows into the survivor's DVH. See docs/KNOWN_LIMITATIONS.md.
     """
     return parse_multi_structure_dvh_text(
-        path, default_dose_per_fraction_gy=default_dpf_gy, preserve_canonical=preserve_canonical
+        path,
+        default_dose_per_fraction_gy=default_dpf_gy,
+        preserve_canonical=preserve_canonical,
+        rx_gy=rx_gy,
+        n_frac=n_frac,
     )
 
 
@@ -202,13 +330,21 @@ def collect_txt_tcp(
     glob_pattern: str,
     default_dpf_gy: float,
     preserve_canonical: bool = False,
+    allow_lq_extrapolation: bool = False,
+    rx_gy: float | None = None,
+    n_frac: int | None = None,
 ) -> list[dict]:
-    """Phase 1–2 from TPS DVH text exports."""
+    """Phase 1–2 from TPS DVH text exports.
+
+    ``allow_lq_extrapolation`` is the opt-in for defect #10, as in :func:`collect_dicom_tcp`.
+    """
     calc = TCPCalculator()
     results: list[dict] = []
 
     for path in iter_dvh_text_files(dvh_dir, glob_pattern):
-        for txt in _read_txt_structures(path, default_dpf_gy, preserve_canonical):
+        for txt in _read_txt_structures(
+            path, default_dpf_gy, preserve_canonical, rx_gy=rx_gy, n_frac=n_frac
+        ):
             # Symmetric to the "a TARGET never receives NTCP" rule: an OAR must never receive TCP.
             # Only reachable when preserve_canonical is on (otherwise everything is coerced to a target).
             if preserve_canonical and canon_target(txt.raw_name).get("category") != "TARGET":
@@ -227,7 +363,11 @@ def collect_txt_tcp(
                 site_info.get("confidence"),
             )
             row = calc.compute_all(
-                txt, txt.plan_metadata, site_params, target_type=txt.canonical_name
+                txt,
+                txt.plan_metadata,
+                site_params,
+                target_type=txt.canonical_name,
+                allow_lq_extrapolation=allow_lq_extrapolation,
             )
             row["AnonPatientID"] = txt.patient_id
             row["raw_name"] = txt.raw_name
@@ -259,11 +399,23 @@ def collect_dicom_ntcp(
     detection = detect_site(meta, _structures_for_site_detection(dicom["rt_struct"], meta))
     params_key, site_info = resolve_pipeline_site(site_override, detection)
     ntcp_site = load_site_ntcp_params(params_key, user_config=user_ntcp_config)
-    allowed = allowed_oar_names(params_key, user_ntcp_config)
+    # #11: with no NTCP block for this site, allowed_oar_names() is empty and the OAR filter
+    # would discard every contour. Discover the OARs unfiltered so the refusal is reported
+    # per structure instead of the run falling silent.
+    site_has_ntcp_params = bool(ntcp_site.organs)
+    allowed = allowed_oar_names(params_key, user_ntcp_config) if site_has_ntcp_params else None
     oars = get_oar_structures(dicom["rt_struct"], allowed_canonicals=allowed)
     if not oars:
         logger.warning("Patient %s: no mapped OARs for site %s", anon_id, params_key)
         return []
+    if not site_has_ntcp_params:
+        logger.warning(
+            "Patient %s: site %s has no NTCP parameter block; writing %d refused row(s) (%s)",
+            anon_id,
+            params_key,
+            len(oars),
+            NO_NTCP_PARAMS_FOR_SITE,
+        )
 
     dvh_map = DVHExtractor().extract_all_dvhs(dicom["rt_dose"], dicom["rt_struct"], oars)
     calc = NTCPCalculator()
@@ -271,9 +423,14 @@ def collect_dicom_ntcp(
     for dvh_r in dvh_map.values():
         organ = dvh_r.canonical_name
         op = ntcp_site.organs.get(organ)
-        if op is None:
+        if op is None and site_has_ntcp_params:
             continue
-        row = calc.compute_all(dvh_r, meta, op, params_key)
+        refused = op is None
+        row = calc.compute_all(
+            dvh_r, meta, op or OrganNTCPParams(canonical=organ), params_key
+        )
+        if refused:
+            _mark_no_ntcp_params(row)
         row["AnonPatientID"] = anon_id
         # Identity of the ROI behind this row. Without it an organ and its own PRV expansion
         # arrive as two rows with the same `structure` label and no field distinguishes them:
@@ -302,22 +459,36 @@ def collect_txt_ntcp(
     glob_pattern: str,
     default_dpf_gy: float,
     preserve_canonical: bool = False,
+    rx_gy: float | None = None,
+    n_frac: int | None = None,
 ) -> list[dict]:
     """NTCP from TPS DVH text when structure maps to a configured OAR."""
     calc = NTCPCalculator()
     results: list[dict] = []
 
     for path in iter_dvh_text_files(dvh_dir, glob_pattern):
-        for txt in _read_txt_structures(path, default_dpf_gy, preserve_canonical):
+        for txt in _read_txt_structures(
+            path, default_dpf_gy, preserve_canonical, rx_gy=rx_gy, n_frac=n_frac
+        ):
             detection = detect_site_from_text(
                 txt.plan_metadata, txt.raw_name, txt.header_text
             )
             params_key, site_info = resolve_pipeline_site(site_override, detection)
             ntcp_site = load_site_ntcp_params(params_key, user_config=user_ntcp_config)
             op = ntcp_site.organs.get(txt.canonical_name)
-            if op is None:
+            # #11: a site with no NTCP block at all is reported per structure, not skipped. A
+            # structure that is simply not an OAR of a site that HAS parameters is still skipped.
+            if op is None and ntcp_site.organs:
                 continue
-            row = calc.compute_all(txt, txt.plan_metadata, op, params_key)
+            refused = op is None
+            row = calc.compute_all(
+                txt,
+                txt.plan_metadata,
+                op or OrganNTCPParams(canonical=txt.canonical_name),
+                params_key,
+            )
+            if refused:
+                _mark_no_ntcp_params(row)
             row["AnonPatientID"] = txt.patient_id
             # Keep the ROI's ORIGINAL name alongside the canonical so downstream consumers can check
             # that the structure definition matches what the model's published parameters assume (a
@@ -333,9 +504,14 @@ def apply_uncertainty_and_hypoxia(
     results: list[dict],
     user_config: Path | None,
     n_mc: int,
+    seed: int = 42,
 ) -> None:
-    """Phase 3: parameter MC and hypoxia correction (in-place)."""
-    mc_cfg = ParamUncertaintyConfig(n_samples=n_mc)
+    """Phase 3: parameter MC and hypoxia correction (in-place).
+
+    ``seed`` is the run's seed (defect #6). It used to be dropped here, so every run drew the
+    same 42 regardless of what the manifest recorded.
+    """
+    mc_cfg = ParamUncertaintyConfig(n_samples=n_mc, seed=seed)
 
     for r in results:
         dvh_df = r.get("_dvh_df")
@@ -375,12 +551,16 @@ def apply_ntcp_uncertainty(
     site_key: str,
     user_ntcp_config: Path | None,
     n_mc: int,
+    seed: int = 42,
 ) -> None:
-    """Phase 3 NTCP: run uNTCP parameter MC in-place on each OAR row."""
+    """Phase 3 NTCP: run uNTCP parameter MC in-place on each OAR row.
+
+    ``seed`` is the run's seed (defect #6), not the config default.
+    """
     from uncertainty.ntcp_mc import NTCPUncertaintyConfig, run_untcp
 
     ntcp_site = load_site_ntcp_params(site_key, user_config=user_ntcp_config)
-    cfg = NTCPUncertaintyConfig(n_samples=n_mc)
+    cfg = NTCPUncertaintyConfig(n_samples=n_mc, seed=seed)
     for r in ntcp_results:
         organ = r.get("structure", "")
         dvh_df = r.get("_dvh_df")
@@ -837,7 +1017,9 @@ def run_pipeline(args: argparse.Namespace) -> int:
     ml_site = site_override or _dominant_params_site(all_results)
 
     if not args.no_uncertainty:
-        apply_uncertainty_and_hypoxia(all_results, args.user_config, args.n_mc)
+        apply_uncertainty_and_hypoxia(
+            all_results, args.user_config, args.n_mc, seed=getattr(args, "seed", 42)
+        )
 
     outcomes = None
     if args.outcome_csv:

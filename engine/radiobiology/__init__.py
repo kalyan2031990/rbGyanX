@@ -39,7 +39,13 @@ def dvh_object_to_dataframe(dvh: Any) -> pd.DataFrame:
     return frame
 
 
-from radiobiology.geud_tcp import GEUDTCPCalculator, compute_geud, geud_tcp_niemierko
+from radiobiology.geud_tcp import (
+    GEUD_ZERO_DOSE_NEG_A,
+    GEUDTCPCalculator,
+    compute_geud,
+    compute_geud_with_reason,
+    geud_tcp_niemierko,
+)
 from radiobiology.logistic_tcp import LogisticTCPCalculator, logistic_tcp
 from radiobiology.lq_model import (
     bed,
@@ -61,7 +67,9 @@ __all__ = [
     "TCPCalculator",
     "ZMTCPCalculator",
     "bed",
+    "GEUD_ZERO_DOSE_NEG_A",
     "compute_geud",
+    "compute_geud_with_reason",
     "dvh_object_to_dataframe",
     "eqd2",
     "eqd2_usc",

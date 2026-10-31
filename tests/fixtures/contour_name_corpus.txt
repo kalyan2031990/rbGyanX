@@ -1,0 +1,510 @@
+# Real radiotherapy contour names, for the organ-key reachability test (defect #22).
+#
+# NAMES ONLY. No patient identifier, no date, no dose and no outcome appears in this file, and
+# nothing here can be traced to a person. It exists so that
+# _validate_default_organ_keys_reachable() can be checked against names a treatment planning
+# system actually exports, instead of against canon_target(key) == key, which is a tautology:
+# the old check compared the alias table with itself and passed however badly the table drifted.
+#
+# Sources (all read-only; harvested from run provenance already recorded in
+# project_rbGyanx/rbGyanX_Manuscript_Workspace/02_Run_Outputs):
+#   TCIA2 head-and-neck (AIRTP contour names), v1.3.0 STRUCTURE_CENSUS -> 53 names
+#   v1.3.0 reachability census (all cohorts) -> 432 names
+#   21 structure_mapping.csv files (PAROTID / SPARK / validation runs) -> 6 names
+#
+# STILL TO ADD, and deliberately not invented: the published AIRTP structure-name list and
+# Gao et al. Table 5. The HN names below come from the AIRTP-contoured TCIA2 cohort as this
+# project actually read them, which overlaps that list but is not a substitute for it.
+#
+# One name per line. Lines beginning with # are comments.
+100% no track
+100% tracked
+100%CI_Dose Regn
+100%TD Vol
+100%Vol_CI
+105% hot
+18.1 (50)
+18.1 (FINAL)
+18.13 Gy
+18Gy replan
+1_Elekta_CouchRemove_0
+1cm TOL
+1cm TOL_P
+1mm+PTV
+25.38 (70)
+25.38_70(FINAL)
+29 (80)
+29_80(FINAL)
+2_Elekta_Shell_0,7
+2cm TOL
+2cm TOL_P
+34.4 (FINAL)
+36.25 (100)
+36.25 Gy
+36.25_100 (FINAL)
+36.25Gy replan
+36.3 (FINAL)
+3_Elekta_Core_0,06
+4_Elekta_Rails_1
+50% no Track
+50% TD Vol
+50% tracked
+50%CI_Dose Regn
+50%Vol_CI
+All_structures1
+APEX
+Apex
+APEX MARKER
+Apex_Fiducial
+Apex_P
+Beacons
+Beacons_P
+BLADDER
+Bladder
+Bladder - 0.5cm
+Bladder in PTV
+bladder in_P
+Bladder Out
+Bladder Sub CTV_
+Bladder_In
+Bladder_In_P
+BLADDER_NS
+Bladder_Out
+Bladder_P
+BLADDER_PRV
+BLADDERINPTV
+BladderInPTV
+BladderPRV
+BODY
+Body
+Body Maximum
+Body Minimum
+BODY_P
+BONES
+Bones
+BrachialPlexus
+Brain
+BrainStem
+BrainStem_03
+Chiasm
+CI_100%
+CI_50%
+Cochlea_L
+Cochlea_R
+cold spot ctv
+ColdSpot
+comb structures
+combined
+control
+cool
+CouchInterior
+CouchInterior1
+CouchInterior1_P
+CouchInterior_P
+CouchSurface
+CouchSurface1
+CouchSurface1_P
+CouchSurface_P
+CTV
+CTV + 0.5
+CTV IMRT_P
+CTV INF
+CTV Prost 36.25
+CTV-U_PRV
+CTV36,25
+CTV36,25-U_PRV
+CTV_P
+CTVHD
+CTVp
+CTVp SC
+CTVProstate
+CTVProstate_P
+CTVSV
+CTVSV_P
+DIL
+DIL-URETHRA
+DIL-URETHRA_PRV
+Dose 100[%]
+Dose 100[%]2
+Dose 100[%]_P
+Dose 18.125[Gy]
+Dose 18.125[Gy]1
+Dose 1800[cGy]
+Dose 1800[cGy]2
+Dose 1812
+Dose 1812.5cGy
+Dose 1812[cGy]
+Dose 1813[cGy]_P
+Dose 36.25[Gy]
+Dose 36.25[Gy]1
+Dose 3625
+Dose 3625[cGy]
+Dose 3625[cGy]_P
+Dose 3625cGy
+Dose 37.5[Gy]1
+Dose 50%
+Dose 50[%]
+Dose 50[%]2
+Dose 50[%]_P
+Esophagus
+EXTERNAL
+External
+EXTERNAL_RVR
+External_RVR
+Eyes
+FemHead
+FemHead_L
+FemHead_L_P
+FemHead_R
+FemHead_R_P
+FemoralHead
+FemoralHead_P
+FemoralHeadL
+FemoralHeadR
+FemoralHeads
+FemoralHeads_P
+Femur_L
+Femur_R
+fiducial 1
+Fiducial 1+0.3
+Fiducial 1+0.3cm
+fiducial 2
+Fiducial 2+0.3
+Fiducial 2+0.3cm
+fiducial 3
+Fiducial 3+0.3
+Fiducial 3+0.3cm
+Fiducial Apex
+Fiducial boolean
+Fiducial Left
+Fiducial Right
+Fiducial1
+Fiducial1+0.3
+Fiducial2
+Fiducial2+0.3
+Fiducial3
+Fiducial3+0.3
+FSD_05
+FSD_10
+Fx3_Arc1and2_WKIM
+Fx3_Arc1and2_woKIM
+Fx4_Arc1
+Fx4_Arc2_withKIM
+Fx4_Arc2_woKIM
+GAP_05
+gas fill_P
+GS1
+GS2
+GS3
+GTV P
+GTVp
+hot
+HOT blad
+HS
+Hydrogel
+Hydrogel1_P
+Hydrogel_P
+IGRT 36.25Gy
+IGRT 36.25Gy_P
+IMRT BLADDER
+IMRT Bladder
+IMRT CTV
+IMRT PTV
+IMRT URETH_P
+IMRTCTV_High_P
+IMRTPTV_High_P
+Inf seed
+ISO
+ISO_Arc1and2
+ISO_Arc1and2_WoKIM
+Iso_Fx1Arc1
+Iso_Fx1Arc2
+Iso_Fx1Arc2_woKIM
+ISO_Fx2_Arc1
+ISO_Fx2_Arc2
+ISO_Fx2_Arc2_WoKIM
+ISO_Fx3_Arc1
+ISO_Fx3_Arc2_WithKIM
+ISO_Fx3_Arc2_WoKIM
+Iso_Fx4_Arc1_wKIM
+Iso_Fx4_Arc1_woKIM
+Iso_Fx4_Arc2_wKIM
+Iso_Fx4_Arc2_woKIM
+ISOCENTER
+Isocenter Marker
+Isocentre
+LacrimalGlands
+Larynx
+Larynx-PTV
+LEFT
+Left
+LEFT MARKER
+LEFT NOF
+Left_Fiducial
+Left_P
+LeftInnerRail
+LeftInnerRail_P
+LeftOuterRail
+LeftOuterRail_P
+Lens_L
+Lens_R
+Lips
+Lungs
+Mandible
+Mandible-PTV
+Marker
+Marker 1
+Marker 2
+Marker 3
+Marker1
+Marker2
+Marker3
+Match points
+MAX
+Max Point Dose
+max2
+MEMB URETHRA
+Mid seed
+MIM Max point dose
+MRI bladder
+MRI SpaceOAR
+MRProstate
+MRProstate BE
+MRProstate_P
+new Bladder
+new BladderInPTV
+new BladderPRV
+new CTV
+new OPTI PTV
+new PTV
+new RectalTuning
+new RECTinPTV
+newBladder
+newCTV
+newPTV
+NonRectalBowel
+NS_Fat
+NS_Tissue
+OCavity-PTV
+old Bladder
+old BladderInPTV
+old BladderPRV
+old CTV
+old OPTI PTV
+old PTV
+old PTV_3MM
+old RectalTuning
+old rectum
+oldPRV RECTinPTV
+Opt Bladder
+Opt CTV Pro36.25
+Opt PTV Bladd
+Opt PTV Pro36.25
+Opt PTV Pros
+Opt PTV Prostate
+Opt PTV Rectum
+Opt Rectum
+OPTI CTV
+Opti CTV
+OPTI PTV
+Opti PTV
+OPTI PTV1
+OpticNerve_L
+OpticNerve_R
+OPTIPTV
+OralCavity
+Parotid
+ParotidCon-PTV
+ParotidIps-PTV
+Parotids
+Parotids-PTV
+PELVIC BONES
+PENILE BULB
+Penile Bulb
+penile bulb
+Penile Bulb_P
+PenileBulb
+PenileBulb_P
+Peripheral Zone_
+PharConst-PTV
+PharynxConst
+Pituitary
+Plan Bladder_P
+Plan CTV
+Plan CTV_P
+Plan GTV
+Plan PTV
+Plan PTV 2
+Plan PTV_P
+Plan PTVSV
+Plan_PTV1
+Plan_PTVSV1
+Post rec dose
+Post rectal Vol
+Posterior_Neck
+POSTRECT_NS
+PostTuning
+PROST URETHRA
+PROSTATE
+Prostate CT Scan
+Prostate_P
+ProstUrethra
+PRV RECT IN PTV
+PRV RectInPTV
+PRV-U_PRV
+PRV_RecInPTV
+PRVRectInPTV
+PTISSUE
+PTV
+ptv ao_P
+PTV Combined
+PTV IMRT_P
+PTV Prost 36.25
+PTV SC
+PTV-CTV
+PTV-U_PRV
+PTV36,25
+PTV36,25-U_PRV
+PTV36.25_10
+PTV70
+PTV_02
+PTV_3MM
+PTV_3mm
+PTV_5MM
+PTV_P
+PTV_Total
+PTVHD
+PTVHD_P
+PTVHighOPT
+PTVLow
+PTVLow-PTVMid
+PTVLowOPT
+PTVMid
+PTVMid-PTVHigh
+PTVMidOPT
+PTVProstate
+PTVSV
+RECT_03_NS
+RECT_IN_PTV
+Rectal PRV
+RECTAL TUNING
+Rectal Tuning
+RectalTuning
+RectalWall
+RECTUM
+Rectum
+Rectum - 0.5cm
+Rectum avoid
+RECTUM IN PTV
+Rectum in PTV
+Rectum PRV
+Rectum PRV_P
+RECTUM-IN-PTV
+RECTUM-PTV
+RECTUM02
+Rectum_In_P
+RECTUM_NS
+Rectum_P
+RECTUMINPTV
+RectumInPTV
+Reference Line
+Reference Line1
+RIGHT
+Right
+RIGHT MARKER
+RIGHT NOF
+Right_Fiducial
+Right_P
+RightInnerRail
+RightInnerRail_P
+RightOuterRail
+RightOuterRail_P
+RING15
+Ring2
+RING35
+RING55
+RING_15
+RING_35
+RING_36,25_15
+RING_36,25_35
+RING_36,25_55
+RING_55
+RingPTVHigh
+RingPTVLow
+RingPTVMid
+RT_PTV
+RT_PTV3625-CTV
+RVR
+RVR1
+RVR2
+RVR_P
+SCAN_REF
+SEED INF
+SEED MID
+SEED SUP
+Shoulders
+Sigmoid
+Signmoid
+SmallBowel
+SpaceOAR
+spaceoar
+SpinalCord
+SpinalCord_05
+Submand-PTV
+Submandibular
+SubmandL-PTV
+SubmandR-PTV
+Sup seed
+TD 100
+TD 100 10FFF
+TD 100 6x
+TD 100 v11
+TD 10XFFF
+TD 1813
+TD 3625
+TD 50
+TD 50 10FFF
+TD 50 6x
+TD 50 v11
+TD 6X
+TEST PTV
+test ptv
+Thyroid
+Thyroid-PTV
+TISSUE
+Tissue
+TOON_P
+Trachea
+TROG 18.13 Gy
+TROG 36.25 Gy
+ts rectum_P
+tsCTVProstate ip
+tsCTVProstate_P
+tsCTVSV ip_P
+tsCTVSV_P
+tsHydrogel_P
+tsMRProstate ip_
+tsMRProstate_P
+TT
+Tuning Inner_P
+Tuning InnerHD_P
+Tuning RingHD
+Tuning RingHD_P
+URETHRA
+Urethra
+URETHRA IN PTV
+URETHRA in PTV
+Urethra in PTV
+Urethra PRV
+URETHRA PTV
+URETHRA_HS
+Urethra_opt
+Urethra_P
+URETHRA_PRV
+Urethra_PRV
+URETHRA_PRV02
+URETHRA_PRV_NS
+Urethra_PRV_P
+UrethraPRV
+VMAT CTV
+VMAT PTV

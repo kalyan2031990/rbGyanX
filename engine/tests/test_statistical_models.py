@@ -43,42 +43,42 @@ lifelines_skip = pytest.mark.skipif(
 # GROUP A — EPV Guard
 def test_epv_passes_with_sufficient_events():
     y = np.array([0] * 15 + [1] * 85)
-    result = compute_epv(y, n_features=1)
+    result = compute_epv(y, n_features=1, event_label=0)
     assert result.passes
     assert result.epv == pytest.approx(15.0)
 
 
 def test_epv_fails_with_too_few_events():
     y = np.array([0] * 9 + [1] * 91)
-    result = compute_epv(y, n_features=1)
+    result = compute_epv(y, n_features=1, event_label=0)
     assert not result.passes
     assert result.epv == pytest.approx(9.0)
 
 
 def test_epv_exact_boundary():
     y = np.array([0] * 10 + [1] * 90)
-    result = compute_epv(y, n_features=1)
+    result = compute_epv(y, n_features=1, event_label=0)
     assert result.passes
     assert result.epv == pytest.approx(10.0)
 
 
 def test_epv_three_features_blocks():
     y = np.array([0] * 10 + [1] * 90)
-    result = compute_epv(y, n_features=3)
+    result = compute_epv(y, n_features=3, event_label=0)
     assert not result.passes
     assert result.epv == pytest.approx(10 / 3)
 
 
 def test_epv_events_count_recurrences_only():
     y = np.array([0] * 5 + [1] * 95)
-    result = compute_epv(y, n_features=1)
+    result = compute_epv(y, n_features=1, event_label=0)
     assert result.n_events == 5
 
 
 def test_select_features_by_epv_reduces_feature_set():
     y = np.array([0] * 15 + [1] * 85)
     features = ["TCP_Poisson", "TCP_gEUD", "EQD2"]
-    selected, epv_r = select_features_by_epv(features, y)
+    selected, epv_r = select_features_by_epv(features, y, event_label=0)
     assert len(selected) == 1
     assert epv_r.passes
     assert selected[0] == "TCP_Poisson"

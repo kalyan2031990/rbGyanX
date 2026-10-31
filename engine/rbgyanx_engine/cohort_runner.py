@@ -76,9 +76,17 @@ class RunnerConfig:
     pseudonym_map_dir: Path | None = None   # MUST be outside the repo; defaults beside output_root
     file_pattern: str = "*.txt"             # dvh_txt only: which files form the cohort (e.g. one study arm)
     preserve_txt_canonical: bool = False    # dvh_txt: keep true ROI canonical (OARs) so NTCP can apply
-    dose_per_fraction: float = 2.0          # TPS text: exports often omit fractionation entirely
-                                            # ("Prescribed dose: not defined"), and the reader then
-                                            # ASSUMES this value. Wrong for hypofractionation/SBRT.
+    dose_per_fraction: float | None = None  # TPS text: exports often omit fractionation entirely
+                                            # ("Prescribed dose: not defined"). Until v1.5.0 the
+                                            # reader then ASSUMED 2 Gy, which is wrong for
+                                            # hypofractionation and SBRT and was never stated on
+                                            # the row. None means not stated: TCP is refused with
+                                            # FRACTIONATION_MISSING unless this, or --rx-gy with
+                                            # --n-frac, is given (defects #4 and #5).
+    rx_gy: float | None = None              # TPS text: prescription when the header omits it
+    plan_label: str | None = None           # DICOM: RTPlanLabel to use when several plans tie
+    plan_overrides: dict[str, str] | None = None  # DICOM: per-patient RTPlanLabel (#18)
+    n_frac: int | None = None               # TPS text: fraction count when the header omits it
     n_mc: int = 1000                        # advanced: uNTCP Monte-Carlo draws
     outcome_csv: Path | None = None         # advanced: required by the engine's ML/XAI branch
 
@@ -159,7 +167,7 @@ def _discover_units(cfg: RunnerConfig) -> list[tuple[str, dict]]:
     from dicom_io.cohort_discovery import discover_cohort
 
     units: list[tuple[str, dict]] = []
-    for m in discover_cohort(root):
+    for m in discover_cohort(root, plan_label=cfg.plan_label, plan_overrides=cfg.plan_overrides):
         key = m.patient_key or f"__NOID__{m.frame_of_reference[:12]}"
         units.append((key, {"kind": "dicom", "manifest": m}))
     return sorted(units, key=lambda kv: kv[0])
@@ -253,8 +261,10 @@ def _process_patient(cfg: RunnerConfig, pseudonym: str, unit: dict, patient_dir:
             enable_ml=(cfg.mode == "advanced"),
             no_uncertainty=(cfg.mode != "advanced"),
             n_mc=cfg.n_mc,
+            seed=cfg.seed,  # #6: the manifest's seed is the one the MC actually uses
             outcome_csv=cfg.outcome_csv,
             cohort=False, dvh_glob="*.txt", dose_per_fraction=cfg.dose_per_fraction,
+            rx_gy=cfg.rx_gy, n_frac=cfg.n_frac,
             preserve_txt_canonical=cfg.preserve_txt_canonical,
         )
         # Suppress BOTH console streams and the logging tree. The engine logs the source-header
@@ -396,6 +406,13 @@ def _accumulate(cfg: RunnerConfig, pseudonym: str, rec: PatientRecord, harvest: 
             definition_ok, codes = verdict["definition_ok"], ";".join(verdict["reason_codes"])
         except Exception:
             definition_ok, codes = "", ""
+        # A row that already refused itself keeps its own reason: the applicability verdict above
+        # is about the ROI's definition and cannot see that the site has no NTCP parameters at
+        # all (defect #11). Without this the reason was computed and then overwritten.
+        row_reason = str(r.get("ntcp_refusal_reason", "") or "")
+        if row_reason:
+            definition_ok = False
+            codes = ";".join(c for c in (row_reason, codes) if c)
         for key in sorted(k for k in r if k.startswith("NTCP_")):
             model = key[5:]
             u = r.get(f"uNTCP_{model}") or {}
@@ -575,9 +592,19 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--endpoint", choices=["tcp", "ntcp", "both"], default="both")
     p.add_argument("--file-pattern", default="*.txt",
                    help="dvh_txt only: which files form the cohort (e.g. '*PlanSumwithKIM.txt')")
-    p.add_argument("--dose-per-fraction", type=float, default=2.0,
+    p.add_argument("--dose-per-fraction", type=float, default=None,
                    help="TPS text: dose per fraction when the export omits it "
-                        "(e.g. 7.25 for a 36.25 Gy / 5 fraction SBRT prescription)")
+                        "(e.g. 7.25 for a 36.25 Gy / 5 fraction SBRT prescription). Unset means "
+                        "not stated, and TCP is refused rather than assuming 2 Gy (#4/#5)")
+    p.add_argument("--rx-gy", type=float, default=None,
+                   help="TPS text: prescribed total dose in Gy when the export header omits it")
+    p.add_argument("--plan-label", default=None,
+                   help="DICOM: RTPlanLabel to use when several plans are equally plausible "
+                        "(all UNAPPROVED, same prescription and date). Without it such a patient "
+                        "is refused with AMBIGUOUS_PLAN_SELECTION rather than tie-broken on "
+                        "SOPInstanceUID order (#18)")
+    p.add_argument("--n-frac", type=int, default=None,
+                   help="TPS text: number of fractions when the export header omits it")
     p.add_argument("--n-mc", type=int, default=1000, help="advanced: uNTCP Monte-Carlo draws")
     p.add_argument("--outcome-csv", type=Path, default=None,
                    help="advanced: outcome labels; REQUIRED by the engine's ML/XAI branch")
@@ -596,6 +623,9 @@ def main(argv: list[str] | None = None) -> int:
         preserve_txt_canonical=args.preserve_structure_canonical,
         n_mc=args.n_mc, outcome_csv=args.outcome_csv,
         dose_per_fraction=args.dose_per_fraction,
+        rx_gy=args.rx_gy,
+        plan_label=args.plan_label,
+        n_frac=args.n_frac,
     )
     print(f"[rbGyanX] cohort={cfg.cohort} kind={cfg.input_kind} → {cfg.output_root}", flush=True)
     summary = run_cohort(cfg, progress=True)
