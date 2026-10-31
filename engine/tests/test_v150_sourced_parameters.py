@@ -183,6 +183,102 @@ def test_the_larynx_carries_the_rancati_fit_and_its_dose_basis() -> None:
     assert params.alpha_beta_gy == pytest.approx(3.0)
 
 
+BAKHSHANDEH = "Bakhshandeh M, Hashemi B, Mahdavi SRM, et al. IJROBP 85(2):514-521 (2013)"
+
+
+def test_the_thyroid_carries_the_bakhshandeh_lkb_fit() -> None:
+    """Table 2, p. 517, Lyman EUD row: n 0.92, m 0.25, D50 44.3 Gy."""
+    params = load_site_ntcp_params("BREAST").organs["Thyroid"]
+    assert params.lkb_probit == {"TD50_gy": 44.3, "m": 0.25, "n": 0.92}
+    assert params.geud_a == pytest.approx(1.0 / 0.92, rel=1e-3)
+    assert params.illustrative is False
+
+    block = params.provenance["LKB_probit"]
+    assert block["source"] == BAKHSHANDEH
+    assert block["table_page"].startswith("Bakhshandeh 2013, Table 2, p. 517")
+    assert block["endpoint"] == "any (clinical or subclinical) hypothyroidism within 1 year"
+    assert block["fractionation_basis"] == "EQD2, alpha/beta 3 Gy"
+    assert block["as_printed"] == {"n": 0.92, "m": 0.25, "TD50_gy": 44.3}
+    assert block["as_printed_ci_95"] == {
+        "n": "0.45-3",
+        "m": "0.16-0.42",
+        "TD50_gy": "40.3-48.3",
+    }
+    assert block["illustrative"] is False
+    # the dose basis of the fit must be the alpha/beta the engine transforms with
+    assert params.alpha_beta_gy == pytest.approx(3.0)
+
+
+def test_the_thyroid_carries_the_bakhshandeh_relative_seriality_fit() -> None:
+    """Table 2, p. 517, Relative seriality row: s 0.05, gamma 1.49, D50 43.5 Gy."""
+    params = load_site_ntcp_params("BREAST").organs["Thyroid"]
+    assert params.rs == {"D50_gy": 43.5, "gamma": 1.49, "s": 0.05}
+
+    block = params.provenance["RS"]
+    assert block["source"] == BAKHSHANDEH
+    assert "Relative seriality" in block["table_page"]
+    assert block["as_printed"] == {"s": 0.05, "gamma": 1.49, "D50_gy": 43.5}
+    assert block["as_printed_ci_95"] == {
+        "s": "0.04-0.07",
+        "gamma": "0.88-2.35",
+        "D50_gy": "39.5-48.5",
+    }
+    assert block["illustrative"] is False
+    # the engine's RS block is the paper's own parameterisation, so nothing is converted
+    assert "none" in block["conversion"].lower()
+
+
+def test_the_thyroid_records_the_head_and_neck_provenance_of_its_fit() -> None:
+    """The fit's cohort is not the cohort it is applied to, and the value must say so."""
+    params = load_site_ntcp_params("BREAST").organs["Thyroid"]
+    for model in ("LKB_probit", "RS"):
+        definition = params.provenance[model]["structure_definition"]
+        assert "head-and-neck cohort" in definition, model
+        assert "65 patients" in definition, model
+        assert "14.84 mL" in definition, model
+    assert "breast plan" in params.provenance["LKB_probit"]["structure_definition"]
+
+
+def test_the_thyroid_records_the_alternative_fit_without_adopting_it() -> None:
+    """Table 4's clinical-only endpoint is the conservative alternative, not the default."""
+    params = load_site_ntcp_params("BREAST").organs["Thyroid"]
+    alternative = params.provenance["LKB_probit"]["alternative_fit"]
+    assert "Table 4, p. 519" in alternative
+    assert "CLINICAL hypothyroidism" in alternative
+    assert "60 Gy" in alternative
+    # and the default really is Table 2's value, not Table 4's
+    assert params.lkb_probit["TD50_gy"] == 44.3
+
+
+def test_the_thyroid_no_longer_carries_the_unsourced_loglogistic_block() -> None:
+    params = load_site_ntcp_params("BREAST").organs["Thyroid"]
+    assert params.lkb_probit is not None
+    assert params.lkb_loglogit is None
+    assert "LKB_loglogit" not in params.provenance
+    assert params.provenance["LKB_probit"]["replaces"].startswith("LKB_loglogit TD50_gy 37.7")
+
+
+def test_basic_mode_now_computes_the_thyroid() -> None:
+    """It was illustrative and refused in BASIC; with a citable source it is computed."""
+    params = load_site_ntcp_params("BREAST").organs["Thyroid"]
+    row = NTCPCalculator().compute_all(
+        _oar_dvh_result("Thyroid", 35.0), _PLAN, params, "BREAST", mode="basic"
+    )
+    assert row["param_illustrative"] is False
+    assert row["param_source"] == BAKHSHANDEH
+    assert not row.get("ntcp_refusal_reason")
+    assert not math.isnan(row["NTCP_LKB_probit"])
+    assert not math.isnan(row["NTCP_RS"])
+
+
+def test_the_citation_year_is_2013_everywhere() -> None:
+    """The file is named 2012 (submission year); the issue is 2013 and the citation must say so."""
+    params = load_site_ntcp_params("BREAST").organs["Thyroid"]
+    for block in params.provenance.values():
+        assert "(2013)" in block["source"], block["source"]
+        assert "2012" not in block["source"], block["source"]
+
+
 def test_the_spinal_cord_structure_definition_states_the_20_cm_reference_length() -> None:
     """Burman's V_ref for the cord is a 20 cm LENGTH, not the whole contoured volume."""
     block = load_site_ntcp_params("HN").organs["SpinalCord"].provenance["LKB_probit"]
@@ -236,7 +332,6 @@ AWAITING_A_PAPER = {
     ("HN", "Parotid_L"),
     ("HN", "Parotid_R"),
     ("PROSTATE", "Rectum"),
-    ("BREAST", "Thyroid"),
 }
 
 NO_PUBLISHED_FIT = {
@@ -281,7 +376,6 @@ def test_the_organs_awaiting_a_paper_name_it() -> None:
         ("HN", "Parotid_L"): "Deasy",
         ("HN", "Parotid_R"): "Deasy",
         ("PROSTATE", "Rectum"): "Michalski",
-        ("BREAST", "Thyroid"): "Bakhshandeh",
     }
     for (site, name), author in expected.items():
         params = load_site_ntcp_params(site).organs[name]

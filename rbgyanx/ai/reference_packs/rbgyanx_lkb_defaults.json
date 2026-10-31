@@ -978,24 +978,68 @@
     {
       "organ": "Thyroid",
       "site": "BREAST",
-      "endpoint": "LKB_loglogit parameter",
+      "endpoint": "LKB_probit parameter",
       "metric": "TD50_gy",
       "comparator": "=",
-      "value": 37.7,
+      "value": 44.3,
       "units": "Gy",
       "risk_pct": null,
-      "citation": "rbGyanX shipped default with no published source (illustrative): BASIC mode refuses it, ADVANCED mode labels it. Bakhshandeh et al., IJROBP 85(2):514-521 (2013) gives a thyroid fit for hypothyroidism (Table 2 p. 517, Table 4 p. 519) and is proposed separately; not applied pending approval"
+      "citation": "Bakhshandeh M, Hashemi B, Mahdavi SRM, et al. IJROBP 85(2):514-521 (2013) — Bakhshandeh 2013, Table 2, p. 517 (Lyman EUD row) — endpoint: any (clinical or subclinical) hypothyroidism within 1 year — structure: thyroid gland. The fit is derived from a head-and-neck cohort (65 patients, mean gland volume 14.84 mL) and is applied here to the incidental irradiation a breast plan delivers, which is a different dose distribution. The parameters are the best published ones for this gland and endpoint; the cohort they came from is not the cohort they are applied to."
     },
     {
       "organ": "Thyroid",
       "site": "BREAST",
-      "endpoint": "LKB_loglogit parameter",
-      "metric": "gamma50",
+      "endpoint": "LKB_probit parameter",
+      "metric": "m",
       "comparator": "=",
-      "value": 0.7,
+      "value": 0.25,
       "units": null,
       "risk_pct": null,
-      "citation": "rbGyanX shipped default with no published source (illustrative): BASIC mode refuses it, ADVANCED mode labels it. Bakhshandeh et al., IJROBP 85(2):514-521 (2013) gives a thyroid fit for hypothyroidism (Table 2 p. 517, Table 4 p. 519) and is proposed separately; not applied pending approval"
+      "citation": "Bakhshandeh M, Hashemi B, Mahdavi SRM, et al. IJROBP 85(2):514-521 (2013) — Bakhshandeh 2013, Table 2, p. 517 (Lyman EUD row) — endpoint: any (clinical or subclinical) hypothyroidism within 1 year — structure: thyroid gland. The fit is derived from a head-and-neck cohort (65 patients, mean gland volume 14.84 mL) and is applied here to the incidental irradiation a breast plan delivers, which is a different dose distribution. The parameters are the best published ones for this gland and endpoint; the cohort they came from is not the cohort they are applied to."
+    },
+    {
+      "organ": "Thyroid",
+      "site": "BREAST",
+      "endpoint": "LKB_probit parameter",
+      "metric": "n",
+      "comparator": "=",
+      "value": 0.92,
+      "units": null,
+      "risk_pct": null,
+      "citation": "Bakhshandeh M, Hashemi B, Mahdavi SRM, et al. IJROBP 85(2):514-521 (2013) — Bakhshandeh 2013, Table 2, p. 517 (Lyman EUD row) — endpoint: any (clinical or subclinical) hypothyroidism within 1 year — structure: thyroid gland. The fit is derived from a head-and-neck cohort (65 patients, mean gland volume 14.84 mL) and is applied here to the incidental irradiation a breast plan delivers, which is a different dose distribution. The parameters are the best published ones for this gland and endpoint; the cohort they came from is not the cohort they are applied to."
+    },
+    {
+      "organ": "Thyroid",
+      "site": "BREAST",
+      "endpoint": "RS parameter",
+      "metric": "D50_gy",
+      "comparator": "=",
+      "value": 43.5,
+      "units": "Gy",
+      "risk_pct": null,
+      "citation": "Bakhshandeh M, Hashemi B, Mahdavi SRM, et al. IJROBP 85(2):514-521 (2013) — Bakhshandeh 2013, Table 2, p. 517 (Relative seriality row) — endpoint: any (clinical or subclinical) hypothyroidism within 1 year — structure: thyroid gland. Same cohort and caveat as the LKB probit block above: a head-and-neck cohort of 65 patients, mean gland volume 14.84 mL, applied here to incidental irradiation in breast plans."
+    },
+    {
+      "organ": "Thyroid",
+      "site": "BREAST",
+      "endpoint": "RS parameter",
+      "metric": "gamma",
+      "comparator": "=",
+      "value": 1.49,
+      "units": null,
+      "risk_pct": null,
+      "citation": "Bakhshandeh M, Hashemi B, Mahdavi SRM, et al. IJROBP 85(2):514-521 (2013) — Bakhshandeh 2013, Table 2, p. 517 (Relative seriality row) — endpoint: any (clinical or subclinical) hypothyroidism within 1 year — structure: thyroid gland. Same cohort and caveat as the LKB probit block above: a head-and-neck cohort of 65 patients, mean gland volume 14.84 mL, applied here to incidental irradiation in breast plans."
+    },
+    {
+      "organ": "Thyroid",
+      "site": "BREAST",
+      "endpoint": "RS parameter",
+      "metric": "s",
+      "comparator": "=",
+      "value": 0.05,
+      "units": null,
+      "risk_pct": null,
+      "citation": "Bakhshandeh M, Hashemi B, Mahdavi SRM, et al. IJROBP 85(2):514-521 (2013) — Bakhshandeh 2013, Table 2, p. 517 (Relative seriality row) — endpoint: any (clinical or subclinical) hypothyroidism within 1 year — structure: thyroid gland. Same cohort and caveat as the LKB probit block above: a head-and-neck cohort of 65 patients, mean gland volume 14.84 mL, applied here to incidental irradiation in breast plans."
     },
     {
       "organ": "BrachialPlexus",
