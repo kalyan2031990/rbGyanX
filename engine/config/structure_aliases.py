@@ -260,8 +260,9 @@ _PHASE3_EXTRA_ALIASES = {
     "Brainstem": ["bstem"],
     "BrainStem_PRV": ["brainstemprv", "prvbrainstem"],
     "PharynxConstrictor": ["pcm", "constrictors", "pharyngealconstrictor", "constrictormuscle",
-                            # TCIA2 / AIRTP spells it "PharynxConst" in 135/135 patients; the
-                            # fuzzy ratio is 0.80, under the 0.88 cutoff, so it never resolved.
+                            # "PharynxConst" is a common export spelling; its fuzzy ratio
+                            # against the canonical is 0.80, under the 0.88 cutoff, so it never
+                            # resolved on its own.
                             "pharynxconst", "pharynxconstrict"],
     "Larynx": ["voicebox", "glottis", "supraglotticlarynx"],
     "OralCavity": ["mouthcavity", "oralmucosa"],

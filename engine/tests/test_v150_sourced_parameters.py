@@ -427,7 +427,7 @@ def test_the_lkb_reference_pack_carries_the_real_citation() -> None:
 
     It also drifted: when HN/SpinalCord moved from 45.0 to 66.5 Gy the pack still said 45.0, and
     the repository's own guard caught it. ``scripts/generate_lkb_reference_pack.py`` now makes the
-    pack's ``generated_from`` claim mechanical.
+    pack's ``generated_from`` claim mechanical, so the two cannot disagree silently again.
     """
     import json
     import pathlib

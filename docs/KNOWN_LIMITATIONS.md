@@ -235,9 +235,9 @@ future config error, a new site, or a differently-named ROI hits the same silent
   rows and no reason. Those OARs are now discovered unfiltered and each gets a row with NaN for
   every model, `definition_ok = False` and `NO_NTCP_PARAMS_FOR_SITE` (defect #11).
 - The reachability guard that was supposed to catch a mis-keyed organ was a tautology — it
-  compared the alias table with itself. It is now measured against 491 real contour names from
-  this project's own recorded runs, which is how `PharynxConst` (exported by 135 of 135 TCIA2
-  patients, and unmapped while the guard was green) was found (defect #22).
+  compared the alias table with itself. It is now measured against a corpus of structure-name
+  variants collected from public sources, which is how `PharynxConst` (a common export spelling
+  for the pharyngeal constrictors, unmapped while the guard was green) was found (defect #22).
 
 What is **still** unaddressed: on a site that *does* have parameters, an ROI whose canonical name
 is not among them is still dropped by a bare `continue` in `get_oar_structures()`, with no row and

@@ -58,9 +58,10 @@ _UNIVERSAL_CANONICALS = frozenset(
 # Defects #9 and #19: a planning-risk volume is the organ grown by a margin, so its DVH is
 # colder and larger than the organ's. Scoring it with the organ's published parameters is
 # scoring a different structure. ``SpinalCord_05`` and ``BrainStem_03`` carried no alias, fell
-# through to fuzzy TG-263 matching and came back as ``SpinalCord`` and ``BrainStem``; measured
-# on TCIA2 the organ and its own PRV collided in 121/121 patients and SpinalCord NTCP differed
-# sevenfold between the two. ``brainstemprv`` was mapped onto the organ by the alias table
+# through to fuzzy TG-263 matching and came back as ``SpinalCord`` and ``BrainStem``. Because the
+# two then share one ``structure`` label, an organ and its own PRV arrive as indistinguishable
+# rows, and which of them was scored changes the number. ``brainstemprv`` was mapped onto the organ
+# by the alias table
 # outright. A PRV now gets its own canonical key, ``<Organ>_PRV``, with ``is_prv`` True, so it
 # is never scored with organ parameters unless the operator maps that key themselves in
 # site_params_ntcp_user.yaml.
@@ -171,7 +172,8 @@ def normalize_to_tg263(raw_name: str) -> dict:
                     # The source name asserts no side and this token does. difflib ties the
                     # "_L" and "_R" keys exactly and breaks the tie lexicographically, so "_R"
                     # always won and the side was chosen by the alphabet, not by anatomy
-                    # (defect #21: 120/121 TCIA2 patients, 54/54 of the parotid-54 cohort).
+                    # (defect #21). A side-less name is common in real exports, so the effect is
+                    # not a corner case.
                     # Refusing here is also what makes the documented bilateral-name policy in
                     # config/structure_aliases.py actually hold: the alias table honoured it and
                     # this branch bypassed it.

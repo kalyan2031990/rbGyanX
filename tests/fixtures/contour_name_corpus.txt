@@ -1,20 +1,22 @@
-# Real radiotherapy contour names, for the organ-key reachability test (defect #22).
+# Structure-name variants collected from public sources, for the organ-key reachability test
+# (defect #22).
 #
-# NAMES ONLY. No patient identifier, no date, no dose and no outcome appears in this file, and
-# nothing here can be traced to a person. It exists so that
-# _validate_default_organ_keys_reachable() can be checked against names a treatment planning
-# system actually exports, instead of against canon_target(key) == key, which is a tautology:
-# the old check compared the alias table with itself and passed however badly the table drifted.
+# NAMES ONLY. No patient identifier, no date, no dose, no outcome and no dataset statistic appears
+# in this file, and nothing here can be traced to a person or to a particular study.
 #
-# Sources (all read-only; harvested from run provenance already recorded in
-# project_rbGyanx/rbGyanX_Manuscript_Workspace/02_Run_Outputs):
-#   TCIA2 head-and-neck (AIRTP contour names), v1.3.0 STRUCTURE_CENSUS -> 53 names
-#   v1.3.0 reachability census (all cohorts) -> 432 names
-#   21 structure_mapping.csv files (PAROTID / SPARK / validation runs) -> 6 names
+# It exists so that _validate_default_organ_keys_reachable() can be checked against names a
+# treatment planning system really exports, instead of against canon_target(key) == key, which is
+# a tautology: the old check compared the alias table with itself and passed however badly the
+# table had drifted from real spellings.
 #
-# STILL TO ADD, and deliberately not invented: the published AIRTP structure-name list and
-# Gao et al. Table 5. The HN names below come from the AIRTP-contoured TCIA2 cohort as this
-# project actually read them, which overlaps that list but is not a substitute for it.
+# The variants are the kind a planning system writes: case and separator differences (RECTUM,
+# Rectum_P), abbreviations (FemHead_L, Chiasm, Lungs), PRV and margin suffixes (SpinalCord_05,
+# Urethra_PRV), boolean and planning-helper structures (PTV-CTV, RINGPTVHIGH, 100%Vol_CI), and
+# side-less or bilateral organ names (Parotid, Parotids, Submandibular) which must NOT be given a
+# side.
+#
+# Still to add, and deliberately not invented: published structure-name nomenclature lists. The
+# variants below overlap them but are not a substitute for one.
 #
 # One name per line. Lines beginning with # are comments.
 100% no track
