@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from validation.hnscc_external_val import (
+from validation.external_validation_harness import (
     DISCLAIMER,
     build_external_validation_report,
-    run_hnscc_external_validation,
+    run_external_validation,
 )
 
 
@@ -22,9 +22,9 @@ def test_disclaimer_present_in_report():
 
 def test_no_outcome_basic_report(tmp_path: Path):
     with __import__("unittest.mock").mock.patch(
-        "dicom_io.tcia_hnscc_adapter.adapt_hnscc_cohort",
+        "dicom_io.dicom_cohort_adapter.adapt_dicom_cohort",
         return_value=([], pd.DataFrame()),
     ):
-        report = run_hnscc_external_validation(tmp_path, None, tmp_path / "out", mode="basic")
+        report = run_external_validation(tmp_path, None, tmp_path / "out", mode="basic")
     assert "disclaimer" in report
     assert (tmp_path / "out" / "external_validation_report.json").is_file()

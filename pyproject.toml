@@ -199,9 +199,7 @@ ignore = [
 # Every case below is an import that MUST follow something: a sys.path insertion that makes the
 # import resolvable, a pytest.importorskip guard, or a matplotlib backend selection. Moving them
 # to the top would break the file.
-"scripts/run_ntcp_benchmark_workspace.py" = ["E402"]
 "scripts/verify_gui_modes.py" = ["E402"]
-"scripts/audit_spark_dataset.py" = ["E402"]
 "utils/tcp_models.py" = ["E402"]
 "tests/test_ntcp_models_core.py" = ["E402"]
 "engine/tests/test_statistical_models.py" = ["E402"]

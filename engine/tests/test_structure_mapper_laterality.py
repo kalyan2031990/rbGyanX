@@ -5,8 +5,8 @@ unlateralised paired-organ name the ``_L`` and ``_R`` keys score IDENTICALLY, an
 ``get_close_matches`` breaks the tie lexicographically, so ``_R`` always won: the side was chosen
 by the alphabet, not by anatomy.
 
-Measured before the fix: ``Submandibular`` -> ``Submandibular_R`` in 120 of 121 TCIA2 patients and
-``Parotid`` -> ``Parotid_R`` in 54 of 54 of the parotid-54 cohort, both at confidence LOW, and that
+Before the fix, a side-less ``Submandibular`` became ``Submandibular_R`` and a side-less
+``Parotid`` became ``Parotid_R``, both at confidence LOW, and that
 LOW never reached any output. In one subject the contours carried ``SubmandL-PTV`` and no
 ``SubmandR-PTV`` -- the only laterality evidence present pointed LEFT and the engine reported RIGHT.
 
@@ -67,7 +67,7 @@ def test_the_tie_is_what_made_r_always_win():
     ("SubmandR", "Submandibular_R"),
     ("Parotid_L", "Parotid_L"),
     ("Parotid_R", "Parotid_R"),
-    # abbreviations that carry the side, matched by curated alias -- SPARK relies on these
+    # abbreviations that carry the side, matched by curated alias rather than fuzzily
     ("FemHead_R", "FemoralHead_R"),
     ("FemHead_L", "FemoralHead_L"),
     ("Femur_L", "FemoralHead_L"),
@@ -97,7 +97,7 @@ def test_non_paired_organs_are_untouched_by_the_guard():
 # --------------------------------------------------------------- the constrictor alias
 
 def test_pharynxconst_reaches_its_organ_key():
-    """TCIA2/AIRTP spells it ``PharynxConst`` in 135/135 patients; the fuzzy ratio is 0.80,
+    """``PharynxConst`` is a common export spelling; its fuzzy ratio is 0.80,
     under the cutoff, so it resolved to UNKNOWN and its parameters were unreachable."""
     r = canon_target("PharynxConst", None)
     assert r["canonical"] == "PharynxConstrictor"

@@ -1,5 +1,5 @@
 """
-Capture high-resolution PNGs of the five v2 Qt screens for the manuscript.
+Capture high-resolution PNGs of the five v2 Qt screens, for documentation or publication.
 
 Runs entirely under ``QT_QPA_PLATFORM=offscreen`` on the shipped **synthetic** demo data
 (examples/data/dvh_txt) — no patient data is touched.

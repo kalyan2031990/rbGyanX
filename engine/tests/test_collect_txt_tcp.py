@@ -1,4 +1,4 @@
-"""Regression for the SPARK canonical-key collision (B.1).
+"""Regression for the canonical-key collision in multi-structure text exports (B.1).
 
 `collect_txt_tcp` itself has always appended to a plain list -- the collapse this covers happened
 one layer down, in `_read_txt_structures` (see test_txt_dvh_reader.py for the unit-level version).
@@ -51,7 +51,7 @@ def test_collect_txt_tcp_keeps_every_colliding_structure(tmp_path: Path) -> None
         user_config=None,
         glob_pattern="*.txt",
         default_dpf_gy=2.0,
-        preserve_canonical=False,  # the SPARK cohort's actual configuration
+        preserve_canonical=False,  # the legacy default, which is what exposed the collision
     )
 
     assert len(results) == 3, (

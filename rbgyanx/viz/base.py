@@ -4,7 +4,7 @@ The visualisation interface (v2 Phase 4 · Slice 2).
 One API, swappable engines — the pattern from Düzenli et al., *SoftwareX* **2026**, 102773:
 
     Plotly      -> INTERACTIVE views (embedded in the Qt app via QWebEngineView)
-    Matplotlib  -> PUBLICATION figures (the manuscript's static panels)
+    Matplotlib  -> PUBLICATION figures (static, print-ready panels)
 
 Callers ask for a backend by name and render a spec; they never import a plotting library
 directly. That keeps the Qt app, the CLI and the paper pipeline on one code path, and makes

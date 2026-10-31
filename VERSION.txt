@@ -54,4 +54,4 @@ release blockers found in the final completion audit:
       seed, package set and SHA-256;
   B2  synthetic dose voxels can no longer enter a production dosiomics pathway;
   B3  the release candidate and Zenodo package are rebuilt from the current commit;
-  B4  the two unfilled placeholders in the Manuscript B draft are resolved from the manifest.
+  B4  the two unfilled placeholders in the draft report are resolved from the manifest.

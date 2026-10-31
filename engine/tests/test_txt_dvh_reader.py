@@ -74,7 +74,7 @@ Mean Dose [Gy]: 36.9
 
 
 def test_multi_structure_survives_with_preserve_canonical_false(tmp_path: Path) -> None:
-    """Regression for the SPARK canonical-key collision (B.1): before this fix,
+    """Regression for the canonical-key collision (B.1): before this fix,
     preserve_canonical=False routed a multi-structure file straight to the single-structure
     reader, which has no per-block boundary reset -- it silently kept only the last structure's
     name over dose/volume rows accumulated across ALL structures, discarding the other 5 (a real
@@ -115,7 +115,7 @@ Mean Dose [Gy]: 36.9
 
     from rbgyanx_engine.pipeline import _read_txt_structures
 
-    results = _read_txt_structures(path, 2.0, False)  # the SPARK cohort's actual configuration
+    results = _read_txt_structures(path, 2.0, False)  # the legacy default
     assert len(results) == 3, "one or more colliding structures was silently discarded"
     assert {r.canonical_name for r in results} == {"PTV"}  # all coerced -- this IS the collision
     by_raw = {r.raw_name: r for r in results}

@@ -13,7 +13,7 @@ PALETTE = ["#1f77b4", "#d62728", "#2ca02c", "#9467bd", "#ff7f0e", "#8c564b"]
 
 
 class MatplotlibBackend(VizBackend):
-    """Static, print-ready output for the manuscript's ≤5 main figures."""
+    """Static, print-ready output for publication figures."""
 
     name = "matplotlib"
     interactive = False

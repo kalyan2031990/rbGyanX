@@ -43,7 +43,7 @@ TOL = 0.1
     "raw,expected,category",
     [
         ("Rectum", "Rectum", "OAR"),
-        ("Rectum_P", "Rectum", "OAR"),  # SPARK centre variant
+        ("Rectum_P", "Rectum", "OAR"),  # a centre-specific suffix variant
         ("Rectum-P", "Rectum", "OAR"),
         ("RECTUM", "Rectum", "OAR"),
         ("Bladder", "Bladder", "OAR"),

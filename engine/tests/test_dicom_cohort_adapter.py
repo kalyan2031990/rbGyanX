@@ -1,11 +1,11 @@
-"""Tests for TCIA HNSCC adapter (mocked DICOM — no PHI)."""
+"""Tests for the DICOM cohort adapter (mocked DICOM — no patient data)."""
 
 from __future__ import annotations
 
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from dicom_io.tcia_hnscc_adapter import adapt_patient_folder
+from dicom_io.dicom_cohort_adapter import adapt_patient_folder
 
 
 def test_skip_patient_missing_rtdose(tmp_path: Path):
@@ -31,15 +31,15 @@ def test_adapter_yields_tg263_keyed_dvh(tmp_path: Path):
     mock_dvh.total_volume_cc = 25.0
     mock_dvh.quality_flag = "OK"
 
-    with patch("dicom_io.tcia_hnscc_adapter.DicomPlanReader") as Reader:
+    with patch("dicom_io.dicom_cohort_adapter.DicomPlanReader") as Reader:
         inst = Reader.return_value
         inst.load_patient_dicom.return_value = mock_bundle
         inst.extract_plan_metadata.return_value = {
             "prescription_dose_gy": 70.0,
             "n_fractions": 35,
         }
-        with patch("dicom_io.tcia_hnscc_adapter.get_oar_structures", return_value=mock_oars):
-            with patch("dicom_io.tcia_hnscc_adapter.DVHExtractor") as Ext:
+        with patch("dicom_io.dicom_cohort_adapter.get_oar_structures", return_value=mock_oars):
+            with patch("dicom_io.dicom_cohort_adapter.DVHExtractor") as Ext:
                 Ext.return_value.extract_all_dvhs.return_value = {1: mock_dvh}
                 rec = adapt_patient_folder(tmp_path)
     assert not rec.skipped

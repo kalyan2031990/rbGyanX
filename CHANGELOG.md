@@ -5,6 +5,96 @@ All notable changes to this project are documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — general software only
+
+The repository now contains general software: usable by anyone with their own data, with nothing
+specific to one study in its code, docs, tests or history. Measurements on a particular cohort,
+manuscript references and journal names belong in that study's own evidence package.
+
+Everything removed below exists at the `v1.4.0` tag and in the archive deposited for that release,
+so it stays retrievable. Verified file by file before removal: all 75 paths resolve at `v1.4.0`.
+
+### Removed — study-specific material
+
+- `analysis/` — the analysis pipeline for one study, its scripts numbered to that study's own
+  figure and table order.
+- `paper/` — a figure capsule for one manuscript, and the CI job that ran it. Its data was
+  synthetic, but its purpose was not general.
+- `scripts/cohort_builder/`, `scripts/dvh_builder/`, `scripts/audit_spark_dataset.py`,
+  `scripts/run_ntcp_benchmark_workspace.py`, `scripts/build_parotid_cohort_workspace.py` — these
+  drove one study's workspace. The DVH inspection tools took no arguments at all: they walked up
+  for a directory named after the study workspace and then into a hard-coded centre and patient
+  folder.
+- The dataset-acquisition half of `external_validation/`: the download script, the
+  collection-specific validation runner, the feature builder that read one archive's zip layout,
+  and their READMEs. **The general half is kept** — the synthetic feature-table mirror, the
+  benchmark runner and the ablation analysis, which CI, an example and the tests use.
+- `clinical/hnscc_covariate_mapper.py` — a column map for one clinical workbook. The harness now
+  takes a `clinical_mapper` callable instead, defaulting to reading the sheet as it stands with
+  column names normalised, so adapting a workbook is the caller's business.
+- Eight run reports and investigations under `docs/`, and `docs/MANUSCRIPT_EVIDENCE.md`.
+- `reproducibility/README_REAL_DATA.md` and `ZENODO_UPLOAD_GUIDE.md`. The synthetic reproduction
+  guide stays, because that is the reproduction path this repository supports.
+- `tests/test_extval_cohort_builder.py` and `tests/test_real_dosiomics_resume.py`, whose targets
+  were removed with the above.
+
+### Changed
+
+- `DATA_AVAILABILITY.md` is now a short general statement: the software ships no patient data, the
+  tests run on synthetic data only, and users supply their own DICOM under their own governance.
+  The cohort inventory it used to carry is study material.
+- Cohort measurements are gone from the historical entries below. Each entry keeps its version,
+  its date and the feature itself; a count measured on one cohort does not describe the software.
+- About two dozen comments and docstrings across `engine/` and the test suite no longer name a
+  dataset as the place a behaviour was observed. Every defect keeps its number, how it was found
+  and its status.
+
+### Fixed — a NaN model column could shorten a composite, a ranking or a metric
+
+Four organs lost their `NTCP_LKB_loglogit` **value** when an unsourced log-logistic block was
+replaced by a published probit fit: HN `Larynx`, HN `Mandible`, BREAST `Thyroid`, and `Esophagus`
+at every site. The column still exists and is NaN for them, which is correct as a reported value —
+that model was not applied, and NaN says so.
+
+The hazard was downstream, and it was real. With the organs of a site now split between the two
+model forms, **no single model column covered a whole OAR set**, so three consumers that each read
+one fixed column took NaN for part of their input:
+
+- **P+ refused outright.** `compute_utcp` read one column, reported the organs scored by the other
+  model as missing, and returned NaN with `UTCP_INCOMPLETE_OAR_SET` — at a site where every OAR
+  had in fact been scored. Whichever model was requested, four of the eight head-and-neck OARs
+  came back missing. The refusal guard behaved correctly; the input it was given was wrong.
+- **The patient summary's "top OARs" was silently shortened.** It coerced one column to numeric
+  and took the five largest, so organs scored by the other model dropped out of the ranking with
+  no indication.
+- **A validation metric could be computed on nothing.** The per-organ NTCP validation iterated the
+  model columns and would have scored an all-NaN prediction vector.
+
+All three now read the NTCP **per organ** through the new `radiobiology.ntcp_row.select_ntcp`,
+which returns the value and the model that produced it, preferring a requested model and falling
+back through the rest. `ntcp_model` remains a preference and is no longer the only option.
+
+Because a P+ may now draw on more than one model form, that is recorded rather than hidden:
+`scored_OAR_models` on the result, `UTCP_NTCP_models` and `UTCP_mixed_NTCP_models` on the row. An
+organ with no finite NTCP from any model is still refused, so containment did not become
+permissiveness. `engine/tests/test_v150_nan_model_column_containment.py` (26 tests) pins all of
+it, including that a genuinely missing organ still refuses P+.
+
+### Deprecated
+
+Two modules were named for one public collection although what they do is general. Both were
+renamed, and a thin shim at each old path re-exports the new names and raises
+`DeprecationWarning`. The shims will be removed in the release after next.
+
+| Old path | New path | Renamed symbols |
+|---|---|---|
+| `engine/dicom_io/tcia_hnscc_adapter.py` | `engine/dicom_io/dicom_cohort_adapter.py` | `HNSCCPatientRecord` → `DicomPatientRecord`, `adapt_hnscc_cohort` → `adapt_dicom_cohort` |
+| `engine/validation/hnscc_external_val.py` | `engine/validation/external_validation_harness.py` | `run_hnscc_external_validation` → `run_external_validation` |
+
+The harness's `DISCLAIMER` keeps the distinction that matters — validating against a recurrence or
+survival endpoint says nothing about whether an NTCP model predicts toxicity, because they are
+different endpoints — and no longer names a collection.
+
 ## [Unreleased] — sourced default NTCP parameters
 
 **The scientific change of v1.5.0, kept separate from the code fixes on purpose.** Every value in
@@ -281,8 +371,8 @@ analysis programme generation is unchanged.
 ### Fixed
 
 - **Provenance was computed and discarded.** `site`, `site_confidence` and `dvh_mode` are now
-  populated on **357 of 357** cohort rows instead of **0 of 357**, and `dose_selected` — a column
-  that did not previously exist — on 357 of 357.
+  populated on every cohort row instead of none, and `dose_selected` — a column that did not
+  previously exist — on every row as well.
 - **The structure mapper assigned a laterality absent from the source contour name.** A fuzzy
   match that would assign a side not present in the contour name is now **refused**. Consequence,
   stated with the loss: `Submandibular_R` previously yielded **1,062** NTCP rows with a laterality
@@ -313,7 +403,8 @@ analysis programme generation is unchanged.
 
 ### Provenance note
 
-The three AFTER cohort runs that produced the evidence package executed at commit **`7f42c4d0`**,
+The cohort runs that produced the evidence package for this release executed at commit
+**`7f42c4d0`**,
 which **predates this version bump**, so their `run_manifest.json` files carry the embedded string
 `1.3.0`. That is not fixable retroactively and was deliberately not rerun. **The commit SHA
 recorded in each manifest is the authoritative identifier** of what produced that artefact — not
@@ -387,7 +478,7 @@ rbGyanX; rbGyanX does not exist to serve one. `CITATION.cff` accordingly sets no
   non-numeric literals were never intended to work and now say so.
 
 - **A multi-structure `dvh_txt` file no longer collapses to a single row.** With
-  `preserve_canonical=False` — the SPARK configuration — `_read_txt_structures` routed
+  `preserve_canonical=False` — the legacy default — `_read_txt_structures` routed
   multi-structure files to the *single*-structure reader, which has no per-block boundary reset.
   It returned one row carrying the **last** structure's name over dose and volume data
   accumulated across every structure in the file, so the numbers on that row belonged to no
@@ -709,7 +800,7 @@ release blockers from the final completion audit are closed.
 
 ### Documentation
 
-- Manuscript B section 3.2: the two `[from manifest]` placeholders resolved to QC_PASSED **219** and
+- The two `[from manifest]` placeholders in the draft report resolved from the run manifest,
   OUTCOME_LINKED **127**, each cited to its `radiomics_manifest.json` key, with the 219 → 127 drop
   attributed to clinical-data loss rather than imaging QC (blocker B4).
 - `docs/AUDIT.md` and `docs/IMPLEMENTATION_ROADMAP.md` corrected: the engine's `dose3d` module
@@ -763,17 +854,23 @@ governance is enforced by the engine; ML/xAI/PINN are ADVANCED-only and experime
 
 ### Added
 
-- TCIA HNSCC external validation acquisition scaffold (`external_validation/`).
+- External-validation tooling (`external_validation/`): a synthetic feature-table mirror,
+  the benchmark runner and the ablation analysis. The dataset-acquisition scripts this
+  originally shipped with were removed in v1.5.0 as study-specific.
 - TG-263 structure normalization (`engine/config/tg263_aliases.py`).
-- TCIA HNSCC DICOM adapter and clinical covariate mapper.
-- External validation pipeline (`engine/validation/hnscc_external_val.py`).
+- DICOM cohort adapter, reading a directory of DICOM-RT studies one patient per
+  subdirectory (renamed from a collection-specific name in v1.5.0; the clinical
+  covariate mapper it shipped with was a column map for one workbook and was removed).
+- External-validation harness (`engine/validation/external_validation_harness.py`;
+  renamed from a collection-specific name in v1.5.0).
 - **Real DVH feature front-end** (`engine/dicom_io/cohort_features.py`) + analytic synthetic
   DICOM-RT factory (`tests/synthetic/dicom_rt_factory.py`); `cohort_features.csv` builder.
 - **Four-class external benchmark** (`engine/validation/extval_benchmark.py`): classical,
   clinical, dosiomics ML, and LQ-constrained **PINN** (`engine/validation/outcome_pinn.py`)
   under centre-grouped CV, with AUC/Brier/H-L/ECE/calibration/DCA and optimism plots.
 - Benchmark + ablation drivers, synthetic CI mirror (`external_validation/`), `extval` CI job.
-- `load_hnscc_outcomes` multi-sheet outcome loader; results in `docs/EXTVAL_RESULTS.md`,
+- Multi-sheet outcome loader for a clinical workbook (removed in v1.5.0: its sheet and
+  column names described one collection). Results in `docs/EXTVAL_RESULTS.md`,
   paper section in `paper/EXTERNAL_VALIDATION.md`.
 
 ### Fixed

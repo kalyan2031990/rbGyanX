@@ -8,6 +8,7 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from outputs.ntcp_reporter import save_ntcp_excel
@@ -88,6 +89,11 @@ def _write_ntcp_validation_metrics(
             y_true = grp["ntcp_outcome"].astype(float).values
             y_pred = grp[ntcp_col].astype(float).values
             if grp["ntcp_outcome"].nunique() < 2:
+                continue
+            # An organ scored by a different model has NaN in this column since v1.5.0.
+            # Validating against an all-NaN prediction produces a metric computed on nothing, so
+            # skip the (column, organ) pair rather than report it.
+            if not np.isfinite(y_pred).any():
                 continue
             vr = validate_ntcp_model(
                 y_true,

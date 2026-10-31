@@ -51,7 +51,7 @@ def test_two_patients_grouped_by_patient_id(tmp_path):
 
 
 def test_no_ct_is_full_not_a_crash(tmp_path):
-    """The key TCIA-lung robustness case: no CT must NOT block DVH-capable processing."""
+    """The key robustness case: no CT series must NOT block DVH-capable processing."""
     s, d, p = build_rt_triple(patient_id="SYN-001")
     _place(tmp_path / "pt", s, d, p)
     (m,) = discover_cohort(tmp_path)

@@ -22,7 +22,7 @@ then discards it.
 
 Defect #19's identity half is here too: NTCP rows carried no ``raw_name`` and no ``roi_number``,
 so an organ and its own PRV expansion arrived as two rows with the same ``structure`` label and
-nothing to tell them apart. Measured on TCIA2: ``BrainStem``/``BrainStem_03`` and
+nothing to tell them apart: ``BrainStem``/``BrainStem_03`` and
 ``SpinalCord``/``SpinalCord_05`` collide in 121/121 patients, with a 7-fold NTCP difference.
 """
 

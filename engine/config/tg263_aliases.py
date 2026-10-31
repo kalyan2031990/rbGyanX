@@ -1,4 +1,4 @@
-"""AAPM TG-263 structure name aliases (H&N focus for TCIA HNSCC)."""
+"""AAPM TG-263 structure name aliases (head-and-neck focus)."""
 
 from __future__ import annotations
 
