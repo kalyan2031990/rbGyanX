@@ -1,254 +1,1281 @@
-# NTCP organ parameters by tumour site key (matches TCP site_params_key).
-# Literature defaults for v0.1.0-alpha; override in site_params_ntcp_user.yaml.
+# NTCP organ parameters by tumour site key (matches the TCP site_params_key).
+#
+# Every value carries a `provenance` block, per model, giving its source, the table and page it
+# was transcribed from, the endpoint it was fitted to, the dose basis, and what the structure was
+# in the paper. A value with no published source is marked `illustrative: true` and BASIC mode
+# refuses it; ADVANCED mode computes it and labels every row `param_illustrative`.
+#
+# `as_printed` holds the numbers exactly as the paper prints them. Nothing is converted or rounded
+# silently: `conversion` states every derivation, and the only one used here is
+# geud_a = 1/n, which is the Kutcher-Burman DVH reduction the LKB probit model assumes.
+#
+# Sources read for this file:
+#   Burman C, Kutcher GJ, Emami B, Goitein M. Fitting of normal tissue tolerance data to an
+#     analytic function. IJROBP 21:123-135 (1991). Table 1, p. 125.
+#   Rancati T, Fiorino C, Fellin G, et al. NTCP modeling of subacute/late laryngeal edema scored
+#     by fiberoptic examination. IJROBP 75:915-923 (2009). p. 919.
+#
+# Override anything here in site_params_ntcp_user.yaml.
+#
+# GENERATED, then committed. The transcription table lives in the v1.5.0 parameter review:
+# see rbGyanX-papers/V1_5_0_DEFAULT_PARAMETERS_FOR_APPROVAL.md.
 
 HN:
   organs:
-    # Parotid xerostomia is a PARALLEL, mean-dose endpoint (QUANTEC / Deasy 2010):
-    # gEUD with a=1 reduces to the mean dose. a=3 over-weights hot spots and is wrong here.
     Parotid_L:
-      geud_a: 1.0
-      alpha_beta_gy: 3.0
+      geud_a: 1
+      alpha_beta_gy: 3
       LKB_loglogit: {TD50_gy: 28.4, gamma50: 0.6}
-      RS: {D50_gy: 28.4, gamma: 1.0, s: 0.25}
+      RS: {D50_gy: 28.4, gamma: 1, s: 0.25}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: >-
+            awaiting Deasy JO et al., IJROBP 76(3 Suppl):S58-S63 (2010) (QUANTEC salivary glands). The
+            values are the QUANTEC-consistent parallel mean-dose choice (geud_a = 1), but the paper
+            has not been read, so nothing can be cited with a page
+          illustrative: true
+        RS:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: >-
+            awaiting Deasy JO et al., IJROBP 76(3 Suppl):S58-S63 (2010) (QUANTEC salivary glands). The
+            values are the QUANTEC-consistent parallel mean-dose choice (geud_a = 1), but the paper
+            has not been read, so nothing can be cited with a page
+          illustrative: true
     Parotid_R:
-      geud_a: 1.0
-      alpha_beta_gy: 3.0
+      geud_a: 1
+      alpha_beta_gy: 3
       LKB_loglogit: {TD50_gy: 28.4, gamma50: 0.6}
-      RS: {D50_gy: 28.4, gamma: 1.0, s: 0.25}
+      RS: {D50_gy: 28.4, gamma: 1, s: 0.25}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: >-
+            awaiting Deasy JO et al., IJROBP 76(3 Suppl):S58-S63 (2010) (QUANTEC salivary glands). The
+            values are the QUANTEC-consistent parallel mean-dose choice (geud_a = 1), but the paper
+            has not been read, so nothing can be cited with a page
+          illustrative: true
+        RS:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: >-
+            awaiting Deasy JO et al., IJROBP 76(3 Suppl):S58-S63 (2010) (QUANTEC salivary glands). The
+            values are the QUANTEC-consistent parallel mean-dose choice (geud_a = 1), but the paper
+            has not been read, so nothing can be cited with a page
+          illustrative: true
     SpinalCord:
-      geud_a: 20.0
-      alpha_beta_gy: 3.0
-      LKB_probit: {TD50_gy: 45.0, m: 0.18, n: 0.05}
-      RS: {D50_gy: 45.0, gamma: 2.0, s: 1.0}
+      geud_a: 20
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 66.5, m: 0.175, n: 0.05}
+      RS: {D50_gy: 45, gamma: 2, s: 1}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Myelitis/necrosis"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: >-
+            a 20 cm length of spinal cord (Burman's V_ref is a reference LENGTH of 20 cm, not the
+            whole contoured cord)
+          printed_as: "Spinal cord, V ref 20 cm"
+          as_printed: {n: 0.05, m: 0.175, TD50_gy: 66.5}
+          conversion: "none on the fitted values; geud_a = 1/n = 20 (1/0.05)"
+          replaces: "LKB_probit TD50_gy 45.0 (a planning constraint), m 0.18, n 0.05"
+          illustrative: false
+        RS:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "the relative-seriality block was not part of the v1.5.0 parameter review; it has no source"
+          illustrative: true
     BrainStem:
-      # Was "Brainstem" (lowercase "s") -- canon_target() produces "BrainStem" (camelCase) for
-      # this organ, and the NTCP lookup is an exact-string dict match with no warning on a miss,
-      # so the mismatched key made this organ's NTCP silently vanish for every patient with a
-      # BrainStem ROI. See docs/KNOWN_LIMITATIONS.md.
-      geud_a: 20.0
-      alpha_beta_gy: 2.0
-      LKB_probit: {TD50_gy: 53.0, m: 0.18, n: 0.05}
+      geud_a: 6.25
+      alpha_beta_gy: 2
+      LKB_probit: {TD50_gy: 65, m: 0.14, n: 0.16}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Necrosis/infarction"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Brain stem"
+          as_printed: {n: 0.16, m: 0.14, TD50_gy: 65}
+          conversion: "none on the fitted values; geud_a = 1/n = 6.25 (1/0.16)"
+          replaces: "LKB_probit TD50_gy 53.0, m 0.18, n 0.05"
+          illustrative: false
     OralCavity:
-      geud_a: 3.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 39.0, gamma50: 0.8}
+      geud_a: 3
+      alpha_beta_gy: 3
+      LKB_loglogit: {TD50_gy: 39, gamma50: 0.8}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "Burman 1991 Table 1 has no oral-cavity row"
+          illustrative: true
     Larynx:
-      geud_a: 3.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 44.0, gamma50: 0.7}
+      geud_a: 0.8547
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 47.3, m: 0.23, n: 1.17}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Rancati T, Fiorino C, Fellin G, et al. IJROBP 75:915-923 (2009)"
+          table_page: "Rancati 2009, p. 919 (LEUD best-fit values; also in the abstract, p. 915)"
+          endpoint: "Subacute/late laryngeal edema, RTOG/EORTC grade >= 2, scored by fiberoptic examination"
+          fractionation_basis: "EQD2, alpha/beta 3 Gy (Rancati et al. 2009)"
+          structure_definition: "larynx; the fit is to the EUD of EQD2 dose-volume histograms"
+          as_printed: {n: 1.17, m: 0.23, TD50_gy: 47.3}
+          conversion: >-
+            none on the fitted values; geud_a = 1/n = 0.8547 (1/1.17). The dose basis is EQD2 at
+            alpha/beta 3 Gy, which is this organ's alpha_beta_gy, so the engine's EQD2 transform
+            matches the fit
+          replaces: "LKB_loglogit TD50_gy 44.0, gamma50 0.7 (unsourced)"
+          illustrative: false
     Submandibular_L:
-      geud_a: 3.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 39.0, gamma50: 0.6}
+      geud_a: 3
+      alpha_beta_gy: 3
+      LKB_loglogit: {TD50_gy: 39, gamma50: 0.6}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "Burman 1991 Table 1 has no submandibular-gland row; the parotid row is a different gland"
+          illustrative: true
     Submandibular_R:
-      geud_a: 3.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 39.0, gamma50: 0.6}
+      geud_a: 3
+      alpha_beta_gy: 3
+      LKB_loglogit: {TD50_gy: 39, gamma50: 0.6}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "Burman 1991 Table 1 has no submandibular-gland row; the parotid row is a different gland"
+          illustrative: true
     Mandible:
-      geud_a: 3.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 70.0, gamma50: 0.5}
+      geud_a: 14.2857
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 72, m: 0.1, n: 0.07}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Marked limitation of joint function (TM joint and mandible)"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: >-
+            the temporomandibular joint AND the mandible together, as one structure. This is NOT an
+            osteoradionecrosis model: the fitted endpoint is joint function
+          printed_as: "TM joint and mandible"
+          as_printed: {n: 0.07, m: 0.1, TD50_gy: 72}
+          conversion: "none on the fitted values; geud_a = 1/n = 14.29 (1/0.07)"
+          replaces: "LKB_loglogit TD50_gy 70.0, gamma50 0.5 (unsourced)"
+          illustrative: false
     PharynxConstrictor:
-      geud_a: 3.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 41.0, gamma50: 0.4}
+      geud_a: 3
+      alpha_beta_gy: 3
+      LKB_loglogit: {TD50_gy: 41, gamma50: 0.4}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "Burman 1991 Table 1 has no pharyngeal-constrictor row"
+          illustrative: true
     Esophagus:
-      geud_a: 3.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 34.0, gamma50: 0.7}
+      geud_a: 16.6667
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 68, m: 0.11, n: 0.06}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Clinical stricture/perforation"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Esophagus"
+          as_printed: {n: 0.06, m: 0.11, TD50_gy: 68}
+          conversion: "none on the fitted values; geud_a = 1/n = 16.67 (1/0.06)"
+          replaces: >-
+            LKB_loglogit TD50_gy 34.0, gamma50 0.7 (unsourced; 34 Gy is about half Burman's 68 Gy and
+            looks like an acute-esophagitis value, i.e. a different endpoint)
+          illustrative: false
 
 LUNG:
   organs:
     LungTotal:
-      geud_a: 3.0
-      alpha_beta_gy: 3.0
+      geud_a: 1.1494
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 24.5, m: 0.18, n: 0.87}
       LKB_loglogit: {TD50_gy: 24.5, gamma50: 0.7}
-      RS: {D50_gy: 24.5, gamma: 1.0, s: 0.01}
-    Heart:
-      geud_a: 3.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 48.0, gamma50: 0.5}
-    Esophagus:
-      geud_a: 3.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 34.0, gamma50: 0.7}
+      RS: {D50_gy: 24.5, gamma: 1, s: 0.01}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Pneumonitis"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Lung"
+          as_printed: {n: 0.87, m: 0.18, TD50_gy: 24.5}
+          conversion: "none on the fitted values; geud_a = 1/n = 1.149 (1/0.87)"
+          illustrative: false
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "the log-logistic block was not part of the v1.5.0 parameter review; it has no source"
+          illustrative: true
+        RS:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "the relative-seriality block was not part of the v1.5.0 parameter review; it has no source"
+          illustrative: true
     Lung_L:
-      geud_a: 3.0
-      alpha_beta_gy: 3.0
+      geud_a: 1.1494
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 24.5, m: 0.18, n: 0.87}
       LKB_loglogit: {TD50_gy: 24.5, gamma50: 0.7}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Pneumonitis"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Lung"
+          as_printed: {n: 0.87, m: 0.18, TD50_gy: 24.5}
+          conversion: "none on the fitted values; geud_a = 1/n = 1.149 (1/0.87)"
+          illustrative: false
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "the log-logistic block was not part of the v1.5.0 parameter review; it has no source"
+          illustrative: true
     Lung_R:
-      geud_a: 3.0
-      alpha_beta_gy: 3.0
+      geud_a: 1.1494
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 24.5, m: 0.18, n: 0.87}
       LKB_loglogit: {TD50_gy: 24.5, gamma50: 0.7}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Pneumonitis"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Lung"
+          as_printed: {n: 0.87, m: 0.18, TD50_gy: 24.5}
+          conversion: "none on the fitted values; geud_a = 1/n = 1.149 (1/0.87)"
+          illustrative: false
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "the log-logistic block was not part of the v1.5.0 parameter review; it has no source"
+          illustrative: true
+    Heart:
+      geud_a: 2.8571
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 48, m: 0.1, n: 0.35}
+      LKB_loglogit: {TD50_gy: 48, gamma50: 0.5}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Pericarditis"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Heart"
+          as_printed: {n: 0.35, m: 0.1, TD50_gy: 48}
+          conversion: "none on the fitted values; geud_a = 1/n = 2.857 (1/0.35)"
+          illustrative: false
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "the log-logistic block was not part of the v1.5.0 parameter review; it has no source"
+          illustrative: true
+    Esophagus:
+      geud_a: 16.6667
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 68, m: 0.11, n: 0.06}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Clinical stricture/perforation"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Esophagus"
+          as_printed: {n: 0.06, m: 0.11, TD50_gy: 68}
+          conversion: "none on the fitted values; geud_a = 1/n = 16.67 (1/0.06)"
+          replaces: "LKB_loglogit TD50_gy 34.0, gamma50 0.7 (unsourced)"
+          illustrative: false
     BrachialPlexus:
-      geud_a: 20.0
-      alpha_beta_gy: 3.0
-      LKB_probit: {TD50_gy: 54.0, m: 0.18, n: 0.05}
+      geud_a: 33.3333
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 75, m: 0.12, n: 0.03}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Clinically apparent nerve damage"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Brachial plexus"
+          as_printed: {n: 0.03, m: 0.12, TD50_gy: 75}
+          conversion: "none on the fitted values; geud_a = 1/n = 33.33 (1/0.03)"
+          replaces: "LKB_probit TD50_gy 54.0, m 0.18, n 0.05"
+          illustrative: false
     ChestWall:
-      geud_a: 20.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 35.0, gamma50: 0.6}
+      geud_a: 20
+      alpha_beta_gy: 3
+      LKB_loglogit: {TD50_gy: 35, gamma50: 0.6}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "Burman 1991 Table 1 has no chest-wall row; the rib-cage row is a different structure"
+          illustrative: true
     Rib:
-      geud_a: 20.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 50.0, gamma50: 0.5}
+      geud_a: 10
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 68, m: 0.21, n: 0.1}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Pathologic fracture"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: >-
+            one third of the rib cage (Burman 1991 p. 124: only tolerance doses for 1/3 of the rib
+            cage were available), NOT a single rib
+          printed_as: "Rib cage"
+          as_printed: {n: 0.1, m: 0.21, TD50_gy: 68}
+          conversion: "none on the fitted values; geud_a = 1/n = 10 (1/0.1)"
+          replaces: "LKB_loglogit TD50_gy 50.0, gamma50 0.5 (unsourced)"
+          illustrative: false
+    SpinalCord:
+      geud_a: 20
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 66.5, m: 0.175, n: 0.05}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Myelitis/necrosis"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: >-
+            a 20 cm length of spinal cord (Burman's V_ref is a reference LENGTH of 20 cm, not the
+            whole contoured cord)
+          printed_as: "Spinal cord, V ref 20 cm"
+          as_printed: {n: 0.05, m: 0.175, TD50_gy: 66.5}
+          conversion: "none on the fitted values; geud_a = 1/n = 20 (1/0.05)"
+          replaces: >-
+            nothing; this organ had no entry for LUNG at all, so its NTCP never computed and LUNG_CONV
+            / LUNG_SBRT P+ was always incomplete (defect #20)
+          illustrative: false
 
 BREAST:
   organs:
     Heart:
-      geud_a: 3.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 48.0, gamma50: 0.5}
+      geud_a: 2.8571
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 48, m: 0.1, n: 0.35}
+      LKB_loglogit: {TD50_gy: 48, gamma50: 0.5}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Pericarditis"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Heart"
+          as_printed: {n: 0.35, m: 0.1, TD50_gy: 48}
+          conversion: "none on the fitted values; geud_a = 1/n = 2.857 (1/0.35)"
+          illustrative: false
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "the log-logistic block was not part of the v1.5.0 parameter review; it has no source"
+          illustrative: true
     LungTotal:
-      # Was two separate keys, "Lung_Ipsi" and "Lung_Contra" -- canon_target() has no way to tell
-      # ipsilateral from contralateral lung apart (both canonicalise to "LungTotal"), so neither
-      # key ever matched and this organ's NTCP silently never computed for BREAST. Merged into the
-      # one key canon_target() actually produces. Both original blocks carried identical values
-      # (TD50_gy: 24.5, gamma50: 0.7), so merging changes no computed number -- only reachability.
-      geud_a: 3.0
-      alpha_beta_gy: 3.0
+      geud_a: 1.1494
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 24.5, m: 0.18, n: 0.87}
       LKB_loglogit: {TD50_gy: 24.5, gamma50: 0.7}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Pneumonitis"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Lung"
+          as_printed: {n: 0.87, m: 0.18, TD50_gy: 24.5}
+          conversion: "none on the fitted values; geud_a = 1/n = 1.149 (1/0.87)"
+          illustrative: false
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "the log-logistic block was not part of the v1.5.0 parameter review; it has no source"
+          illustrative: true
     LAD:
-      geud_a: 3.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 50.0, gamma50: 0.5}
+      geud_a: 3
+      alpha_beta_gy: 3
+      LKB_loglogit: {TD50_gy: 50, gamma50: 0.5}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "Burman 1991 Table 1 has no coronary-artery row"
+          illustrative: true
     Esophagus:
-      geud_a: 3.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 34.0, gamma50: 0.7}
+      geud_a: 16.6667
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 68, m: 0.11, n: 0.06}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Clinical stricture/perforation"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Esophagus"
+          as_printed: {n: 0.06, m: 0.11, TD50_gy: 68}
+          conversion: "none on the fitted values; geud_a = 1/n = 16.67 (1/0.06)"
+          replaces: "LKB_loglogit TD50_gy 34.0, gamma50 0.7 (unsourced)"
+          illustrative: false
     Thyroid:
-      geud_a: 3.0
-      alpha_beta_gy: 3.0
+      geud_a: 3
+      alpha_beta_gy: 3
       LKB_loglogit: {TD50_gy: 37.7, gamma50: 0.7}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: >-
+            Bakhshandeh et al., IJROBP 85(2):514-521 (2013) gives a thyroid fit for hypothyroidism
+            (Table 2 p. 517, Table 4 p. 519) and is proposed separately; not applied pending approval
+          illustrative: true
     BrachialPlexus:
-      geud_a: 20.0
-      alpha_beta_gy: 3.0
-      LKB_probit: {TD50_gy: 54.0, m: 0.18, n: 0.05}
+      geud_a: 33.3333
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 75, m: 0.12, n: 0.03}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Clinically apparent nerve damage"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Brachial plexus"
+          as_printed: {n: 0.03, m: 0.12, TD50_gy: 75}
+          conversion: "none on the fitted values; geud_a = 1/n = 33.33 (1/0.03)"
+          replaces: "LKB_probit TD50_gy 54.0, m 0.18, n 0.05"
+          illustrative: false
     SpinalCord:
-      geud_a: 20.0
-      alpha_beta_gy: 3.0
-      LKB_probit: {TD50_gy: 45.0, m: 0.18, n: 0.05}
+      geud_a: 20
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 66.5, m: 0.175, n: 0.05}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Myelitis/necrosis"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: >-
+            a 20 cm length of spinal cord (Burman's V_ref is a reference LENGTH of 20 cm, not the
+            whole contoured cord)
+          printed_as: "Spinal cord, V ref 20 cm"
+          as_printed: {n: 0.05, m: 0.175, TD50_gy: 66.5}
+          conversion: "none on the fitted values; geud_a = 1/n = 20 (1/0.05)"
+          replaces: "LKB_probit TD50_gy 45.0 (a planning constraint), m 0.18, n 0.05"
+          illustrative: false
 
 BRAIN_GBM:
   organs:
     BrainStem:
-      # Was "Brainstem" -- see the HN block above for why this must match canon_target() exactly.
-      geud_a: 20.0
-      alpha_beta_gy: 2.0
-      LKB_probit: {TD50_gy: 53.0, m: 0.18, n: 0.05}
+      geud_a: 6.25
+      alpha_beta_gy: 2
+      LKB_probit: {TD50_gy: 65, m: 0.14, n: 0.16}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Necrosis/infarction"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Brain stem"
+          as_printed: {n: 0.16, m: 0.14, TD50_gy: 65}
+          conversion: "none on the fitted values; geud_a = 1/n = 6.25 (1/0.16)"
+          replaces: "LKB_probit TD50_gy 53.0, m 0.18, n 0.05"
+          illustrative: false
     OpticChiasm:
-      geud_a: 20.0
-      alpha_beta_gy: 2.0
-      LKB_probit: {TD50_gy: 55.0, m: 0.18, n: 0.05}
+      geud_a: 4
+      alpha_beta_gy: 2
+      LKB_probit: {TD50_gy: 65, m: 0.14, n: 0.25}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Blindness"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Optic chiasma"
+          as_printed: {n: 0.25, m: 0.14, TD50_gy: 65}
+          conversion: "none on the fitted values; geud_a = 1/n = 4 (1/0.25)"
+          replaces: "LKB_probit TD50_gy 55.0, m 0.18, n 0.05"
+          illustrative: false
     OpticNerve_L:
-      geud_a: 20.0
-      alpha_beta_gy: 2.0
-      LKB_probit: {TD50_gy: 54.0, m: 0.18, n: 0.05}
+      geud_a: 4
+      alpha_beta_gy: 2
+      LKB_probit: {TD50_gy: 65, m: 0.14, n: 0.25}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Blindness"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Optic nerve"
+          as_printed: {n: 0.25, m: 0.14, TD50_gy: 65}
+          conversion: "none on the fitted values; geud_a = 1/n = 4 (1/0.25)"
+          replaces: "LKB_probit TD50_gy 54.0, m 0.18, n 0.05"
+          illustrative: false
     OpticNerve_R:
-      geud_a: 20.0
-      alpha_beta_gy: 2.0
-      LKB_probit: {TD50_gy: 54.0, m: 0.18, n: 0.05}
+      geud_a: 4
+      alpha_beta_gy: 2
+      LKB_probit: {TD50_gy: 65, m: 0.14, n: 0.25}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Blindness"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Optic nerve"
+          as_printed: {n: 0.25, m: 0.14, TD50_gy: 65}
+          conversion: "none on the fitted values; geud_a = 1/n = 4 (1/0.25)"
+          replaces: "LKB_probit TD50_gy 54.0, m 0.18, n 0.05"
+          illustrative: false
     NormalBrain:
-      geud_a: 3.0
-      alpha_beta_gy: 2.0
-      LKB_loglogit: {TD50_gy: 60.0, gamma50: 0.5}
+      geud_a: 4
+      alpha_beta_gy: 2
+      LKB_probit: {TD50_gy: 60, m: 0.15, n: 0.25}
+      LKB_loglogit: {TD50_gy: 60, gamma50: 0.5}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Necrosis/infarction"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Brain"
+          as_printed: {n: 0.25, m: 0.15, TD50_gy: 60}
+          conversion: "none on the fitted values; geud_a = 1/n = 4 (1/0.25)"
+          illustrative: false
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "the log-logistic block was not part of the v1.5.0 parameter review; it has no source"
+          illustrative: true
     Pituitary:
-      geud_a: 3.0
-      alpha_beta_gy: 2.0
-      LKB_loglogit: {TD50_gy: 45.0, gamma50: 0.5}
+      geud_a: 3
+      alpha_beta_gy: 2
+      LKB_loglogit: {TD50_gy: 45, gamma50: 0.5}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "Burman 1991 Table 1 has no pituitary row"
+          illustrative: true
     Hippocampus_L:
-      geud_a: 3.0
-      alpha_beta_gy: 2.0
-      LKB_loglogit: {TD50_gy: 22.0, gamma50: 0.8}
+      geud_a: 3
+      alpha_beta_gy: 2
+      LKB_loglogit: {TD50_gy: 22, gamma50: 0.8}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: >-
+            Burman 1991 Table 1 has no hippocampus row; 22 Gy resembles the Gondi 2012
+            memory-impairment D40%, which is a different quantity
+          illustrative: true
     Hippocampus_R:
-      geud_a: 3.0
-      alpha_beta_gy: 2.0
-      LKB_loglogit: {TD50_gy: 22.0, gamma50: 0.8}
+      geud_a: 3
+      alpha_beta_gy: 2
+      LKB_loglogit: {TD50_gy: 22, gamma50: 0.8}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: >-
+            Burman 1991 Table 1 has no hippocampus row; 22 Gy resembles the Gondi 2012
+            memory-impairment D40%, which is a different quantity
+          illustrative: true
     Cochlea_L:
-      geud_a: 1.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 45.0, gamma50: 0.6}
+      geud_a: 1
+      alpha_beta_gy: 3
+      LKB_loglogit: {TD50_gy: 45, gamma50: 0.6}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: >-
+            Burman 1991 Table 1 has no cochlea row. Its 'Ear (middle/external)' rows (acute serous
+            otitis TD50 40, chronic serous otitis TD50 65) are a different structure, and n = 0.01
+            implies an extreme volume effect, so they were deliberately not substituted
+          illustrative: true
     Cochlea_R:
-      geud_a: 1.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 45.0, gamma50: 0.6}
+      geud_a: 1
+      alpha_beta_gy: 3
+      LKB_loglogit: {TD50_gy: 45, gamma50: 0.6}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: >-
+            Burman 1991 Table 1 has no cochlea row. Its 'Ear (middle/external)' rows (acute serous
+            otitis TD50 40, chronic serous otitis TD50 65) are a different structure, and n = 0.01
+            implies an extreme volume effect, so they were deliberately not substituted
+          illustrative: true
 
 BRAIN_METS:
   organs:
     BrainStem:
-      # Was "Brainstem" -- see the HN block above for why this must match canon_target() exactly.
-      geud_a: 20.0
-      alpha_beta_gy: 2.0
-      LKB_probit: {TD50_gy: 53.0, m: 0.18, n: 0.05}
-    Hippocampus_L:
-      geud_a: 1.0
-      alpha_beta_gy: 2.0
-      LKB_loglogit: {TD50_gy: 22.0, gamma50: 0.8}
-    Hippocampus_R:
-      geud_a: 1.0
-      alpha_beta_gy: 2.0
-      LKB_loglogit: {TD50_gy: 22.0, gamma50: 0.8}
+      geud_a: 6.25
+      alpha_beta_gy: 2
+      LKB_probit: {TD50_gy: 65, m: 0.14, n: 0.16}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Necrosis/infarction"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Brain stem"
+          as_printed: {n: 0.16, m: 0.14, TD50_gy: 65}
+          conversion: "none on the fitted values; geud_a = 1/n = 6.25 (1/0.16)"
+          replaces: "LKB_probit TD50_gy 53.0, m 0.18, n 0.05"
+          illustrative: false
     OpticChiasm:
-      geud_a: 20.0
-      alpha_beta_gy: 2.0
-      LKB_probit: {TD50_gy: 55.0, m: 0.18, n: 0.05}
+      geud_a: 4
+      alpha_beta_gy: 2
+      LKB_probit: {TD50_gy: 65, m: 0.14, n: 0.25}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Blindness"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Optic chiasma"
+          as_printed: {n: 0.25, m: 0.14, TD50_gy: 65}
+          conversion: "none on the fitted values; geud_a = 1/n = 4 (1/0.25)"
+          replaces: "LKB_probit TD50_gy 55.0, m 0.18, n 0.05"
+          illustrative: false
     OpticNerve_L:
-      geud_a: 20.0
-      alpha_beta_gy: 2.0
-      LKB_probit: {TD50_gy: 54.0, m: 0.18, n: 0.05}
+      geud_a: 4
+      alpha_beta_gy: 2
+      LKB_probit: {TD50_gy: 65, m: 0.14, n: 0.25}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Blindness"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Optic nerve"
+          as_printed: {n: 0.25, m: 0.14, TD50_gy: 65}
+          conversion: "none on the fitted values; geud_a = 1/n = 4 (1/0.25)"
+          replaces: "LKB_probit TD50_gy 54.0, m 0.18, n 0.05"
+          illustrative: false
     OpticNerve_R:
-      geud_a: 20.0
-      alpha_beta_gy: 2.0
-      LKB_probit: {TD50_gy: 54.0, m: 0.18, n: 0.05}
+      geud_a: 4
+      alpha_beta_gy: 2
+      LKB_probit: {TD50_gy: 65, m: 0.14, n: 0.25}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Blindness"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Optic nerve"
+          as_printed: {n: 0.25, m: 0.14, TD50_gy: 65}
+          conversion: "none on the fitted values; geud_a = 1/n = 4 (1/0.25)"
+          replaces: "LKB_probit TD50_gy 54.0, m 0.18, n 0.05"
+          illustrative: false
+    NormalBrain:
+      geud_a: 4
+      alpha_beta_gy: 2
+      LKB_probit: {TD50_gy: 60, m: 0.15, n: 0.25}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Necrosis/infarction"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Brain"
+          as_printed: {n: 0.25, m: 0.15, TD50_gy: 60}
+          conversion: "none on the fitted values; geud_a = 1/n = 4 (1/0.25)"
+          replaces: >-
+            nothing; this organ had no entry for BRAIN_METS at all, so its NTCP never computed and
+            BRAIN_METS P+ was always incomplete (defect #20)
+          illustrative: false
+    Hippocampus_L:
+      geud_a: 1
+      alpha_beta_gy: 2
+      LKB_loglogit: {TD50_gy: 22, gamma50: 0.8}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "Burman 1991 Table 1 has no hippocampus row"
+          illustrative: true
+    Hippocampus_R:
+      geud_a: 1
+      alpha_beta_gy: 2
+      LKB_loglogit: {TD50_gy: 22, gamma50: 0.8}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "Burman 1991 Table 1 has no hippocampus row"
+          illustrative: true
     Cochlea_L:
-      geud_a: 1.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 45.0, gamma50: 0.6}
+      geud_a: 1
+      alpha_beta_gy: 3
+      LKB_loglogit: {TD50_gy: 45, gamma50: 0.6}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: >-
+            Burman 1991 Table 1 has no cochlea row. Its 'Ear (middle/external)' rows (acute serous
+            otitis TD50 40, chronic serous otitis TD50 65) are a different structure, and n = 0.01
+            implies an extreme volume effect, so they were deliberately not substituted
+          illustrative: true
     Cochlea_R:
-      geud_a: 1.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 45.0, gamma50: 0.6}
+      geud_a: 1
+      alpha_beta_gy: 3
+      LKB_loglogit: {TD50_gy: 45, gamma50: 0.6}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: >-
+            Burman 1991 Table 1 has no cochlea row. Its 'Ear (middle/external)' rows (acute serous
+            otitis TD50 40, chronic serous otitis TD50 65) are a different structure, and n = 0.01
+            implies an extreme volume effect, so they were deliberately not substituted
+          illustrative: true
 
 PROSTATE:
   organs:
     Rectum:
       geud_a: 8.33
-      alpha_beta_gy: 4.0
-      LKB_loglogit: {TD50_gy: 76.9, gamma50: 4.0}
+      alpha_beta_gy: 4
       LKB_probit: {TD50_gy: 76.9, m: 0.14, n: 0.12}
+      LKB_loglogit: {TD50_gy: 76.9, gamma50: 4}
+      illustrative: true
+      provenance:
+        LKB_probit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: >-
+            awaiting Michalski JM et al., IJROBP 76(3 Suppl):S123-S129 (2010) (QUANTEC rectum). TD50
+            76.9 Gy is not Burman's 80 Gy and its origin is not established
+          illustrative: true
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: >-
+            awaiting Michalski JM et al., IJROBP 76(3 Suppl):S123-S129 (2010) (QUANTEC rectum). TD50
+            76.9 Gy is not Burman's 80 Gy and its origin is not established
+          illustrative: true
     Bladder:
-      geud_a: 2.0
-      alpha_beta_gy: 5.0
-      LKB_loglogit: {TD50_gy: 80.0, gamma50: 3.5}
+      geud_a: 2
+      alpha_beta_gy: 5
+      LKB_probit: {TD50_gy: 80, m: 0.11, n: 0.5}
+      LKB_loglogit: {TD50_gy: 80, gamma50: 3.5}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Symptomatic bladder contracture and volume loss"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Bladder"
+          as_printed: {n: 0.5, m: 0.11, TD50_gy: 80}
+          conversion: "none on the fitted values; geud_a = 1/n = 2 (1/0.5)"
+          illustrative: false
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "the log-logistic block was not part of the v1.5.0 parameter review; it has no source"
+          illustrative: true
     FemoralHead_L:
-      geud_a: 4.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 52.0, gamma50: 3.0}
+      geud_a: 4
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 65, m: 0.12, n: 0.25}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Necrosis"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "femoral head and neck"
+          printed_as: "Femoral head and neck"
+          as_printed: {n: 0.25, m: 0.12, TD50_gy: 65}
+          conversion: "none on the fitted values; geud_a = 1/n = 4 (1/0.25)"
+          replaces: "LKB_loglogit TD50_gy 52.0, gamma50 3.0 (unsourced)"
+          illustrative: false
     FemoralHead_R:
-      geud_a: 4.0
-      alpha_beta_gy: 3.0
-      LKB_loglogit: {TD50_gy: 52.0, gamma50: 3.0}
+      geud_a: 4
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 65, m: 0.12, n: 0.25}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Necrosis"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "femoral head and neck"
+          printed_as: "Femoral head and neck"
+          as_printed: {n: 0.25, m: 0.12, TD50_gy: 65}
+          conversion: "none on the fitted values; geud_a = 1/n = 4 (1/0.25)"
+          replaces: "LKB_loglogit TD50_gy 52.0, gamma50 3.0 (unsourced)"
+          illustrative: false
     Urethra:
-      geud_a: 4.0
-      alpha_beta_gy: 5.0
-      LKB_loglogit: {TD50_gy: 80.0, gamma50: 3.0}
+      geud_a: 4
+      alpha_beta_gy: 5
+      LKB_loglogit: {TD50_gy: 80, gamma50: 3}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "Burman 1991 Table 1 has no urethra row"
+          illustrative: true
+    SpinalCord:
+      geud_a: 20
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 66.5, m: 0.175, n: 0.05}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Myelitis/necrosis"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: >-
+            a 20 cm length of spinal cord (Burman's V_ref is a reference LENGTH of 20 cm, not the
+            whole contoured cord)
+          printed_as: "Spinal cord, V ref 20 cm"
+          as_printed: {n: 0.05, m: 0.175, TD50_gy: 66.5}
+          conversion: "none on the fitted values; geud_a = 1/n = 20 (1/0.05)"
+          replaces: >-
+            nothing; this organ had no entry for PROSTATE at all, so its NTCP never computed and
+            PROSTATE P+ was always incomplete (defect #20)
+          illustrative: false
 
 LIVER:
   organs:
     Liver:
-      geud_a: 0.97
+      geud_a: 3.125
       alpha_beta_gy: 2.5
-      LKB_loglogit: {TD50_gy: 40.0, gamma50: 3.2}
-      LKB_probit: {TD50_gy: 40.0, m: 0.15, n: 0.97}
+      LKB_probit: {TD50_gy: 40, m: 0.15, n: 0.32}
+      LKB_loglogit: {TD50_gy: 40, gamma50: 3.2}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Liver failure"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Liver"
+          as_printed: {n: 0.32, m: 0.15, TD50_gy: 40}
+          conversion: "none on the fitted values; geud_a = 1/n = 3.125 (1/0.32)"
+          replaces: >-
+            LKB_probit TD50_gy 40.0, m 0.15, n 0.97 — TD50 and m already matched Burman; only n did
+            not, and geud_a held n (0.97) instead of 1/n, so the DVH reduction was wrong independently
+            of the value of n (defect #47)
+          illustrative: false
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "the log-logistic block was not part of the v1.5.0 parameter review; it has no source"
+          illustrative: true
     Duodenum:
-      geud_a: 4.0
-      alpha_beta_gy: 5.0
-      LKB_loglogit: {TD50_gy: 55.0, gamma50: 3.0}
+      geud_a: 4
+      alpha_beta_gy: 5
+      LKB_loglogit: {TD50_gy: 55, gamma50: 3}
+      illustrative: true
+      provenance:
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: >-
+            Burman 1991 Table 1 has no duodenum row. Its 'Small intestine' row (n 0.15, m 0.16, TD50
+            55) is the nearest published organ and was deliberately NOT substituted
+          illustrative: true
     Stomach:
-      geud_a: 4.0
-      alpha_beta_gy: 5.0
-      LKB_loglogit: {TD50_gy: 68.0, gamma50: 3.0}
+      geud_a: 6.6667
+      alpha_beta_gy: 5
+      LKB_probit: {TD50_gy: 65, m: 0.14, n: 0.15}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Ulceration/perforation"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Stomach"
+          as_printed: {n: 0.15, m: 0.14, TD50_gy: 65}
+          conversion: "none on the fitted values; geud_a = 1/n = 6.667 (1/0.15)"
+          replaces: "LKB_loglogit TD50_gy 68.0, gamma50 3.0 (unsourced)"
+          illustrative: false
     SpinalCord:
-      geud_a: 20.0
-      alpha_beta_gy: 2.0
-      LKB_loglogit: {TD50_gy: 66.5, gamma50: 4.0}
+      geud_a: 20
+      alpha_beta_gy: 2
+      LKB_probit: {TD50_gy: 66.5, m: 0.175, n: 0.05}
+      LKB_loglogit: {TD50_gy: 66.5, gamma50: 4}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Myelitis/necrosis"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: >-
+            a 20 cm length of spinal cord (Burman's V_ref is a reference LENGTH of 20 cm, not the
+            whole contoured cord)
+          printed_as: "Spinal cord, V ref 20 cm"
+          as_printed: {n: 0.05, m: 0.175, TD50_gy: 66.5}
+          conversion: "none on the fitted values; geud_a = 1/n = 20 (1/0.05)"
+          illustrative: false
+        LKB_loglogit:
+          source: "unsourced"
+          table_page: ""
+          endpoint: "not stated"
+          fractionation_basis: "not stated"
+          structure_definition: "not stated"
+          as_printed: {}
+          conversion: ""
+          note: "the log-logistic block was not part of the v1.5.0 parameter review; it has no source"
+          illustrative: true
+    Esophagus:
+      geud_a: 16.6667
+      alpha_beta_gy: 3
+      LKB_probit: {TD50_gy: 68, m: 0.11, n: 0.06}
+      illustrative: false
+      provenance:
+        LKB_probit:
+          source: "Burman C, Kutcher GJ, Emami B, Goitein M. IJROBP 21:123-135 (1991)"
+          table_page: "Burman 1991, Table 1, p. 125"
+          endpoint: "Clinical stricture/perforation"
+          fractionation_basis: >-
+            Emami et al. 1991 tolerance compilation; Burman et al. 1991 state no fractionation of
+            their own
+          structure_definition: "whole organ (Burman's V_ref)"
+          printed_as: "Esophagus"
+          as_printed: {n: 0.06, m: 0.11, TD50_gy: 68}
+          conversion: "none on the fitted values; geud_a = 1/n = 16.67 (1/0.06)"
+          replaces: >-
+            nothing; this organ had no entry for LIVER at all, so its NTCP never computed and LIVER P+
+            was always incomplete (defect #20)
+          illustrative: false

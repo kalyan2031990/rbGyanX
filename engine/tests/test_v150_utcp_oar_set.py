@@ -79,15 +79,12 @@ def test_defect_20_every_resolved_key_is_reachable_from_a_contour_name() -> None
 
 # ------------------------------------------------- the map vs the NTCP parameter library
 
-#: OARs a site's UTCP map lists that its NTCP block cannot score. These are a real gap, not a
-#: coding slip: supplying parameters for them is a scientific decision, so the inventory is
-#: pinned here and any drift from it fails this test.
+#: OARs a site's UTCP map lists that its NTCP block cannot score. v1.5.0 filled the gaps that a
+#: published fit could fill: LUNG and PROSTATE SpinalCord and LIVER Esophagus from Burman 1991
+#: Table 1 p. 125, BRAIN_METS NormalBrain from the same table's "Brain" row. PELVIS remains,
+#: because it has no NTCP parameter block at all and inventing one is a scientific decision, not
+#: a code fix. The inventory is pinned so it cannot drift either way.
 KNOWN_UNSCORABLE = {
-    "BRAIN_METS": {"NormalBrain"},
-    "LUNG_CONV": {"SpinalCord"},
-    "LUNG_SBRT": {"SpinalCord"},
-    "PROSTATE": {"SpinalCord"},
-    "LIVER": {"Esophagus"},
     "PELVIS": {
         "Bladder",
         "BowelBag",
@@ -100,7 +97,7 @@ KNOWN_UNSCORABLE = {
 
 
 def test_defect_20_the_unscorable_oar_inventory_is_exactly_what_is_recorded() -> None:
-    """P+ has been formed over a partial OAR set at five sites; this pins which."""
+    """Only PELVIS now lists OARs its NTCP block cannot score."""
     found: dict[str, set[str]] = {}
     for site, entries in UTCP_OAR_MAP.items():
         block = NTCP_BLOCK_FOR_UTCP_SITE[site]
@@ -111,11 +108,42 @@ def test_defect_20_the_unscorable_oar_inventory_is_exactly_what_is_recorded() ->
     assert found == KNOWN_UNSCORABLE, found
 
 
-def test_defect_20_hn_and_brain_gbm_are_fully_scorable() -> None:
-    """After the canonicalisation fix these two sites can form a complete P+."""
-    for site in ("HN", "BRAIN_GBM"):
+def test_defect_20_every_site_but_pelvis_is_fully_scorable() -> None:
+    """Each of these can now form a complete P+ from the shipped parameter library."""
+    for site in UTCP_OAR_MAP:
+        if site == "PELVIS":
+            continue
         library = set(load_site_ntcp_params(NTCP_BLOCK_FOR_UTCP_SITE[site]).organs)
         assert {e["oar"] for e in resolve_oar_map(UTCP_OAR_MAP[site])} <= library, site
+
+
+def test_pelvis_is_refused_as_unsupported_not_merely_incomplete() -> None:
+    """A site with no NTCP block at all cannot be completed by better data, and says so."""
+    from radiobiology.utcp import UTCP_SITE_UNSUPPORTED, site_has_ntcp_parameters
+
+    assert not site_has_ntcp_parameters("PELVIS")
+    result = compute_utcp(
+        {"AnonPatientID": "P1", "TCP_Poisson": 0.8},
+        [{"AnonPatientID": "P1", "structure": "Rectum", "NTCP_LKB_loglogit": 0.1}],
+        "PELVIS",
+    )
+    assert result.reason == UTCP_SITE_UNSUPPORTED
+    assert math.isnan(result.UTCP)
+    assert any("no NTCP parameter block" in w for w in result.warnings), result.warnings
+
+
+def test_pelvis_cannot_be_forced_with_allow_partial() -> None:
+    """allow_partial means "score the organs I have"; with no parameters there are none."""
+    from radiobiology.utcp import UTCP_SITE_UNSUPPORTED
+
+    result = compute_utcp(
+        {"AnonPatientID": "P1", "TCP_Poisson": 0.8},
+        [{"AnonPatientID": "P1", "structure": "Rectum", "NTCP_LKB_loglogit": 0.1}],
+        "PELVIS",
+        allow_partial=True,
+    )
+    assert math.isnan(result.UTCP)
+    assert result.reason == UTCP_SITE_UNSUPPORTED
 
 
 # ------------------------------------------------------------- a partial set is refused

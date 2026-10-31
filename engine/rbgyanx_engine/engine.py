@@ -185,6 +185,7 @@ def run_analysis(cfg: RunConfig) -> EngineResult:
                             user_tcp,
                             user_ntcp,
                             patient_id=pid_filter,
+                            mode=cfg.mode,
                         )
                     )
             except Exception as exc:
@@ -213,6 +214,7 @@ def run_analysis(cfg: RunConfig) -> EngineResult:
                 preserve_canonical=cfg.preserve_txt_canonical,
                 rx_gy=cfg.rx_gy,
                 n_frac=cfg.n_frac,
+                mode=cfg.mode,
             )
 
     all_for_site = tcp_results or ntcp_results

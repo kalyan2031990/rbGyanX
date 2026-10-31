@@ -78,6 +78,87 @@ Record both variables in the run provenance of any result produced under them.
 
 ## Scientific scope
 
+### NTCP default parameters: what is sourced, and what is only illustrative
+
+Since v1.5.0 every value in `engine/config/site_params_ntcp_default.yaml` carries a per-model
+`provenance` block naming its source, the table and page it was transcribed from, the endpoint it
+was fitted to, the dose basis, and what the structure was in the paper. `as_printed` holds the
+numbers exactly as the paper prints them, and `conversion` states every derivation; the only one
+used is `geud_a = 1/n`, the Kutcher–Burman DVH reduction the LKB probit model is defined on.
+
+Two papers were read for this release: **Burman et al., IJROBP 21:123–135 (1991), Table 1, p. 125**
+and **Rancati et al., IJROBP 75:915–923 (2009), p. 919**.
+
+**Values with no published source are marked `illustrative: true`, and BASIC mode refuses them.**
+ADVANCED mode computes them and labels every row with `param_illustrative` and `param_source`.
+Twenty-one of fifty-seven organ entries are illustrative, in two groups.
+
+*Awaiting a paper the project has not yet obtained:*
+
+| Organ | Value kept | What is needed |
+|---|---|---|
+| HN `Parotid_L`, `Parotid_R` | `TD50 28.4 Gy`, `gamma50 0.6`, `geud_a 1` | Deasy JO et al., IJROBP 76(3 Suppl):S58–S63 (2010) — QUANTEC salivary glands |
+| PROSTATE `Rectum` | `TD50 76.9 Gy`, `m 0.14`, `n 0.12` | Michalski JM et al., IJROBP 76(3 Suppl):S123–S129 (2010) — QUANTEC rectum |
+| BREAST `Thyroid` | `TD50 37.7 Gy`, `gamma50 0.7` | A fit from Bakhshandeh et al., IJROBP 85(2):514–521 (2013) is proposed and awaiting approval |
+
+The parotid is the project's most-used organ, so note the consequence plainly: **in BASIC mode an
+HN run now reports no parotid NTCP** until that citation is in place. ADVANCED mode, which is what
+the published cohort runs use, computes it and labels it illustrative.
+
+*No published fit located in the sources read:* HN `OralCavity`, `PharynxConstrictor`,
+`Submandibular_L/R`; LUNG `ChestWall`; BREAST `LAD`; BRAIN_GBM `Pituitary`; `Hippocampus_L/R` and
+`Cochlea_L/R` at both brain sites; PROSTATE `Urethra`; LIVER `Duodenum`. Each one's provenance
+block says why. Two were deliberately *not* substituted from a near neighbour: Burman's "Small
+intestine" row is not the duodenum, and its "Ear (middle/external)" rows are not the cochlea.
+
+### The esophagus NTCP models stricture and perforation, not acute esophagitis
+
+The esophagus now carries Burman's fit — `TD50 68 Gy`, `m 0.11`, `n 0.06`, endpoint **clinical
+stricture/perforation**. The value it replaced, `TD50 34 Gy`, had no source and is about half
+Burman's, which is consistent with an acute-esophagitis threshold rather than a late-stricture
+TD50. **Acute esophagitis is therefore not modelled.** A run that needs it must supply its own
+parameters in `site_params_ntcp_user.yaml`, where they will be marked illustrative unless their
+own provenance is supplied with them.
+
+### The mandible NTCP is a joint-function model, not osteoradionecrosis
+
+Burman's row is **"TM joint and mandible"** with the endpoint **"marked limitation of joint
+function"**. Both facts are recorded in `structure_definition` and `endpoint`, because a column
+headed *mandible NTCP* will otherwise be read as osteoradionecrosis risk, which this is not. The
+structure the fit assumes is the temporomandibular joint and the mandible together.
+
+### Two structure definitions do not match a contoured volume
+
+- **Spinal cord.** Burman's reference volume is a **20 cm length** of cord, not a contoured
+  volume. The engine reduces whatever cord volume the DVH covers. The mismatch is recorded on the
+  value and is not resolvable without a different published fit.
+- **Rib.** Burman's reference volume is **one third of the rib cage** (p. 124: only tolerance
+  doses for ⅓ of the rib cage were available), not a single rib. The organ key is `Rib`.
+
+### PELVIS has an OAR map but no NTCP parameters, so P+ is refused
+
+`radiobiology.utcp.UTCP_OAR_MAP["PELVIS"]` lists six OARs — Rectum, Bladder, FemoralHead_L/R,
+BowelBag, SpinalCord — and `site_params_ntcp_default.yaml` has no `PELVIS` block at all, so none
+of them can be scored. P+ for PELVIS is refused with `UTCP_SITE_UNSUPPORTED`, which
+`allow_partial=True` deliberately does **not** override: a partial product means "score the organs
+I have", and here there are none. Inventing parameters for a pelvic site is a scientific decision,
+not a code fix. Every other site in the map is now fully scorable, and
+`engine/tests/test_v150_utcp_oar_set.py` pins the inventory so it cannot drift either way.
+
+### A user override drops the shipped citation
+
+If `site_params_ntcp_user.yaml` supplies a model block without also supplying a `provenance` entry
+for it, that model becomes unsourced and illustrative: the shipped citation described a different
+number and must not be inherited by a new one. Supply your own provenance alongside your values to
+keep a model sourced.
+
+### Relative-seriality blocks were not part of the v1.5.0 parameter review
+
+Three organs keep an `RS` block — HN `Parotid_L/R` and `SpinalCord`, LUNG `LungTotal` — and none of
+them has a source. They are marked illustrative per model, so BASIC mode refuses the `NTCP_RS`
+column for them while still computing the sourced `NTCP_LKB_probit` beside it.
+
+
 ### IBSI compliance is not claimed
 
 The radiomics implementation is benchmarked against the IBSI-1 digital phantom and reproduces
@@ -102,31 +183,37 @@ tested, but were not propagated into the published cohort analyses because the a
 per-patient setup data. Reported uncertainty spreads are **parameter uncertainty only** and
 understate total uncertainty.
 
-### Two seeds, one manifest field
+### Two seeds, one manifest field — RESOLVED in v1.5.0 (defect #6)
 
-Every `run_manifest.json` written by `scripts/run_cohort.py` records a `seed` value (default
-`0`, from `RunnerConfig.seed`). That field is provenance metadata only — it is never passed to
-the Monte-Carlo uncertainty module. The actual randomness behind every `uNTCP_*`/`uTCP_*` band
-comes from a separately hardcoded `seed=42` in
-`engine/uncertainty/ntcp_mc.py::NTCPUncertaintyConfig`, freshly instantiated (and therefore
-reset) on every call via `pipeline.py`'s `NTCPUncertaintyConfig(n_samples=n_mc)`, which does not
-override the seed. Results are deterministic and reproducible run to run — both seeds are fixed
-constants — but a manifest asserting a seed that governs nothing is a false provenance claim if
-read as "this is the seed that produced these bands." Neither seed is currently exposed on the
-`rbgyanx-cohort` CLI. Unifying the two into one, CLI-settable seed is v1.4 work; this release
-still ships with them separate, and this is the authoritative statement of that fact.
+Until v1.5.0, `run_manifest.json` recorded a `seed` from `RunnerConfig.seed` that was never passed
+to the Monte-Carlo modules: `NTCPUncertaintyConfig` and `ParamUncertaintyConfig` both stayed at a
+hardcoded 42, so a manifest asserting "this is the seed that produced these bands" was a false
+provenance claim. Both results were deterministic — two fixed constants — but they were not the
+constant the manifest named.
 
-### Two interval conventions, one word: "band"
+The seed is now threaded `RunnerConfig.seed` → `RunConfig.seed` →
+`apply_uncertainty_and_hypoxia` / `apply_ntcp_uncertainty` → both MC configs, and is settable on
+the CLI. **Band values from a cohort run therefore change between v1.4.0 and v1.5.0**, because the
+seed that drives them is now the run's own (0 by default from `RunnerConfig`) rather than 42. The
+manifest is true.
 
-`engine/uncertainty/ntcp_mc.py::_agg` — the source of every cohort-run `uNTCP_*`/`uTCP_*`
-band — reports **p5/p95, a 90% interval**. `utils/uncertainty_models.py::UncertaintyAwareTCP`
-reports a genuine, parametric confidence interval via `confidence_level` (default `0.95`,
-p2.5/p97.5 — a real 95% CI). Both are computed correctly for what they claim to be; neither
-documented, until now, that the other exists or that they differ. A user comparing a
-cohort-run NTCP band against a UTCP figure from the uncertainty-aware TCP path is comparing a
-90% interval to a 95% one with nothing in either output saying so. State which convention is in
-use wherever a band is reported downstream (tables, figures, report text); do not assume
-"the band" means the same coverage level across both modules.
+### Two interval conventions, one word: "band" — now declared on the row (defect #7)
+
+`engine/uncertainty/ntcp_mc.py::_agg` and `parameter_mc.py::_aggregate_mc` — the source of every
+cohort-run `uNTCP_*`/`uTCP_*` band — report **p5/p95, a 90% interval**.
+`utils/uncertainty_models.py::UncertaintyAwareTCP` reports a genuine parametric confidence
+interval via `confidence_level` (default `0.95`, p2.5/p97.5 — a real 95% CI). Both are correct for
+what they claim to be, but until v1.5.0 nothing in either output said which was which, so a
+cohort NTCP band and a UTCP figure could be compared as though they had the same coverage.
+
+Every aggregate now carries **`band_level`**: 0.90 from the engine modules, `confidence_level`
+from the utils path. The column names are unchanged on purpose, so nothing downstream breaks;
+read `band_level` before comparing two bands. The two docstrings that had drifted apart are now
+one shared text.
+
+The limitation that remains is only this: the two conventions still coexist. Nothing forces a
+downstream table or figure to print `band_level` beside the interval, so state the coverage
+wherever a band is reported.
 
 ### An unparameterised OAR is dropped silently, not refused
 
@@ -141,13 +228,22 @@ config error hide with zero trace is unchanged. A structure a user has every rea
 for (it's a real ROI, the site has SOME organs parameterised) can still vanish without a mark if a
 future config error, a new site, or a differently-named ROI hits the same silent-`continue` path.
 
-Recording this as a proper refusal (an organ-level reason code, surfaced the same way a
-patient-level refusal already is) requires changing what `get_oar_structures()` and
-`get_target_structures()` return — a structural change to a shared discovery path, not a
-parameter or a config fix, and not something to do in a release week alongside everything else
-already changing in v1.3.0. Deferred to v1.4. The reachability guard added in v1.3.0 (see below)
-prevents the *specific* class of defect that caused this from shipping silently again; it does not
-make a silently-dropped OAR visible in a given run's output.
+**Partly addressed in v1.5.0.** Two of the three ways this could hide are closed:
+
+- A site with **no NTCP parameter block at all** (`PROSTATE_SBRT`, `LUNG_SBRT`) used to make
+  `allowed_oar_names()` empty, so the filter discarded every contour and the run produced no NTCP
+  rows and no reason. Those OARs are now discovered unfiltered and each gets a row with NaN for
+  every model, `definition_ok = False` and `NO_NTCP_PARAMS_FOR_SITE` (defect #11).
+- The reachability guard that was supposed to catch a mis-keyed organ was a tautology — it
+  compared the alias table with itself. It is now measured against 491 real contour names from
+  this project's own recorded runs, which is how `PharynxConst` (exported by 135 of 135 TCIA2
+  patients, and unmapped while the guard was green) was found (defect #22).
+
+What is **still** unaddressed: on a site that *does* have parameters, an ROI whose canonical name
+is not among them is still dropped by a bare `continue` in `get_oar_structures()`, with no row and
+no reason code. Surfacing that requires changing what `get_oar_structures()` and
+`get_target_structures()` return — a structural change to a shared discovery path — and is not
+part of v1.5.0.
 
 ### Every shipped NTCP organ key is validated against `canon_target()` at import time
 

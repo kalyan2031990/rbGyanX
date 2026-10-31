@@ -391,8 +391,12 @@ def collect_dicom_ntcp(
     user_tcp_config: Path | None,
     user_ntcp_config: Path | None,
     patient_id: str | None = None,
+    mode: str = "advanced",
 ) -> list[dict]:
-    """Phase 1–2 NTCP: DICOM OAR DVHs and classical NTCP models."""
+    """Phase 1–2 NTCP: DICOM OAR DVHs and classical NTCP models.
+
+    ``mode`` is the run mode. BASIC refuses a model whose parameters have no published source.
+    """
     reader = DicomPlanReader()
     dicom = reader.load_patient_dicom(dicom_dir, patient_id=patient_id)
     meta = reader.extract_plan_metadata(dicom["rt_plan"])
@@ -427,7 +431,7 @@ def collect_dicom_ntcp(
             continue
         refused = op is None
         row = calc.compute_all(
-            dvh_r, meta, op or OrganNTCPParams(canonical=organ), params_key
+            dvh_r, meta, op or OrganNTCPParams(canonical=organ), params_key, mode=mode
         )
         if refused:
             _mark_no_ntcp_params(row)
@@ -461,8 +465,12 @@ def collect_txt_ntcp(
     preserve_canonical: bool = False,
     rx_gy: float | None = None,
     n_frac: int | None = None,
+    mode: str = "advanced",
 ) -> list[dict]:
-    """NTCP from TPS DVH text when structure maps to a configured OAR."""
+    """NTCP from TPS DVH text when structure maps to a configured OAR.
+
+    ``mode`` is the run mode. BASIC refuses a model whose parameters have no published source.
+    """
     calc = NTCPCalculator()
     results: list[dict] = []
 
@@ -486,6 +494,7 @@ def collect_txt_ntcp(
                 txt.plan_metadata,
                 op or OrganNTCPParams(canonical=txt.canonical_name),
                 params_key,
+                mode=mode,
             )
             if refused:
                 _mark_no_ntcp_params(row)
