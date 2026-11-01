@@ -10,6 +10,7 @@ import numpy as np
 from dicompylercore import dvhcalc
 from dicompylercore.dvh import DVH
 
+from dicom_io.reader_guard import assert_pydicom_reader
 from dicom_io.structure_mapper import canon_target
 
 logger = logging.getLogger(__name__)
@@ -130,6 +131,10 @@ class DVHExtractor:
         rt_struct_ds,
         structure_list: list[dict],
     ) -> dict[int, DVHResult]:
+        # The only rbGyanX read that goes through dicompyler-core, so the only one the
+        # obsolete-'dicom' fallback can affect (defect #48). Everything else in dicom_io
+        # calls pydicom directly and is unaffected.
+        assert_pydicom_reader()
         results: dict[int, DVHResult] = {}
 
         for structure in structure_list:

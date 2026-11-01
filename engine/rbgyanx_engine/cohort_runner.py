@@ -551,6 +551,10 @@ def run_cohort(cfg: RunnerConfig, progress: bool = False) -> dict:
         if (repo_root / "VERSION.txt").exists() else "unknown",
         "git_commit": _git_commit(repo_root), "config_hash": _config_hash(cfg), "seed": cfg.seed,
         "python": platform.python_version(), "packages": _pkg_versions(),
+        # Which library actually read the DICOM. Recording pydicom's version alone cannot
+        # show this: dicompyler-core falls back to the obsolete 'dicom' package when pydicom
+        # is >= 3, and then every value in this run would be NaN (defect #48).
+        "dicom_reader": _dicom_reader_record(),
         "start_utc": start_utc, "end_utc": datetime.now(timezone.utc).isoformat(),
         # The input tree this run read. Its absence made a completed run unreproducible from its
         # own output: nothing recorded WHERE the data came from (defect #17).
@@ -577,6 +581,22 @@ def run_cohort(cfg: RunnerConfig, progress: bool = False) -> dict:
     return {"cohort": cfg.cohort, "output": str(out), **counts, "attempted": len(records),
             "phi_scan_clean": phi.get("clean", None)}
 
+
+
+def _dicom_reader_record() -> dict:
+    """What dicompyler-core bound its reader to, so a manifest is self-sufficient on defect #48."""
+    try:
+        from dicom_io.reader_guard import reader_diagnostics
+
+        info = reader_diagnostics()
+        return {
+            "read_file_module": info["read_file_module"],
+            "pydicom": info["pydicom"],
+            "dicompylercore": info["dicompylercore"],
+            "is_pydicom": info["is_pydicom"],
+        }
+    except Exception as exc:  # pragma: no cover - never fail a run over provenance
+        return {"error": str(exc)}
 
 def _pkg_versions() -> dict:
     out = {}

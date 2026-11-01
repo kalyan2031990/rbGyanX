@@ -5,6 +5,53 @@ All notable changes to this project are documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — refuse to read DICOM through the obsolete `dicom` package
+
+### Fixed
+
+**With pydicom 3 installed, every DICOM read silently returned nothing.** `dicompylercore`
+guards its reader import with `try: from pydicom.dicomio import read_file / except ImportError:
+from dicom import read_file`. **pydicom 3 removed that name**, and no released dicompyler-core
+(0.5.6 is the latest) has stopped importing it — verified against pydicom 3.0.1, where it is the
+only one of the four names dicompyler-core imports that is missing. So with pydicom >= 3 **and**
+the obsolete `dicom` distribution installed, the fallback succeeds and the reader binds to a
+library written for Python 2, which raises `RuntimeError: generator raised StopIteration` on
+Python 3.7+.
+
+The failure was the dangerous kind: **not an exception, but NaN everywhere.** No dose grid was
+read, so no DVH was extracted, so every TCP and NTCP came out NaN — and the run *completed*,
+writing a full output tree of them.
+
+`engine/dicom_io/reader_guard.py` now checks what `dicompylercore.dicomparser.read_file` actually
+resolved to and **raises before any DICOM is read**, naming the resolved module, both versions and
+the two ways to fix it. It guards `DVHExtractor.extract_all_dvhs` — the one rbGyanX read that goes
+through dicompyler-core. `dicom_reader` and `cohort_discovery` call pydicom directly and are
+unaffected; a test pins that they stay unguarded, because guarding them refuses runs that are in
+fact sound.
+
+Two dependency declarations lacked an upper bound and now have one: the `dose3d` extra in
+`engine_advanced/pyproject.toml` and `packaging/requirements-build.txt`. The other five
+declaration sites already said `pydicom>=2.4,<3` with the reason, and the fault still occurred —
+**a declaration constrains an install, not an environment that drifted afterwards**, which is why
+the runtime check is the substantive part of this fix.
+
+### Added
+
+`run_manifest.json` records **`dicom_reader`**: the module the reader resolved to, the pydicom and
+dicompyler-core versions, and a boolean. A manifest recording pydicom's version alone, as it did,
+cannot show which reader was bound.
+
+### Notes
+
+No rbGyanX code path calls `dicompylercore`'s `CalculateStructureVolume`, which returns `0.0`
+rather than refusing when shapely is absent. Structure volumes come from the DVH's own histogram,
+so that zero cannot reach an output, and **shapely is deliberately not added as a dependency**.
+Recorded so the next caller knows to wrap it in a refusal first.
+
+Tests: `engine/tests/test_v150_dicom_reader_guard.py` (14) — both branches of the guard with the
+resolved module substituted, the message asserted to be actionable on its own, the guarded door,
+and the two doors that must stay unguarded.
+
 ## [Unreleased] — general software only
 
 The repository now contains general software: usable by anyone with their own data, with nothing
