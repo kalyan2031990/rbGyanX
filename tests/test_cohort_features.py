@@ -28,9 +28,16 @@ TOL = 0.1  # dicompyler-core bins dose at ~0.01 Gy
 def _dicom_stack_ok() -> bool:
     """True iff dicompyler-core can actually consume pydicom datasets (pydicom<3.0)."""
     rs, rd, rp = build_rt_triple(dose_gy=D0, n_fractions=NFX)
-    res = DVHExtractor().extract_all_dvhs(
-        rd, rs, [{"roi_number": 1, "raw_name": "PTV70", "roi_type": "PTV"}]
-    )
+    try:
+        res = DVHExtractor().extract_all_dvhs(
+            rd, rs, [{"roi_number": 1, "raw_name": "PTV70", "roi_type": "PTV"}]
+        )
+    except RuntimeError:
+        # Since v1.5.0 the reader guard refuses outright when dicompyler-core has fallen back to
+        # the obsolete `dicom` package (defect #48). A refusal is the clearest possible "the stack
+        # is not functional"; this probe used to rely on the failure being silent and returning
+        # NaN instead.
+        return False
     dvh = next(iter(res.values()))
     return dvh.quality_flag == "OK" and not math.isnan(dvh.dmean_gy)
 

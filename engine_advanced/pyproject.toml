@@ -15,7 +15,10 @@ dependencies = [
 
 [project.optional-dependencies]
 pinn = ["torch>=2.1.0"]
-dose3d = ["pydicom>=2.4", "scikit-image>=0.22"]
+# pydicom is capped below 3.0 for the same reason as the core package: dicompyler-core
+# 0.5.6 still imports pydicom.dicomio.read_file, which pydicom 3 removed, and its import
+# guard then falls back to the obsolete "dicom" distribution and reads nothing.
+dose3d = ["pydicom>=2.4,<3.0", "scikit-image>=0.22"]
 
 [tool.setuptools.packages.find]
 where = ["."]
