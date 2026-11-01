@@ -28,7 +28,7 @@ group is internally consistent and self-contained.
 ## Why quarantine rather than delete
 These monoliths implement the historical analyses that the published prior work was based on.
 Keeping them (a) preserves the audit trail for the JMP → py_ntcpx → rbGyanX lineage table in the
-manuscript, and (b) lets historical numbers be re-derived if a reviewer asks. Deleting them would
+record, and (b) lets historical numbers be re-derived if asked. Deleting them would
 lose that, while leaving them at the repo root implied they were part of the tool.
 
 ## Status

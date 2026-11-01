@@ -126,13 +126,29 @@ def save_patient_summary_pdf(
                     fig.text(0.1, y, "NTCP (top OARs)", fontsize=11, weight="bold")
                     y -= 0.04
                     oar_col = "OAR" if "OAR" in nsub.columns else "structure"
+                    # The ranking must not be shortened by a model column that is NaN for part of
+                    # the set. Since v1.5.0 an organ whose unsourced log-logistic block was
+                    # replaced by a published probit fit has NTCP_LKB_loglogit = NaN, and reading
+                    # that one column dropped those organs out of "top OARs" silently. Each row's
+                    # NTCP is taken from whichever model scored it.
                     ntcp_col = next(
-                        (c for c in ("NTCP_LKB_loglogit", "NTCP_RS", "NTCP") if c in nsub.columns),
+                        (
+                            c
+                            for c in ("NTCP_LKB_probit", "NTCP_LKB_loglogit", "NTCP_RS", "NTCP")
+                            if c in nsub.columns
+                        ),
                         None,
                     )
                     if oar_col and ntcp_col:
+                        from radiobiology.ntcp_row import select_ntcp
+
                         nsub = nsub.copy()
-                        nsub["_ntcp"] = pd.to_numeric(nsub[ntcp_col], errors="coerce")
+                        nsub["_ntcp"] = [
+                            select_ntcp(record)[0]
+                            for record in nsub.to_dict("records")
+                        ]
+                        if nsub["_ntcp"].isna().all():
+                            nsub["_ntcp"] = pd.to_numeric(nsub[ntcp_col], errors="coerce")
                         for _, row in nsub.nlargest(5, "_ntcp").iterrows():
                             fig.text(
                                 0.1,

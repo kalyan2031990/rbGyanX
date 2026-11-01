@@ -174,7 +174,10 @@ HN:
           conversion: >-
             none on the fitted values; geud_a = 1/n = 0.8547 (1/1.17). The dose basis is EQD2 at
             alpha/beta 3 Gy, which is this organ's alpha_beta_gy, so the engine's EQD2 transform
-            matches the fit
+            matches the fit when it runs. The engine applies that EQD2 transform only when the plan states its fractionation: with
+            the fractionation unstated the NTCP is computed on PHYSICAL dose and the row is
+            labelled ntcp_dose_basis physical, which does NOT match this fit's basis. Read
+            that column before comparing a value against the published one.
           replaces: "LKB_loglogit TD50_gy 44.0, gamma50 0.7 (unsourced)"
           illustrative: false
     Submandibular_L:
@@ -615,6 +618,10 @@ BREAST:
             none on the fitted values; geud_a = 1/n = 1.087 (1/0.92), the Kutcher-Burman reduction
             the LKB probit model is defined on. n close to 1 means the response is close to a
             mean-dose one, which is the parallel architecture the authors conclude for the gland.
+            The fit's dose basis is EQD2 at alpha/beta 3 Gy, which is this organ's alpha_beta_gy. The engine applies that EQD2 transform only when the plan states its fractionation: with
+            the fractionation unstated the NTCP is computed on PHYSICAL dose and the row is
+            labelled ntcp_dose_basis physical, which does NOT match this fit's basis. Read
+            that column before comparing a value against the published one.
           replaces: "LKB_loglogit TD50_gy 37.7, gamma50 0.7 (unsourced)"
           alternative_fit: >-
             Table 4, p. 519 of the same paper fits the narrower endpoint of CLINICAL hypothyroidism
@@ -638,7 +645,11 @@ BREAST:
           conversion: >-
             none. The engine's RS block takes {D50_gy, gamma, s}, which is exactly the paper's
             relative-seriality parameterisation, so the values transfer as printed. s = 0.05
-            indicates an almost fully parallel organ, consistent with the LKB n of 0.92.
+            indicates an almost fully parallel organ, consistent with the LKB n of 0.92. The
+            fit's dose basis is EQD2 at alpha/beta 3 Gy, which is this organ's alpha_beta_gy. The engine applies that EQD2 transform only when the plan states its fractionation: with
+            the fractionation unstated the NTCP is computed on PHYSICAL dose and the row is
+            labelled ntcp_dose_basis physical, which does NOT match this fit's basis. Read
+            that column before comparing a value against the published one.
           alternative_fit: >-
             Table 4, p. 519 fits clinical hypothyroidism only: s 0.33, gamma 1.48, D50 60 Gy.
           illustrative: false

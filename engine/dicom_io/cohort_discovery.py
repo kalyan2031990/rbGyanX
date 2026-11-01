@@ -287,7 +287,9 @@ def _select_for_patient(
         m.add_reason("MISSING_RTDOSE")
 
     if not cts:
-        m.add_reason("MISSING_CT")  # not required — TCIA-lung style; DVH still computable from dose+struct
+        # Not required: a thoracic export often ships RTDOSE + RTSTRUCT without the CT
+        # series, and a DVH is computable from those two alone.
+        m.add_reason("MISSING_CT")
 
     # --- degraded mode (what outputs are still possible) ---
     if m.rtdose_path and m.rtstruct_path:

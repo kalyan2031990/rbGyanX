@@ -98,22 +98,20 @@ def test_analytic_control_count_is_twenty_two():
     [
         "README.md",
         "docs/AI_ASSISTANT_DESIGN.md",
-        "docs/MANUSCRIPT_EVIDENCE.md",
         ".github/PULL_REQUEST_TEMPLATE.md",
     ],
 )
 def test_documents_quote_the_real_analytic_control_count(relative_path: str):
     """Every document that states the count must state the same, correct one.
 
-    Scoped to documents describing the current state. CHANGELOG.md entries and
-    analysis/preregistration_B.md are historical records of what was true at the time and are
-    deliberately not rewritten.
+    Scoped to documents describing the current state. CHANGELOG.md entries are historical
+    records of what was true at the time and are deliberately not rewritten.
     """
     expected = _collected_positive_controls()
     text = (ROOT / relative_path).read_text(encoding="utf-8")
 
-    # Both orders occur in these documents: "22 analytic positive controls" (README) and
-    # "Cohort-independent analytic positive controls (22)" (MANUSCRIPT_EVIDENCE).
+    # Both orders occur in these documents: "22 analytic positive controls" and
+    # "analytic positive controls (22)".
     before = re.findall(r"(\d+)\s+(?:\*\*)?(?:analytic|positive)[ \w-]*control", text, re.I)
     after = re.findall(r"(?:analytic|positive)[ \w-]*controls?\s*\((\d+)", text, re.I)
     counts = {int(m) for m in (*before, *after)}

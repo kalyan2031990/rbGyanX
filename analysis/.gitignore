@@ -1,5 +1,0 @@
-# PHI-safety: real inputs and all analysis outputs are NEVER committed.
-inputs/
-outputs/
-*.dcm
-*_phi*

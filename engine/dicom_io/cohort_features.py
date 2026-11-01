@@ -70,7 +70,7 @@ DEFAULT_OAR_SPECS: tuple[OARSpec, ...] = (
     OARSpec("SpinalCord", 12.0, ("spinalcord",)),
 )
 
-# Example alternative set: prostate/pelvic OARs (SPARK-style centre naming varies, so
+# Example alternative set: prostate/pelvic OARs (centre naming varies between sites, so
 # ``Rectum``/``Rectum_P`` both normalise here). Illustrates that the feature front-end
 # is site-agnostic — pass any OARSpec sequence to ``build_*_features(oar_specs=...)``.
 PROSTATE_OAR_SPECS: tuple[OARSpec, ...] = (

@@ -149,7 +149,7 @@ def _fuzzy_would_invent_laterality(raw_name: str, token: str) -> bool:
 
 def normalize_to_tg263(raw_name: str) -> dict:
     """
-    Map vendor/TCIA structure name to AAPM TG-263 token.
+    Map a vendor or archive structure name to an AAPM TG-263 token.
 
     Unmapped names are preserved (uppercase) and flagged — never silently dropped.
     Idempotent when input is already a TG-263 token.

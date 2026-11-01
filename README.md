@@ -253,14 +253,14 @@ Start here:
 | `rbgyanx/` | mode governance, headless services, Qt6 desktop app (`rbgyanx.qtapp`), AI panel |
 | `rbgyanx_gui.py` | the original Tkinter desktop app |
 | `engine_advanced/`, `engine_advanced_f/` | ADVANCED research modules (dosiomics, PINN, Bayesian NTCP) |
-| `analysis/` | the versioned scripts that produced every reported result, with per-analysis provenance in [`FINAL_ANALYSIS_CODE_MANIFEST.json`](analysis/FINAL_ANALYSIS_CODE_MANIFEST.json). Frozen: excluded from linting because its scripts are pinned by SHA-256 |
 | `examples/` | shipped **synthetic** demo DVHs — a positive control for the reader |
 | `packaging/` | PyInstaller + Inno Setup build scripts |
 | `legacy/` | quarantined earlier scripts, retained for provenance and never imported |
 
-**No patient DICOM, cohort tables, or clinical files are in this repository.** External validation
-runs on real head-and-neck anatomy (TCIA Head-Neck-PET-CT) *outside* this repo; CI exercises a
-synthetic mirror only.
+**No patient DICOM, cohort tables, or clinical files are in this repository**, at any tag, and
+none is downloaded by installing or running it. The external-validation tooling in
+`external_validation/` works on a feature table you supply; CI exercises a synthetic mirror of
+that table, generated from a known model. See [`DATA_AVAILABILITY.md`](DATA_AVAILABILITY.md).
 
 ---
 

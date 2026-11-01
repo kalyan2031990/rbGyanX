@@ -394,10 +394,8 @@ rows onto which several colliding structures had collapsed. Both the count and i
 changed with the fix: what used to return a contaminated row now refuses. The 0-of-41 figure for
 the flagged arm is unchanged.
 
-Both arms were re-measured with identical inputs and flags so that code was the only variable;
-outputs are in `02_Run_Outputs/v1_3_0_spark_post_b1_remeasure/`, alongside the pre-fix trees which
-are kept as record. This cohort is a limitation probe only — no result from it is reported anywhere
-else.
+Both arms were re-measured with identical inputs and flags so that code was the only variable.
+The measurement itself is part of the evidence package for that release, not of the software.
 
 ### A structure-level exception fails the whole patient
 

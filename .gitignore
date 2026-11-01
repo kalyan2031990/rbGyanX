@@ -60,7 +60,7 @@ Desktop.ini
 reproducibility/dist/
 paper/figures/*.png
 
-# External validation data (TCIA HNSCC — never commit)
+# External-validation data: patient DICOM and clinical tables, never committed
 external_validation/data/
 
 # Generated real-data reports/inventories — can embed patient filenames/IDs → NEVER commit.

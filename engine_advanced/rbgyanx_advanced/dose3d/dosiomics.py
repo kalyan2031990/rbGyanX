@@ -1,7 +1,7 @@
 """Dosiomics from OAR dose voxels (§28).
 
 Scope note: this module computes first-order dose statistics only. The 3-D texture dosiomics
-(GLCM / GLRLM / GLSZM) reported in the manuscripts are produced by ``analysis/dosiomics/`` against
+(GLCM / GLRLM / GLSZM) are computed by this module against
 real RTDOSE grids; see docs/DOSIOMICS_DATA_PROVENANCE.md for which engine produced which result.
 
 Features computed from generated voxels are surrogates, not dosiomics. Pass ``production=True``

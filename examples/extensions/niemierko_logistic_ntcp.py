@@ -38,7 +38,7 @@ Those hold by construction in the published formalism, so a test of them is a te
 implementation and not a regression lock on its current output.
 
 **Deliberately NOT claimed.** This is a demonstration of the extension mechanism. It is not a
-clinically parameterised model, it is not used anywhere in the manuscript's results, and the
+clinically parameterised model, it is not used to produce any reported result, and the
 `TD50`/`gamma50` values in the tests are the published ones only where cited. The engine's own
 NTCP models remain the ones every reported number comes from.
 

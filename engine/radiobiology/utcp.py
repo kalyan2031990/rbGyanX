@@ -21,6 +21,8 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 
+from radiobiology.ntcp_row import select_ntcp
+
 UTCP_OAR_MAP: dict[str, list[dict]] = {
     "BRAIN_GBM": [
         {"oar": "Brainstem", "severity_weight": 1.0},
@@ -196,6 +198,12 @@ class UTCPResult:
     reason: str = ""
     #: Canonical names of the OARs that entered the product.
     scored_OAR_names: list[str] = field(default_factory=list)
+    #: Which NTCP model supplied each scored OAR's value, in the same order.
+    scored_OAR_models: list[str] = field(default_factory=list)
+    #: True when more than one NTCP model contributed to this product. Not an error -- since
+    #: v1.5.0 the organs of a site are split between model forms, so a complete P+ usually needs
+    #: both -- but it is a property of the number a reader must be able to see.
+    mixed_ntcp_models: bool = False
 
 
 def compute_utcp(
@@ -236,19 +244,23 @@ def compute_utcp(
         tcp_val = float(tcp_result.get(col, math.nan))
         tcp_model_used = tcp_model.replace("TCP_", "")
 
-    ntcp_col_map = {
-        "LKB_loglogit": "NTCP_LKB_loglogit",
-        "LKB_probit": "NTCP_LKB_probit",
-        "RS": "NTCP_RS",
-    }
-    ntcp_col = ntcp_col_map.get(ntcp_model, "NTCP_LKB_loglogit")
-
+    # The NTCP is read per organ rather than from one fixed column. Since v1.5.0 the organs are
+    # split between the log-logistic and probit forms -- an organ whose unsourced log-logistic
+    # block was replaced by a published probit fit has NTCP_LKB_loglogit = NaN -- so no single
+    # column scores a whole OAR set. At the head-and-neck site four of the eight OARs in the map
+    # carry only a probit fit and four only a log-logistic one, and reading either column alone
+    # reported the other four as missing and refused P+ outright. ``ntcp_model`` is still honoured
+    # as the preference; what changed is that it is a preference and not the only option.
     oar_ntcp: dict[str, float] = {}
+    oar_model: dict[str, str] = {}
     for r in ntcp_results:
         oar = str(r.get("structure", ""))
-        val = r.get(ntcp_col, math.nan)
-        if oar and isinstance(val, (int, float)) and not math.isnan(float(val)):
-            oar_ntcp[oar] = float(val)
+        if not oar:
+            continue
+        value, model = select_ntcp(r, preferred=ntcp_model)
+        if not math.isnan(value):
+            oar_ntcp[oar] = value
+            oar_model[oar] = model
 
     oar_list = resolve_oar_map(custom_oar_map or UTCP_OAR_MAP.get(site_norm, []))
     scored_oars: list[dict] = []
@@ -271,6 +283,7 @@ def compute_utcp(
                     "severity_weight": w_k,
                     "contribution": 1.0 - ntcp_k,
                     "oar_listed": entry.get("oar_listed", oar_name),
+                    "ntcp_model": oar_model.get(oar_name, ""),
                 }
             )
         else:
@@ -321,6 +334,9 @@ def compute_utcp(
         warnings=warns,
         reason=reason,
         scored_OAR_names=[d["oar"] for d in scored_oars],
+        scored_OAR_models=[d.get("ntcp_model", "") for d in scored_oars],
+        mixed_ntcp_models=len({d.get("ntcp_model", "") for d in scored_oars if d.get("ntcp_model")})
+        > 1,
     )
 
 
@@ -384,6 +400,8 @@ def attach_utcp_to_tcp_results(
             r["UTCP_missing_OARs"] = ""
             r["UTCP_TCP_model"] = ""
             r["UTCP_reason"] = UTCP_INCOMPLETE_OAR_SET
+            r["UTCP_NTCP_models"] = ""
+            r["UTCP_mixed_NTCP_models"] = False
             continue
         r["UTCP"] = u.UTCP
         r["UTCP_weighted"] = u.UTCP_weighted
@@ -393,4 +411,6 @@ def attach_utcp_to_tcp_results(
         r["UTCP_missing_OARs"] = ", ".join(u.missing_OAR_names)
         r["UTCP_TCP_model"] = u.TCP_model
         r["UTCP_reason"] = u.reason
+        r["UTCP_NTCP_models"] = ", ".join(sorted({m for m in u.scored_OAR_models if m}))
+        r["UTCP_mixed_NTCP_models"] = u.mixed_ntcp_models
     return utcp_list
