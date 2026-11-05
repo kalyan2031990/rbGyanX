@@ -253,6 +253,7 @@ def build_patient_features(
     *,
     patient_id: str = "",
     oar_specs: Sequence[OARSpec] | None = None,
+    prescription_table: Any = None,
 ) -> dict[str, Any]:
     """Assemble one tidy feature row from a DICOM-RT triple (datasets in memory).
 
@@ -262,6 +263,12 @@ def build_patient_features(
     """
     specs = tuple(oar_specs) if oar_specs is not None else DEFAULT_OAR_SPECS
     meta = _plan_metadata(rt_plan_ds)
+    # #60: an optional user-supplied prescription replaces the RT Plan's, for this patient only.
+    # The plan's own values are kept in the row under *_from_rtplan, so nothing is lost.
+    if prescription_table is not None:
+        from dicom_io.prescription_table import apply_to_plan_metadata
+
+        meta = apply_to_plan_metadata(meta, patient_id, prescription_table)
     rx_known = bool(meta["prescription_dose_gy"]) and not math.isnan(
         float(meta["prescription_dose_gy"])
     )
@@ -282,6 +289,11 @@ def build_patient_features(
         "dose_summation_type": str(getattr(rt_dose_ds, "DoseSummationType", "") or ""),
         "n_targets": len(targets),
         "n_oars_mapped": len(oars),
+        # #60: where the prescription came from, so a reader never has to guess.
+        "prescription_source": meta.get("prescription_source", "rtplan"),
+        "prescription_dose_gy_from_rtplan": meta.get(
+            "prescription_dose_gy_from_rtplan", prescription_gy
+        ),
     }
 
     # PTV block

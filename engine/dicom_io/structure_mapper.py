@@ -213,9 +213,61 @@ def _lookup_alias(normalised: str) -> str | None:
     return None
 
 
+# Planning helper structures: created to drive an optimiser or to shape dose, not to be treated
+# to a prescription. Scoring one as a target assigns it TCP and target dose metrics it has no
+# clinical meaning for (defect #59). The patterns are general -- they describe naming conventions
+# used across planning systems, not one dataset.
+_HELPER_TARGET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    # PTVHighOPT, PTVLowOPT, OPT_PTV -- optimisation surrogates, usually a target grown or
+    # trimmed so the optimiser can push dose without violating an OAR constraint.
+    ("optimisation", re.compile(r"opt(?:$|[^a-z])", re.I)),
+    # RingPTVHigh, PTV_Ring_2cm -- dose-shaping shells around a target.
+    ("ring", re.compile(r"(?:^|[^a-z])rings?", re.I)),
+    # PTVLow-PTVMid, PTVMid-PTVHigh -- boolean subtractions of one target from another.
+    ("boolean-subtraction", re.compile(r"(?:ptv|ctv|gtv|itv)[\w]*\s*[-]\s*(?:ptv|ctv|gtv|itv)", re.I)),
+    # PTV_Total, TotalPTV -- an aggregate of several dose levels, which has no single prescription.
+    ("total", re.compile(r"(?:^|[^a-z])total(?:$|[^a-z])", re.I)),
+    # PTV_eval, PTV-opt_eval -- evaluation copies.
+    ("evaluation copy", re.compile(r"(?:^|[_\W])eval(?:$|[_\W])", re.I)),
+)
+
+
+def helper_target_reason(raw_name: str) -> str | None:
+    """Why this name is a planning helper rather than a treated target, or None.
+
+    Defect #59. Applied only when deciding whether something is a TARGET: an OAR whose name
+    happens to contain one of these words is unaffected, and a boolean OAR such as
+    ``Larynx-PTV`` is an OAR either way.
+    """
+    for label, pattern in _HELPER_TARGET_PATTERNS:
+        if pattern.search(raw_name):
+            return label
+    return None
+
+
 def canon_target(raw_name: str, roi_interpreted_type: str | None = None) -> dict:
     """Map a structure name to canonical form with category and confidence."""
     if roi_interpreted_type in {"GTV", "CTV", "PTV"}:
+        # #59: a planning system that writes RTROIInterpretedType=PTV on an optimisation or ring
+        # structure is describing what the contour was derived from, not what is being treated.
+        # The name is the more reliable signal here, so it is checked first.
+        helper = helper_target_reason(raw_name)
+        if helper is not None:
+            logger.warning(
+                "target REFUSED: %r is a planning helper (%s) although the RT Structure Set "
+                "marks it %s; not scored as a target (defect #59)",
+                raw_name,
+                helper,
+                roi_interpreted_type,
+            )
+            return {
+                "canonical": raw_name.upper(),
+                "category": "HELPER",
+                "site_hint": "",
+                "confidence": "HIGH",
+                "is_prv": False,
+                "helper_reason": helper,
+            }
         canonical = roi_interpreted_type
         return {
             "canonical": canonical,
@@ -302,9 +354,25 @@ def get_target_structures(rt_struct_ds, plan_metadata: dict) -> list[dict]:
             }
 
     targets: list[dict] = []
+    refused: list[tuple[str, str]] = []
     for roi_number, info in sorted(roi_by_number.items()):
         mapped = canon_target(info["name"], info["type"] or None)
+        if mapped.get("category") == "HELPER":
+            refused.append((info["name"], str(mapped.get("helper_reason", ""))))
+            continue
         if mapped["canonical"] not in TARGET_CANONICALS:
+            continue
+        # #59 again, for the name-driven path: an archive that leaves RTROIInterpretedType empty
+        # still must not have its optimisation structures treated as targets.
+        helper = helper_target_reason(info["name"])
+        if helper is not None:
+            logger.warning(
+                "target REFUSED: %r is a planning helper (%s); not scored as a target "
+                "(defect #59)",
+                info["name"],
+                helper,
+            )
+            refused.append((info["name"], helper))
             continue
         targets.append(
             {
@@ -314,6 +382,23 @@ def get_target_structures(rt_struct_ds, plan_metadata: dict) -> list[dict]:
                 "roi_type": info["type"],
                 "confidence": mapped["confidence"],
             }
+        )
+
+    if refused:
+        logger.info(
+            "%d planning helper structure(s) refused as targets, %d target(s) kept: %s",
+            len(refused),
+            len(targets),
+            ", ".join(f"{name} ({why})" for name, why in refused),
+        )
+    if not targets and refused:
+        # Every candidate was a helper. Say so rather than returning an empty list that reads
+        # like "this study has no target".
+        logger.warning(
+            "no treated target remains after refusing %d planning helper structure(s): %s. "
+            "Target metrics and TCP will not be reported for this study (defect #59).",
+            len(refused),
+            ", ".join(name for name, _ in refused),
         )
 
     order = {"GTV": 0, "CTV": 1, "PTV": 2, "ITV": 3, "BOOST": 4}

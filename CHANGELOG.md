@@ -166,7 +166,36 @@ carries a validation message, with the message stating explicitly that a non-zer
 is not evidence the validation code ran. The script does reject the file, and the test now
 demonstrates that rather than asserting around it.
 
-#### Added
+#**Planning helper structures were scored as targets (defect #59).** Optimisation surrogates
+(`…OPT`), dose-shaping rings (`Ring…`), boolean subtractions of one target from another
+(`PTVLow-PTVMid`) and aggregate totals (`PTV_Total`) were all mapped to canonical `PTV` and scored
+as treated targets, receiving TCP and target dose metrics that mean nothing for them. Because such
+structures share a name stem with the real target and often overlap it, a study could report
+several apparent "targets" with near-identical dose.
+
+The reason the DICOM type did not prevent it: planning systems write
+`RTROIInterpretedType = PTV` on these structures, describing what the contour was derived from
+rather than what is treated. The name is now checked first; a structure matching a helper pattern
+is refused as a target, logged with its reason, and categorised `HELPER`. If every candidate is
+refused, the run says so explicitly rather than reporting "no target". The patterns describe naming
+conventions used across planning systems and sit in one place to be extended.
+
+**One prescription per plan, now overridable (defect #60).** The engine takes a single prescription
+from the RT Plan's `DoseReferenceSequence`. That is wrong whenever an archive writes a nominal
+value into every plan while the real per-patient prescription lives elsewhere — and it is not
+cosmetic, because TCP's EQD2 and BED are computed from the prescription rather than from the
+target's measured dose, and V95/V100 coverage, conformity and gradient index are scaled by it. A
+wrong prescription changes reported numbers while every dose value stays the same.
+
+v1.5.0 adds an **optional** per-patient prescription table the user supplies: a four-column CSV
+(`patient,target_roi,prescription_gy,n_fractions`) passed as `RunnerConfig.prescription_table`. It
+is never inferred. A patient absent from it keeps the RT Plan value; the plan's own values are
+retained in the output under `*_from_rtplan`; every row records a `prescription_source`; and the
+run manifest records the table's path, its SHA-256 and which patients were overridden. A dose
+outside 1–120 Gy, a fraction count outside 1–60, a duplicate patient or a non-numeric field stops
+the run at load time rather than halfway through a cohort.
+
+### Added
 
 - `engine_advanced/tests/test_v150_dosiomics_scope_claims.py` — 5 tests for #53 and #54. Three fail
   on v1.4.0.
@@ -178,6 +207,9 @@ demonstrates that rather than asserting around it.
   the objectively checkable part of #55 and deliberately nothing more: a regex cannot tell prose
   that names a dead path from prose that names it in order to say it is gone, and the corrected text
   does the latter on purpose.
+- `engine/dicom_io/prescription_table.py` — the optional per-patient prescription table, with
+  `engine/tests/test_v150_prescription_table.py` (22 tests).
+- `engine/tests/test_v150_helper_target_refusal.py` — 39 tests for #59.
 - A `legacy` pytest marker, declared in both configs, as the mechanism for #46's exclusions, and
   applied to the six subprocess tests that drive retired `legacy/` modules.
 - `tomli>=2.0` in the `dev` extra for `python_version < '3.11'`. Declared rather than inherited
