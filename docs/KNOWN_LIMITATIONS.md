@@ -300,6 +300,38 @@ The code change is two lines. The consequence is not: populating `raw_name` chan
 and `reason_codes` for DICOM rows in `ntcp_results.csv`, so existing NTCP output would gain
 verdicts it does not currently carry, including refusals. Deferred to v1.4 with its own tests.
 
+### The DVH end-caps volume but not the dose range, so D_max and D_min are biased inward (defect #52)
+
+`dicompylercore.dvhcalc` weights **every** contour plane by a full plane thickness, the outermost
+included, so the volume it reports extends half a slice beyond each end contour — an end-cap. The
+**dose** it histograms, however, is sampled only *at* contour planes: nothing is sampled inside the
+cap. The two halves of the convention disagree.
+
+Where a dose gradient runs along the slice axis, the consequence has a closed form:
+
+| Quantity | Error | At a 3 mm slice and 1 Gy/mm |
+|---|---|---|
+| `Dmax_gy` | low by `slice_thickness / 2 × gradient` | **1.5 Gy low** |
+| `Dmin_gy` | high by the same | **1.5 Gy high** |
+| `Dmean_gy`, gEUD | unaffected to within 0.5 Gy | — |
+
+Measured against the analytical DVHs of Nelms et al. 2015 (Med Phys 42(8):4435–4448): **32 of 32**
+along-axis comparisons matched the half-slice prediction to within 0.005 Gy at contour spacings of
+0.2, 1, 2 and 3 mm, and **40 of 40** in-plane comparisons stayed inside one dose voxel and did not
+vary with slice thickness at all. Structure volume reproduced the end-capped analytical value to a
+constant −0.58 %.
+
+Two consequences for use. Where the extreme contour is a near-degenerate sliver — a cone apex, the
+tip of a tapering structure — the bound moves further in still, because that contour rasterises to
+no voxels: measured at three times the half-slice shift. And a serial organ scored on `Dmax_gy`
+across a cranio-caudal gradient, spinal cord being the obvious case, has its hottest dose
+under-reported by half a slice; the direction is always the optimistic one.
+
+This is **not fixed in v1.5.0**, and the reason is scope rather than difficulty: dose sampling sits
+in `dicompyler-core`, and changing it would alter every DVH this project has produced. It is
+documented, quantified and pinned by `engine/tests/test_v150_endcap_dose_range.py`, whose tests
+fail if the behaviour changes in either direction.
+
 ### Dosiomics require a real 3-D dose grid
 
 Spatial dose texture is computed only where an RTDOSE grid exists. Planning-system DVH text
