@@ -11,7 +11,7 @@ authors:
     given-names: Anuj
     orcid: "https://orcid.org/0000-0001-6610-3844"
 title: "rbGyanX: A research framework for radiobiological evaluation of radiotherapy plans (TCP/NTCP) from DICOM-RT"
-version: "1.4.0"
+version: "1.5.0"
 date-released: 2026-10-17
 # Concept DOI: always resolves to the newest version of the record. Cite this rather than
 # a version DOI (10.5281/zenodo.21757164 was the v1.2.1 version DOI) so that a citation

@@ -19,6 +19,7 @@ Usage:
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -59,6 +60,22 @@ def version_txt_version() -> str:
     return match.group(1)
 
 
+def feature_registry_version() -> str:
+    """``app_info.version`` in the feature registry, which the GUI surfaces to the user.
+
+    Added for v1.5.0. This was a declared version the agreement check did not read, so it could
+    drift from the source of truth and a release would still build. Its 1.4.0 value happened to be
+    right, by hand. A version string a user can see is one this check has to cover.
+    """
+    data = json.loads((ROOT / "core" / "feature_registry.json").read_text(encoding="utf-8"))
+    try:
+        return str(data["app_info"]["version"])
+    except (KeyError, TypeError) as exc:
+        raise SystemExit(
+            "could not read app_info.version from core/feature_registry.json"
+        ) from exc
+
+
 def collect() -> dict[str, str]:
     """Every declared version, by source."""
     return {
@@ -66,6 +83,7 @@ def collect() -> dict[str, str]:
         "pyproject.toml": pyproject_version(),
         "CITATION.cff": citation_version(),
         "VERSION.txt": version_txt_version(),
+        "core/feature_registry.json": feature_registry_version(),
     }
 
 
