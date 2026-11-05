@@ -5,9 +5,35 @@ All notable changes to this project are documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — Tier B/C: capabilities the docs claimed and the release did not have, and the test-suite blind spot
+## [1.5.0] - 2026-11-05 — minor: sourced parameters, defects that changed written numbers, and general software only
 
-### Fixed
+A **minor** release. It repairs software defects, replaces unsourced default parameters with
+published fits, corrects documentation that described capabilities the software does not have, and
+narrows the repository to general software usable by anyone with their own data. It **adds no new
+scientific result** and reruns no analysis, and the release identifier stays **FINAL_V3.2** because
+the analysis programme generation is unchanged.
+
+**Three things to read before upgrading.**
+
+1. **This release computes no CT radiomic feature.** The versioned record of one study's analysis
+   was removed as study-specific material, and the CT feature engine went with it. The IBSI-1
+   digital-phantom measurement of 56 of 63 reference features reproduced is a statement about
+   **v1.4.0**, where that code shipped. See `docs/KNOWN_LIMITATIONS.md`.
+2. **`Dmax_gy` is biased low and `Dmin_gy` high**, by `slice_thickness/2` x the local dose
+   gradient - 1.5 Gy at a 3 mm slice and 1 Gy/mm - because the DVH end-caps structure volume but
+   not the dose range. The direction is always the optimistic one. `Dmean_gy` and gEUD are
+   unaffected to within 0.5 Gy. This is measured, bounded and documented, and **not fixed**: dose
+   sampling sits in `dicompyler-core` and changing it would alter every DVH this project has
+   produced. The convention choice is set out rather than taken.
+3. **Default NTCP parameters changed**, organ by organ, to published fits with the source and
+   endpoint recorded beside each value. If you relied on a previous default, read the parameter
+   section below before comparing results across versions.
+
+The work is grouped below as it was done, one block per tier, newest first.
+
+### Tier B/C: capabilities the docs claimed and the release did not have, and the test-suite blind spot
+
+#### Fixed
 
 **The documentation claimed two capabilities this release does not contain (defect #53).**
 
@@ -140,7 +166,7 @@ carries a validation message, with the message stating explicitly that a non-zer
 is not evidence the validation code ran. The script does reject the file, and the test now
 demonstrates that rather than asserting around it.
 
-### Added
+#### Added
 
 - `engine_advanced/tests/test_v150_dosiomics_scope_claims.py` — 5 tests for #53 and #54. Three fail
   on v1.4.0.
@@ -159,16 +185,16 @@ demonstrates that rather than asserting around it.
   `tomllib` is stdlib only from 3.11, and a skip on 3.10 would be a silent gap in the one test whose
   purpose is to stop a silent configuration difference.
 
-### Notes
+#### Notes
 
 `analysis/` is still listed in the ruff exclusion list although the directory is absent. That is
 deliberate and the comment there now says why: the directory is retrievable from the `v1.4.0` tag,
 and its scripts are pinned by SHA-256 to the exact bytes that produced the reported results, so a
 restored checkout of it must not be silently reformatted.
 
-## [Unreleased] — refuse to read DICOM through the obsolete `dicom` package
+### Tier D: refusing to read DICOM through the obsolete `dicom` package
 
-### Fixed
+#### Fixed
 
 **With pydicom 3 installed, every DICOM read silently returned nothing.** `dicompylercore`
 guards its reader import with `try: from pydicom.dicomio import read_file / except ImportError:
@@ -196,13 +222,13 @@ declaration sites already said `pydicom>=2.4,<3` with the reason, and the fault 
 **a declaration constrains an install, not an environment that drifted afterwards**, which is why
 the runtime check is the substantive part of this fix.
 
-### Added
+#### Added
 
 `run_manifest.json` records **`dicom_reader`**: the module the reader resolved to, the pydicom and
 dicompyler-core versions, and a boolean. A manifest recording pydicom's version alone, as it did,
 cannot show which reader was bound.
 
-### Notes
+#### Notes
 
 No rbGyanX code path calls `dicompylercore`'s `CalculateStructureVolume`, which returns `0.0`
 rather than refusing when shapely is absent. Structure volumes come from the DVH's own histogram,
@@ -213,7 +239,7 @@ Tests: `engine/tests/test_v150_dicom_reader_guard.py` (14) — both branches of 
 resolved module substituted, the message asserted to be actionable on its own, the guarded door,
 and the two doors that must stay unguarded.
 
-## [Unreleased] — general software only
+### Scope: general software only
 
 The repository now contains general software: usable by anyone with their own data, with nothing
 specific to one study in its code, docs, tests or history. Measurements on a particular cohort,
@@ -222,7 +248,7 @@ manuscript references and journal names belong in that study's own evidence pack
 Everything removed below exists at the `v1.4.0` tag and in the archive deposited for that release,
 so it stays retrievable. Verified file by file before removal: all 75 paths resolve at `v1.4.0`.
 
-### Removed — study-specific material
+#### Removed — study-specific material
 
 - `analysis/` — the analysis pipeline for one study, its scripts numbered to that study's own
   figure and table order.
@@ -246,7 +272,7 @@ so it stays retrievable. Verified file by file before removal: all 75 paths reso
 - `tests/test_extval_cohort_builder.py` and `tests/test_real_dosiomics_resume.py`, whose targets
   were removed with the above.
 
-### Changed
+#### Changed
 
 - `DATA_AVAILABILITY.md` is now a short general statement: the software ships no patient data, the
   tests run on synthetic data only, and users supply their own DICOM under their own governance.
@@ -257,7 +283,7 @@ so it stays retrievable. Verified file by file before removal: all 75 paths reso
   dataset as the place a behaviour was observed. Every defect keeps its number, how it was found
   and its status.
 
-### Fixed — a NaN model column could shorten a composite, a ranking or a metric
+#### Fixed — a NaN model column could shorten a composite, a ranking or a metric
 
 Four organs lost their `NTCP_LKB_loglogit` **value** when an unsourced log-logistic block was
 replaced by a published probit fit: HN `Larynx`, HN `Mandible`, BREAST `Thyroid`, and `Esophagus`
@@ -288,7 +314,7 @@ organ with no finite NTCP from any model is still refused, so containment did no
 permissiveness. `engine/tests/test_v150_nan_model_column_containment.py` (26 tests) pins all of
 it, including that a genuinely missing organ still refuses P+.
 
-### Deprecated
+#### Deprecated
 
 Two modules were named for one public collection although what they do is general. Both were
 renamed, and a thin shim at each old path re-exports the new names and raises
@@ -303,7 +329,7 @@ The harness's `DISCLAIMER` keeps the distinction that matters — validating aga
 survival endpoint says nothing about whether an NTCP model predicts toxicity, because they are
 different endpoints — and no longer names a collection.
 
-## [Unreleased] — sourced default NTCP parameters
+### Parameters: sourced default NTCP values
 
 **The scientific change of v1.5.0, kept separate from the code fixes on purpose.** Every value in
 `engine/config/site_params_ntcp_default.yaml` now carries a per-model `provenance` block naming its
@@ -318,7 +344,7 @@ Three sources were read and transcribed: **Burman C, Kutcher GJ, Emami B, Goitei
 75:915-923 (2009), p. 919**, and **Bakhshandeh M, Hashemi B, Mahdavi SRM, et al. IJROBP
 85(2):514-521 (2013), Table 2, p. 517**.
 
-### Changed — parameters now carry a citation
+#### Changed — parameters now carry a citation
 
 - **Spinal cord, at five sites.** `TD50` 45.0 -> **66.5 Gy**, `m` 0.18 -> 0.175 (Burman, myelitis /
   necrosis). The 45 Gy was a planning constraint, not a fit. `LUNG` and `PROSTATE` had no cord
@@ -373,7 +399,7 @@ BrainStem, BrachialPlexus, OpticChiasm and OpticNerve, at four sites. Five organ
 volume effect; Burman gives 0.05, 0.16, 0.03 and 0.25 for the same four. A test now refuses that
 pair anywhere in the library.
 
-### Added — `illustrative`, and BASIC mode refuses it
+#### Added — `illustrative`, and BASIC mode refuses it
 
 Twenty of fifty-seven organ entries have no citable source and are marked
 `illustrative: true`. **BASIC mode refuses them**: the column is NaN and the row carries
@@ -389,7 +415,7 @@ ADVANCED mode to compute it, labelled.
 `site_params_ntcp_user.yaml` overrides are handled the same way: a model supplied without its own
 provenance becomes unsourced, because the shipped citation described a different number.
 
-### Changed — PELVIS P+ is refused as unsupported
+#### Changed — PELVIS P+ is refused as unsupported
 
 `UTCP_OAR_MAP["PELVIS"]` lists six OARs and there is no `PELVIS` NTCP block at all, so none can be
 scored. P+ for PELVIS is refused with the new reason **`UTCP_SITE_UNSUPPORTED`**, which
@@ -398,14 +424,14 @@ have", and here there are none. Every other site in the map is now fully scorabl
 published fit could fill (LUNG and PROSTATE SpinalCord, BRAIN_METS NormalBrain, LIVER Esophagus)
 were filled from Burman.
 
-### Changed — ntcp_results.csv
+#### Changed — ntcp_results.csv
 
 Four columns are added, per model row: `param_source`, `param_illustrative`, `param_endpoint`,
 `param_table_page`. Four organs lose their `NTCP_LKB_loglogit` value, which becomes NaN, because
 the unsourced log-logistic block was replaced by a sourced probit fit: HN `Larynx`, HN `Mandible`,
 BREAST `Thyroid`, and `Esophagus` at all four sites.
 
-### What a parameter change does to a reported NTCP
+#### What a parameter change does to a reported NTCP
 
 Changing TD50, m or n changes every NTCP the model produces, and the direction is not always the
 same for every structure. Where the new fit is *shallower* than the one it replaced, the two
@@ -416,7 +442,7 @@ this release must not be summarised as "NTCP went down".
 The quantitative effect on any particular dataset is a property of that dataset, not of the
 software, and is reported in the accompanying evidence package rather than here.
 
-### Tests
+#### Tests
 
 `engine/tests/test_v150_sourced_parameters.py` (58): the schema (every model block has provenance,
 every provenance block declares all required fields, a sourced block names a page and an endpoint,
@@ -430,14 +456,14 @@ config.
 points at a path outside the repository: each value's own `provenance` block is the record, so the
 transcription is checkable from that file alone.
 
-## [Unreleased] — Tier A: the defects that change written numbers
+### Tier A: the defects that change written numbers
 
 Thirteen output-affecting defects in `engine/`, each with a test that fails at v1.4.0 (`ffd69ef`)
 and passes after the fix. **These change numbers.** Several change them on every run, so output
 produced with v1.4.0 and earlier is not comparable with v1.5.0 output. Default NTCP parameters are
 deliberately **not** touched here; they are a separate change with its own section above.
 
-### Fixed — values that were simply wrong
+#### Fixed — values that were simply wrong
 
 - **gEUD dropped every zero-dose bin.** `compute_geud` masked `doses > 0`, so the unirradiated part
   of a partly covered target vanished from the generalised mean and the remaining volume was
@@ -476,7 +502,7 @@ deliberately **not** touched here; they are a separate change with its own secti
   which means **uncertainty bands change**: the manifest is true, and the cohort runner's own
   default seed is 0.
 
-### Fixed — refusing instead of publishing
+#### Fixed — refusing instead of publishing
 
 - **No prescription or fractionation is invented from a TPS text export.** The prescription fell
   back to the DVH maximum and the dose per fraction to a flat 2.0 Gy, with a logged warning beside
@@ -511,7 +537,7 @@ deliberately **not** touched here; they are a separate change with its own secti
   `--plan-label` or a per-case override resolves it. Approval, a later date or a different
   prescription still separate plans without an operator.
 
-### Fixed — saying what a number means
+#### Fixed — saying what a number means
 
 - **Every uncertainty band declares its coverage.** `p5`-`p95` is a 90% interval and nothing on the
   row said so, while `utils/uncertainty_models.py` reports a genuine parametric 95% CI on a
@@ -529,7 +555,7 @@ deliberately **not** touched here; they are a separate change with its own secti
   reason recorded for each - a site the corpus does not cover, or an organ whose name carries no
   laterality and so must not be given one.
 
-### Known gaps surfaced, not closed
+#### Known gaps surfaced, not closed
 
 - **Five UTCP sites listed OARs their NTCP block could not score**, so P+ at those sites was NaN by
   default: BRAIN_METS/NormalBrain, LUNG/SpinalCord (both fractionations), PROSTATE/SpinalCord,
@@ -539,7 +565,7 @@ deliberately **not** touched here; they are a separate change with its own secti
 - **`ITV50` maps to UNKNOWN** rather than a target: the dose-embedded-name pass covers the gtv,
   ctv and ptv prefixes and not itv. Pre-existing and out of Tier A's scope.
 
-## [Unreleased] — the DICOM path through the desktop app
+### The DICOM path through the desktop app
 
 Three defects found by driving the Qt app over a synthetic DICOM-RT study. **All three sat in the
 GUI and service layer; the engine beneath was correct throughout**, which is why they went
@@ -547,7 +573,7 @@ unnoticed — every written CSV carried the right numbers. **No published result
 analysis was rerun**: `engine/` is unchanged, and cohort runs go through
 `rbgyanx_engine.cohort_runner`, which touches none of this.
 
-### Fixed
+#### Fixed
 
 - **The folder check refused a cohort root the engine handles.** `_looks_like_dicom_dir` inspected
   only the chosen folder, so a cohort laid out one patient per subfolder — what

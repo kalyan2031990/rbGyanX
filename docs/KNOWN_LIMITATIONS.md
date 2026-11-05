@@ -501,13 +501,6 @@ does not carry it.
 
 ## Reproducibility
 
-### Two cohorts are not independently reproducible
-
-The public head-and-neck analysis is fully reproducible from public archives. The internal parotid
-and external prostate cohorts are institutional and cannot be redistributed; reproduction requires
-a data-transfer agreement. De-identified derived tables sufficient to regenerate the reported
-values accompany the associated publications.
-
 ### The analysis provenance record is not in this repository (defect #55)
 
 `analysis/` — the versioned record of the study analysis, including

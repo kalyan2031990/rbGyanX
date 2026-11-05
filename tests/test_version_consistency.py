@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -31,6 +32,17 @@ def _read_pyproject() -> str:
     return m.group(1)
 
 
+def _read_feature_registry() -> str:
+    """``app_info.version``, which the GUI surfaces to the user.
+
+    Added for v1.5.0. This was a sixth declared version that neither this test nor
+    ``scripts/check_release_version.py`` read, so it could drift from the source of truth and a
+    release would still build. Its 1.4.0 value was correct only because someone edited it by hand.
+    """
+    data = json.loads((ROOT / "core" / "feature_registry.json").read_text(encoding="utf-8"))
+    return str(data["app_info"]["version"])
+
+
 def test_version_single_source_of_truth():
     from rbgyanx_engine import __version__ as engine_ver
 
@@ -38,10 +50,11 @@ def test_version_single_source_of_truth():
     # only thing that checks the engine version at all - pre_publish_check.py looks at
     # pyproject, CITATION.cff and VERSION.txt, but not at rbgyanx_engine.__version__, which
     # is what the other three are supposed to agree WITH.
-    assert engine_ver == "1.4.0"
+    assert engine_ver == "1.5.0"
     assert _read_version_txt() == engine_ver
     assert _read_citation_cff() == engine_ver
     assert _read_pyproject() == engine_ver
+    assert _read_feature_registry() == engine_ver
 
     import rbgyanx
 
