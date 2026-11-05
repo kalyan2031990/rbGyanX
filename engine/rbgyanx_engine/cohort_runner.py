@@ -91,6 +91,12 @@ class RunnerConfig:
     n_frac: int | None = None               # TPS text: fraction count when the header omits it
     n_mc: int = 1000                        # advanced: uNTCP Monte-Carlo draws
     outcome_csv: Path | None = None         # advanced: required by the engine's ML/XAI branch
+    # DICOM: optional per-patient prescription table (defect #60). The engine takes one
+    # prescription per plan from the RT Plan, which is wrong whenever an archive writes a nominal
+    # value into every plan. TCP's EQD2 and BED are computed from the prescription, so this is not
+    # cosmetic. A patient absent from the table keeps the RT Plan value; the manifest records which
+    # patients were overridden. See engine/dicom_io/prescription_table.py.
+    prescription_table: Path | None = None
 
 
 @dataclass
@@ -497,6 +503,18 @@ def run_cohort(cfg: RunnerConfig, progress: bool = False) -> dict:
     tmp_root = out / ".staging"
     tmp_root.mkdir(parents=True, exist_ok=True)
 
+    # #60: load the optional prescription table once, before any patient is read. A bad table is
+    # a hard failure here rather than a silent fallback to the RT Plan halfway through a cohort.
+    _prescription_table = None
+    if getattr(cfg, "prescription_table", None):
+        from dicom_io.prescription_table import load_prescription_table
+
+        _prescription_table = load_prescription_table(cfg.prescription_table)
+        logger.info(
+            "prescription table in force: %d patient(s) from %s",
+            len(_prescription_table), cfg.prescription_table,
+        )
+
     units = _discover_units(cfg)
     if cfg.limit:
         units = units[: cfg.limit]
@@ -561,6 +579,11 @@ def run_cohort(cfg: RunnerConfig, progress: bool = False) -> dict:
         "input_root": str(Path(cfg.input_root).resolve()),
         "input_inventory": {"n_units_discovered": len(units), "n_processed": len(records)},
         "per_patient_status": {r.pseudonym: r.status for r in records},
+        # #60: whether a user-supplied prescription table was in force, and for whom. Absent
+        # means every prescription came from its RT Plan.
+        "prescription_table": (
+            _prescription_table.manifest_record() if _prescription_table is not None else None
+        ),
         "pseudonym_map_location": str(map_dir.resolve()),
         "note": "No PHI in this tree; raw IDs live only in the gitignored pseudonym map above.",
     }

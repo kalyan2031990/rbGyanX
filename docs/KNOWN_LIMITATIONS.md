@@ -223,6 +223,75 @@ default, is unchanged.
 
 Pinned by `engine_advanced/tests/test_v150_dosiomics_scope_claims.py`.
 
+### One prescription per plan, taken from the RT Plan (defect #60)
+
+The engine reads a single prescription for a plan from the RT Plan's `DoseReferenceSequence`. That
+is correct when the plan states the dose it was optimised to, and wrong whenever an archive writes
+a nominal value into every plan while the real per-patient prescription lives somewhere else.
+
+**It is not a cosmetic field.** `radiobiology/tcp_calculator.py` computes TCP's EQD2 and BED from
+the prescription and the fraction count, not from the target's measured dose, and the
+prescription-normalised plan-quality metrics — V95 and V100 coverage, conformity index, gradient
+index — are scaled by it. A wrong prescription therefore changes reported numbers while every dose
+value stays the same, which is the hard kind of error to notice.
+
+Two further limits of the same mechanism: a plan carrying several dose levels yields one
+prescription for all of them, and a simultaneous integrated boost is represented by whichever value
+the `DoseReferenceSequence` gives first.
+
+**What v1.5.0 adds.** An optional per-patient prescription table the user supplies — a four-column
+CSV (`patient,target_roi,prescription_gy,n_fractions`) passed as `RunnerConfig.prescription_table`.
+It is never inferred and never defaulted: a patient absent from the table keeps the RT Plan value,
+the plan's own values are retained in the output under `*_from_rtplan`, every row records a
+`prescription_source`, and the run manifest records the table's path, its SHA-256 and exactly which
+patients were overridden. Implausible values are refused rather than used — a dose outside
+1–120 Gy, a fraction count outside 1–60, a duplicate patient, or a non-numeric field all stop the
+run at load time rather than halfway through a cohort.
+
+See `engine/dicom_io/prescription_table.py` and
+`engine/tests/test_v150_prescription_table.py`.
+
+### Planning helper structures are no longer scored as targets (defect #59)
+
+Optimisation surrogates (`…OPT`), dose-shaping rings (`Ring…`), boolean subtractions of one target
+from another (`PTVLow-PTVMid`) and aggregate totals (`PTV_Total`) are created to drive a planning
+system. None carries a prescription, and scoring one as a target gives it TCP and target dose
+metrics that have no meaning for it — and, because such structures share a name stem and often
+overlap the real target, produces several apparent "targets" with near-identical dose.
+
+The difficulty is that planning systems write `RTROIInterpretedType = PTV` on these structures,
+describing what the contour was derived from rather than what is treated, so the DICOM type cannot
+be trusted alone. The name is now checked first, and a structure matching a helper pattern is
+refused as a target, logged with its reason, and categorised `HELPER`.
+
+**The limitation that remains**: this is pattern matching on names. A helper named in a convention
+not covered here will still be scored as a target, and a genuine target named, say, `PTV_Total70`
+is refused — the patterns are deliberately biased towards refusing, because scoring a helper
+silently corrupts a target metric while refusing one is visible in the log. The patterns are in
+`engine/dicom_io/structure_mapper.py` (`_HELPER_TARGET_PATTERNS`) and are the right place to add a
+convention. If every candidate target is refused, the run says so explicitly rather than reporting
+"no target".
+
+### Bilateral organ names receive no NTCP, by design (defect #21 consequence)
+
+Where a contour is named without a side — `Parotids`, `Submandibular` — the structure mapper
+**refuses** to map it to a lateralised organ key rather than choose one. That guard exists because
+the fuzzy matcher previously tied the `_L` and `_R` keys and broke the tie alphabetically, so `_R`
+always won and the side was decided by the alphabet rather than by anatomy.
+
+Refusing is the right call, and it has a measurable cost that users should know before they run:
+the shipped head-and-neck organ set declares eleven organs, of which **four are lateralised pairs**
+(`Parotid_L`, `Parotid_R`, `Submandibular_L`, `Submandibular_R`). A dataset that contours those
+glands bilaterally — a common and perfectly reasonable clinical convention — therefore receives
+**no NTCP for any of the four**, including the parotid, which is the organ most head-and-neck
+toxicity work is about. The refusal is logged per structure, so it is visible, but it is visible
+only to someone reading the log.
+
+No behaviour change in v1.5.0. The options, neither taken here, are to let the user map a bilateral
+contour explicitly, or to report a single combined gland against parameters fitted to one. Both
+need a decision about which published fit applies to a combined volume, which is a scientific
+question rather than a software one. Recorded in the backlog.
+
 ### Poisson TCP saturates
 
 The Poisson linear-quadratic tumour-control implementation saturates at the dose levels present in
@@ -346,7 +415,27 @@ Where a dose gradient runs along the slice axis, the consequence has a closed fo
 |---|---|---|
 | `Dmax_gy` | low by `slice_thickness / 2 × gradient` | **1.5 Gy low** |
 | `Dmin_gy` | high by the same | **1.5 Gy high** |
-| `Dmean_gy`, gEUD | unaffected to within 0.5 Gy | — |
+| `Dmean_gy`, gEUD at `a = 1` | unaffected to within 0.5 Gy | — |
+
+**How far it reaches, by quantity.** Averaging over the volume damps the end-cap bias, but not
+equally: a generalised mean with a large exponent is dominated by the high-dose tail, which is
+exactly where the bias sits. Signed error at the finest Nelms grid, 40 comparisons each:
+
+| Quantity | Median | Range |
+|---|---|---|
+| `Dmax` | −1.41 % | **−15.24 % to −0.34 %** |
+| `Dmean`, gEUD at `a = 1` | −0.03 % | −1.28 % to −0.001 % |
+| **gEUD at `a = 20`** | **−0.38 %** | **−3.02 % to +0.17 %** |
+
+The third row is the one that matters for NTCP. The shipped head-and-neck set contains three
+strongly serial organs — `SpinalCord` (`geud_a` 20), `Esophagus` (16.7) and `Mandible` (14.3) —
+whose gEUD therefore carries up to **−3 %** of this bias, not the ≤0.03 % that `a = 1` suggests.
+It is damped fivefold from `Dmax`, and it is not nothing. No shipped organ uses a negative
+exponent, so the much wider spread seen at `a = −10` does not reach any reported value.
+
+**So `Dmax_gy` is the reported column materially affected**, by up to −15 %, and serial-organ gEUD
+carries a smaller share of the same bias. Both directions are optimistic: the hottest dose is
+under-reported.
 
 Measured against the analytical DVHs of Nelms et al. 2015 (Med Phys 42(8):4435–4448): **32 of 32**
 along-axis comparisons matched the half-slice prediction to within 0.005 Gy at contour spacings of
