@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.5.0] - 2026-11-05 — minor: sourced parameters, defects that changed written numbers, and general software only
+## [1.5.0] - 2026-11-06 — minor: sourced parameters, defects that changed written numbers, and general software only
 
 A **minor** release. It repairs software defects, replaces unsourced default parameters with
 published fits, corrects documentation that described capabilities the software does not have, and
@@ -21,8 +21,10 @@ the analysis programme generation is unchanged.
    **v1.4.0**, where that code shipped. See `docs/KNOWN_LIMITATIONS.md`.
 2. **`Dmax_gy` is biased low and `Dmin_gy` high**, by `slice_thickness/2` x the local dose
    gradient - 1.5 Gy at a 3 mm slice and 1 Gy/mm - because the DVH end-caps structure volume but
-   not the dose range. The direction is always the optimistic one. `Dmean_gy` and gEUD are
-   unaffected to within 0.5 Gy. This is measured, bounded and documented, and **not fixed**: dose
+   not the dose range. The direction is always the optimistic one. `Dmean_gy` and gEUD **at
+   `a = 1`** are unaffected to within 0.5 Gy — but gEUD at `a = 20`, which is what the serial
+   organs use, carries up to **−3 %** of the same bias, so spinal cord, oesophagus and mandible
+   are not exempt. This is measured, bounded and documented, and **not fixed**: dose
    sampling sits in `dicompyler-core` and changing it would alter every DVH this project has
    produced. The convention choice is set out rather than taken.
 3. **Default NTCP parameters changed**, organ by organ, to published fits with the source and
@@ -30,6 +32,79 @@ the analysis programme generation is unchanged.
    section below before comparing results across versions.
 
 The work is grouped below as it was done, one block per tier, newest first.
+
+---
+
+### Fixed
+
+- **gEUD dropped zero-dose bins**, so a negative exponent with an occupied 0 Gy bin gave a wrong
+  answer (#45).
+- **`geud_a` held `n` instead of `1/n`** (#47).
+- **A DICOM read through the obsolete `dicom` package returned NaN everywhere without raising**,
+  and the run completed and wrote a full output tree of them (#48).
+- **Planning helper structures were scored as treated targets** — optimisation surrogates, rings,
+  boolean subtractions and aggregate totals all mapped to `PTV` (#59).
+- **Documentation claimed two capabilities the release does not contain**, and 21 references
+  pointed at paths not in the repository (#53, #55).
+- **`use_pyradiomics` was accepted and ignored** (#54).
+- **A test asserted a guarantee it never checked** and would have passed with the code under test
+  deleted (#57).
+- **A declared version string that neither the release gate nor the consistency test read** (#58),
+  and **version-bearing instructions in the documentation that nothing asserted on** — including an
+  install command naming a wheel two releases old.
+- **Test-configuration traps**: `-q` in `addopts` plus `-q` on the command line suppressed the
+  totals line (#49); `pytest engine/tests` re-rooted and silently dropped `--strict-markers` and
+  the import mode (#50).
+
+### Changed (behaviour)
+
+- **Default NTCP parameters are sourced**, organ by organ, to published fits, each with its source
+  and the endpoint it was fitted to. Results computed with previous defaults are not comparable
+  without reading the parameter section.
+- **Targets are selected by name before DICOM type.** A structure matching a helper pattern is
+  refused, logged and categorised `HELPER`, so target metrics and TCP no longer come from
+  optimisation or ring structures. Studies whose structure sets contain such names will report
+  fewer targets than before — that is the fix, not a loss.
+- **The repository contains general software only.** One study's analysis record was removed, so
+  **this release computes no CT radiomic feature**.
+- **The CI matrix runs the default test selection** and excludes only marked tests.
+
+### Added
+
+- **An optional per-patient prescription table** (#60): a four-column CSV the user supplies, never
+  inferred, with the plan's own values retained and the run manifest recording who was overridden.
+- A `legacy` pytest marker, and tests pinning every defect above. The new test files are listed in
+  the tier detail below.
+
+### Deprecated
+
+- `engine/dicom_io/tcia_hnscc_adapter.py` and `engine/validation/hnscc_external_val.py` remain as
+  deprecation shims for the modules they were renamed to in this release
+  (`dicom_cohort_adapter.py`, `external_validation_harness.py`). They are kept for one release.
+
+### Known limitations
+
+Carried into this release deliberately, each documented in `docs/KNOWN_LIMITATIONS.md` with its
+measured magnitude:
+
+- **The DVH end-caps volume but not the dose range** (#52): `Dmax_gy` low and `Dmin_gy` high by
+  `slice_thickness/2 × gradient`, always in the optimistic direction. `Dmax` carries up to −15 %;
+  serial-organ gEUD up to −3 %.
+- **One prescription per plan**, taken from the RT Plan, unless the new table is supplied (#60).
+- **Bilateral organ names receive no NTCP**: four of the eleven shipped head-and-neck organs are
+  lateralised pairs, and a contour named without a side is refused rather than assigned one.
+- **`pydicom < 3`** is required, because `dicompyler-core` imports a module removed in 3.0.
+- **The illustrative organ count**, and which organs are illustrative rather than sourced.
+- **`CalculateStructureVolume` returns `0.0` when shapely is absent** (#51) — unreachable from any
+  rbGyanX call site, registered rather than fixed.
+
+---
+
+**Detail, by tier.**
+
+The same work as it was done, newest first. The sections above are the summary; these are the
+records, with the measurements and the reasoning behind each decision.
+
 
 ### Tier B/C: capabilities the docs claimed and the release did not have, and the test-suite blind spot
 
@@ -195,7 +270,7 @@ run manifest records the table's path, its SHA-256 and which patients were overr
 outside 1–120 Gy, a fraction count outside 1–60, a duplicate patient or a non-numeric field stops
 the run at load time rather than halfway through a cohort.
 
-### Added
+#### Added
 
 - `engine_advanced/tests/test_v150_dosiomics_scope_claims.py` — 5 tests for #53 and #54. Three fail
   on v1.4.0.
