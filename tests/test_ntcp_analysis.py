@@ -5,6 +5,16 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
+
+# Defect #46 follow-up. These tests run `legacy/code3_ntcp_analysis_ml.py` in a subprocess, and that
+# module imports seaborn, which lives in the `ml` extra. The CI core job installs only `.[dev]`, so
+# the subprocess exits with ModuleNotFoundError there and the assertion on its return code fails.
+# This is the `legacy` marker's declared purpose: the code under test is quarantined lineage code,
+# retired and never imported by the engine, and a contributor should not have to install a plotting
+# library to run the core suite in order to support it. The `full` job installs the extras and
+# applies no marker filter, so these tests still run there -- the coverage moves, it does not go.
+pytestmark = pytest.mark.legacy
 
 
 def test_ntcp_with_synthetic_data(synthetic_data_dir, ntcp_template, temp_output_dir):
@@ -49,29 +59,57 @@ def test_ntcp_with_synthetic_data(synthetic_data_dir, ntcp_template, temp_output
             assert pred_df[col].max() <= 1, f"{col} has values > 1"
 
 
-def test_ntcp_validation(ntcp_template, temp_output_dir):
-    """Test NTCP clinical data validation"""
-    
-    # Test with invalid data (missing required columns)
+def test_ntcp_validation(synthetic_data_dir, temp_output_dir):
+    """The clinical-data validation must reject a file with missing required columns.
+
+    Defect #57. This test used to pass `--dvh_dir test_data/DVH_files`, a path that does not exist
+    in the repository, so the script printed "DVH directory not found" and exited 1 before it ever
+    opened the clinical file. The assertion accepted `result.returncode != 0` as one of its
+    disjuncts, so a non-zero exit from *any* cause satisfied it: the test passed without the
+    validation code running at all, and would have kept passing if that code were deleted. On the
+    CI core job, where seaborn is absent, it passed a third way -- on the import error.
+
+    It now takes the same `synthetic_data_dir` fixture its siblings use, so the script gets a real
+    DVH directory and reaches the clinical file, and the assertion requires evidence that
+    *validation* rejected the file rather than merely that the process failed.
+    """
+    # A clinical file with none of the required columns.
     invalid_clinical = temp_output_dir / "invalid_clinical.xlsx"
     df = pd.DataFrame({
         'Patient': ['P001', 'P002'],
         'Value': [1, 0]
     })
     df.to_excel(invalid_clinical, index=False)
-    
+
+    dvh_dir = synthetic_data_dir.get('dvh_dir', synthetic_data_dir.get('output_dir'))
     cmd = [
         sys.executable,
         "legacy/code3_ntcp_analysis_ml.py",
-        "--dvh_dir", "test_data/DVH_files",
+        "--dvh_dir", str(dvh_dir),
         "--patient_data", str(invalid_clinical),
         "--output_dir", str(temp_output_dir)
     ]
-    
+
     result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=Path.cwd())
-    
-    # Should fail with validation error
-    assert result.returncode != 0 or "validation failed" in result.stdout.lower() or \
-           "Missing required columns" in result.stdout or \
-           "PatientID" in result.stderr, "Validation should have failed"
+    combined = (result.stdout + result.stderr).lower()
+
+    # It must not have died before reaching the clinical file.
+    assert not ("dvh directory" in combined and "not found" in combined), (
+        "the script exited on a missing DVH directory, so clinical validation never ran -- this is "
+        "the #57 failure mode returning.\nstdout tail:\n" + result.stdout[-1500:]
+    )
+
+    # And it must say the clinical data was rejected, not merely fail.
+    validation_signals = (
+        "missing required column",
+        "validation failed",
+        "required column",
+        "patientid",
+    )
+    assert any(sig in combined for sig in validation_signals), (
+        "no validation message found; a non-zero exit code alone is not evidence that the "
+        "validation code ran.\nreturncode=" + str(result.returncode)
+        + "\nstdout tail:\n" + result.stdout[-1500:]
+        + "\nstderr tail:\n" + result.stderr[-1500:]
+    )
 
