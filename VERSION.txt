@@ -40,10 +40,13 @@ makes this a minor rather than a patch release. See the Changed / Breaking secti
 CHANGELOG.md.
 
 Supported Python: 3.10-3.12, which is exactly the matrix CI tests on Linux and Windows. Note that
-this is NOT the interpreter the published analysis ran on: analysis/FINAL_ANALYSIS_CODE_MANIFEST.json
-records Python 3.14.2 on Windows with its own package set, because that analysis drove the engine
-directly rather than the installed rbgyanx distribution. Both records are accurate and they
-describe different environments; neither should be edited to match the other.
+this is NOT the interpreter the published study analysis ran on: that analysis used Python 3.14.2 on
+Windows with its own package set, because it drove the engine directly rather than the installed
+rbgyanx distribution. Both records are accurate and they describe different environments; neither
+should be edited to match the other. The analysis-side record is
+analysis/FINAL_ANALYSIS_CODE_MANIFEST.json, which is NOT in this repository: analysis/ was removed
+in v1.5.0 as study-specific material and is retrievable at the v1.4.0 tag and in that release's
+deposited archive.
 
 FINAL_V3.2 supersedes FINAL_V3.1. It adds no new scientific result: every headline value is
 unchanged and was independently verified before this release was built. It exists to close four
@@ -51,7 +54,9 @@ release blockers found in the final completion audit:
 
   B1  the analysis code that produced the reported results is now versioned, under analysis/,
       with analysis/FINAL_ANALYSIS_CODE_MANIFEST.json mapping each result to its script, config,
-      seed, package set and SHA-256;
+      seed, package set and SHA-256 (this describes the state at FINAL_V3.2; analysis/ was later
+      removed from the repository in v1.5.0 as study-specific material, and lives at the v1.4.0
+      tag and in that release's deposited archive);
   B2  synthetic dose voxels can no longer enter a production dosiomics pathway;
   B3  the release candidate and Zenodo package are rebuilt from the current commit;
   B4  the two unfilled placeholders in the draft report are resolved from the manifest.

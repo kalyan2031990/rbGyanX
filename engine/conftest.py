@@ -1,5 +1,7 @@
 # engine/conftest.py — engine-specific fixtures only
-# sys.path for the engine root is handled by pytest.ini (pythonpath + importlib mode)
+# sys.path for the engine root is handled by [tool.pytest.ini_options] in engine/pyproject.toml
+# (pythonpath + importlib mode). There is no pytest.ini in this repository; the earlier comment
+# named one, and named an import mode this file did not set until defect #50 was fixed.
 
 """Shared pytest fixtures for engine tests."""
 

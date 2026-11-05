@@ -180,15 +180,48 @@ them has a source. They are marked illustrative per model, so BASIC mode refuses
 column for them while still computing the sourced `NTCP_LKB_probit` beside it.
 
 
-### IBSI compliance is not claimed
+### No CT radiomics implementation ships, so no IBSI benchmark applies to this release (defect #53)
 
-The radiomics implementation is benchmarked against the IBSI-1 digital phantom and reproduces
-**56 of 63** reference features. Two families reproduce only in part: neighbouring grey-level
-dependence (3 of 7) and morphology (1 of 4). See
-`analysis/ibsi/v3_ibsi_benchmark.py` and the compliance matrix it writes.
+**This release computes no CT radiomic features.** `analysis/` was removed in v1.5.0 under the rule
+that the repository holds general software only, and the CT feature engine
+(`analysis/radiomics/p14_ct_radiomics.py`) and the IBSI benchmark
+(`analysis/ibsi/v3_ibsi_benchmark.py`) went with it. Measured on the release commit: a search of
+every tracked file for any IBSI feature name (`glcm_*`, `glrlm_*`, `glszm_*`, `ngldm_*`, `ngtdm_*`,
+`fo_*`, `shape_sphericity`) returns **no files**.
 
-Compliance is a status; what this release supports is a benchmark measurement. Any downstream
-radiomic result is bounded by the two partial families.
+Earlier versions of this section stated in the present tense that "the radiomics implementation is
+benchmarked against the IBSI-1 digital phantom and reproduces 56 of 63 reference features" and
+pointed the reader at the benchmark script. Both the implementation and the script had already been
+removed, so the claim described software this release does not contain and the path resolved to
+nothing. That was defect #53; this section is the correction.
+
+The 56-of-63 measurement itself was real and still stands **as a statement about v1.4.0**, where
+the code shipped. It is not evidence about this release and is not quoted as such here. The word
+*compliance* is not used of this project in either case: what existed was a benchmark measurement
+against a published phantom, with two families reproducing only in part (neighbouring grey-level
+dependence 3 of 7, morphology 1 of 4, the latter because the engine's surface area counted voxel
+faces where IBSI uses a marching-cubes mesh).
+
+What does ship is `engine_advanced/rbgyanx_advanced/dose3d/dosiomics.py`, which computes
+**first-order statistics of the dose distribution** in an OAR. Those are not CT radiomic features,
+the IBSI-1 phantom does not benchmark them, and no texture dosiomics (GLCM / GLRLM / GLSZM) are
+computed anywhere in this release — see the next entry.
+
+### `use_pyradiomics` was accepted and ignored (defect #54)
+
+`extract_dosiomics_features(..., use_pyradiomics=True)` took the argument and never read it. The
+module's only consumer of it was a `try: from radiomics import featureextractor` probe that set
+`_PYRADIOMICS_AVAILABLE` -- a name nothing in the codebase ever referenced. A caller asking for
+pyradiomics-backed texture features therefore received the first-order dictionary, with nothing in
+the return value, the column names or the log to indicate the request had been dropped.
+
+No call site in the repository passed it, so nothing produced a wrong number because of this. It is
+registered and fixed because the failure mode it created is the one this codebase refuses
+everywhere else: returning something that looks like the measurement that was asked for. Passing
+`True` now raises `NotImplementedError` naming the defect; the dead probe is removed. `False`, the
+default, is unchanged.
+
+Pinned by `engine_advanced/tests/test_v150_dosiomics_scope_claims.py`.
 
 ### Poisson TCP saturates
 
@@ -475,41 +508,38 @@ and external prostate cohorts are institutional and cannot be redistributed; rep
 a data-transfer agreement. De-identified derived tables sufficient to regenerate the reported
 values accompany the associated publications.
 
-### Analysis provenance and software release carry distinct commits
+### The analysis provenance record is not in this repository (defect #55)
 
-`analysis/FINAL_ANALYSIS_CODE_MANIFEST.json` stamps a different `source_commit` from the software
-release tag. This is deliberate and should not be reconciled: which code produced a number and
-which version was distributed are different questions.
+`analysis/` — the versioned record of the study analysis, including
+`analysis/FINAL_ANALYSIS_CODE_MANIFEST.json` — **was removed in v1.5.0** because it was specific to
+one study. It is retrievable at the `v1.4.0` tag and in the archive deposited for that release.
 
-### Eight analysis scripts match their recorded SHA-256 only with CRLF line endings
+Two facts recorded here previously, in the present tense and pointing at paths that no longer
+resolve, are kept because they remain true of those released artefacts and a verifier needs them.
+Both are now stated as what they are: notes about the archive, not about this release's software.
 
-`analysis/FINAL_ANALYSIS_CODE_MANIFEST.json` records a SHA-256 for each script that produced a
-reported result — that mapping is the whole point of the manifest, and it closed audit blocker B1.
-Hashing the files as checked out, **15 of 23 match and 8 do not**:
+**The manifest's `source_commit` differs from the software release tag, deliberately.** Which code
+produced a number and which version was distributed are different questions, and reconciling the
+two would destroy the answer to the first.
 
-```
-analysis/radiomics/p14_ct_radiomics.py          analysis/pinn/v2_pinn.py
-analysis/radiomics/p14_assemble_radiomics.py    analysis/cohort/t2_resolve_linkage.py
-analysis/ibsi/v3_ibsi_benchmark.py              analysis/cohort/build_patient_features.py
-analysis/dosiomics/real_dosiomics.py            analysis/bayesian/v3_bayesian_pymc.py
-```
+**Eight of its 23 script entries reproduce their recorded SHA-256 only with CRLF line endings.**
+The manifest was stamped on Windows line endings; `.gitattributes` (`* text=auto eol=lf`)
+normalises the repository copy to LF. Measured 2026-09-27 over all 23 entries: **15 match as LF, 8
+match as CRLF, 0 match neither.** The eight are the radiomics, IBSI, dosiomics, PINN, cohort and
+Bayesian scripts. So for every script the manifest still identifies the exact code that produced
+the reported numbers; what it does not identify is the byte form, which a verifier has to know is
+CRLF for those eight. This was confirmed again on 2026-11-05 when two of the eight were recovered
+from the `v1.4.0` tag for a benchmark re-run and both reproduced their recorded digest exactly in
+CRLF form.
 
-This was earlier recorded as drift of unknown origin. It is not a content change. All eight match
-their recorded digests exactly once the file is converted from LF to CRLF: the manifest was stamped
-on Windows line endings, and `.gitattributes` (`* text=auto eol=lf`) normalises the repository copy
-to LF. Measured 2026-09-27 over all 23 entries: 15 match as LF, 8 match as CRLF, **0 match
-neither**. So for every script, the manifest still identifies the exact code that produced the
-reported numbers. What it does not identify is the byte form, which a verifier has to know is CRLF
-for those eight.
+`real_dosiomics.py` was changed in v1.3.0, for resume and skip reasons only. Its manifest entry
+keeps the recorded digest (the version that produced the results) and adds `sha256_v1_3_0` with a
+note stating what changed, rather than overwriting it. Re-stamping any entry against a later file
+would make the hashes agree while destroying the evidence of which bytes produced the results.
 
-`real_dosiomics.py` has since been changed in v1.3.0, for resume and skip reasons only. Its
-manifest entry keeps the recorded digest (the version that produced the results) and adds
-`sha256_v1_3_0` with a note stating what changed, rather than overwriting it. Re-stamping any entry
-against the current file would make the hashes agree while destroying the evidence of which bytes
-produced the results.
-
-`analysis/` is excluded from linting and formatting for this reason — it is a frozen provenance
-artefact, not maintained code.
+`analysis/` is still named in this repository's ruff exclusion list although the directory is
+absent, so that a restored checkout of it for a re-run cannot be silently reformatted. That is
+intentional, and the comment there says so.
 
 ### The AI literature pack claims a generator that doesn't exist
 

@@ -40,4 +40,5 @@ See `docs/validation_report.json` and `docs/TECHNICAL_DEVELOPMENT_NOTE.md`.
 .\scripts\build_zenodo_bundle.ps1
 ```
 
-See `reproducibility/ZENODO_UPLOAD_GUIDE.md`.
+The deposit guide that used to be at `reproducibility/ZENODO_UPLOAD_GUIDE.md` was removed in
+v1.5.0 along with the study-specific material; see the `v1.4.0` tag.

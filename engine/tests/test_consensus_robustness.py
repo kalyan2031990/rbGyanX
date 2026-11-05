@@ -7,7 +7,9 @@ weighting fails this (weights ~ 1/sigma**2, so a narrow band buys unbounded
 weight); the default median combiner passes it. These tests lock that guarantee in
 place so a future refactor cannot silently reinstate the fragile default.
 
-See ``analysis/preregistration_B.md`` (B4) and ``docs/CONSENSUS_B_RESULTS.md``.
+The pre-registration and results documents for that analysis are not distributed
+with this software. This test does not depend on them: the over-confident member
+below is synthetic and the guarantee is algebraic.
 """
 
 from __future__ import annotations

@@ -76,5 +76,33 @@ exclude = ["tests/test_*", "examples*", "archive*", "quantification*", "src*"]
 config = ["*.yaml"]
 
 [tool.pytest.ini_options]
+# Defect #50. pytest picks its rootdir by walking UP from the arguments to the nearest ancestor
+# carrying a pytest config, so `pytest engine/tests` from the repository root stops here and uses
+# this file -- not the root pyproject.toml. The root `addopts` and marker list were therefore
+# silently dropped: `--strict-markers` was off (a typo in a marker name would pass unnoticed) and
+# the import mode fell back to prepend. The load-bearing options are duplicated here so that the
+# checks are the same whichever config wins, and
+# `engine/tests/test_v150_pytest_config_trap.py` fails loudly if they ever diverge again.
+#
+# The genuinely engine-local settings are testpaths and pythonpath; everything below mirrors the
+# repository root and must be kept in step with it.
 testpaths = ["tests"]
 pythonpath = ["."]
+addopts = [
+    "--import-mode=importlib",
+    "--tb=short",
+    "--strict-markers",
+]
+markers = [
+    "unit: fast isolated unit test",
+    "integration: crosses module boundaries",
+    "e2e: full pipeline test",
+    "slow: long-running (skip in quick CI unless --runslow)",
+    "requires_ml: needs xgboost/lightgbm stack",
+    "requires_torch: needs PyTorch",
+    "requires_pymc: needs PyMC",
+    "requires_dicom: needs DICOM fixtures or local cohort",
+    "requires_xgboost: needs xgboost",
+    "requires_lifelines: needs lifelines",
+    "dicom: synthetic or real DICOM round-trip",
+]

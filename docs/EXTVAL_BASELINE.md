@@ -72,7 +72,9 @@ engine `__version__`, and `rbgyanx.__version__`.
 ## 5. Documentation drift fixed
 
 - Published test count reconciled **462 → 487** (the 462 predated the merged external-validation work) across
-  `README.md`, `docs/TEST_RUN_SUMMARY.md`, `docs/VERIFICATION_REPORT.md`, `reproducibility/README_SYNTHETIC.md`.
+  `README.md`, `docs/TEST_RUN_SUMMARY.md`, `reproducibility/README_SYNTHETIC.md`, and
+`docs/VERIFICATION_REPORT.md` (the last removed from the repository in v1.5.0; see the `v1.4.0`
+tag).
 - `419` (no-optional-deps baseline) vs `487` (full deps) confirmed as two documented scenarios, not a contradiction.
 
 ## 6. Phase-1 exit criteria — status

@@ -14,7 +14,8 @@ a merge:
                       Tiers T1-T4.
 
 Anything else (a logistic fitted to dose used as a "classical" tier, or the TCP predictor
-applied to a toxicity endpoint) is a defect — see docs/AUDIT_REPORT.md A1/A5.
+applied to a toxicity endpoint) is a defect. Recorded as audit findings A1/A5; that audit
+report was removed from the repository in v1.5.0 and is at the v1.4.0 tag.
 
 Examples
 --------

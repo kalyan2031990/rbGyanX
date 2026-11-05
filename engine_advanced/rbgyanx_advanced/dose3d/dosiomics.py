@@ -1,8 +1,15 @@
 """Dosiomics from OAR dose voxels (§28).
 
-Scope note: this module computes first-order dose statistics only. The 3-D texture dosiomics
-(GLCM / GLRLM / GLSZM) are computed by this module against
-real RTDOSE grids; see docs/DOSIOMICS_DATA_PROVENANCE.md for which engine produced which result.
+Scope note: this module computes **first-order dose statistics only** -- mean, SD, min, max,
+percentiles, D2/D50/D98, skewness, kurtosis, energy, uniformity, entropy, IQR, CV and a hot-volume
+fraction. It computes **no texture features**. There is no GLCM, GLRLM, GLSZM, NGLDM or NGTDM
+implementation anywhere in this release, for dose or for CT.
+
+An earlier version of this docstring said the 3-D texture dosiomics "are computed by this module",
+which was false and contradicted the sentence before it (defect #53). The claim arose from
+rewriting a pointer to ``analysis/dosiomics/`` when that directory was removed; the pointer went,
+the capability never existed here, and the sentence should have gone too rather than being
+re-aimed at this module.
 
 Features computed from generated voxels are surrogates, not dosiomics. Pass ``production=True``
 (or a ``dose_source``) to have that enforced rather than trusted.
@@ -21,13 +28,6 @@ from rbgyanx_advanced.dose3d.dose_grid_extractor import (
 )
 
 logger = logging.getLogger(__name__)
-
-try:
-    from radiomics import featureextractor  # noqa: F401
-
-    _PYRADIOMICS_AVAILABLE = True
-except ImportError:
-    _PYRADIOMICS_AVAILABLE = False
 
 
 def _skewness(d: np.ndarray, mean: float, std: float) -> float:
@@ -114,7 +114,21 @@ def extract_dosiomics_features(
     ``production=True`` the source must be a real RTDOSE grid, otherwise
     :class:`SyntheticDoseInProductionError` is raised - a production run fails rather than emitting
     surrogate features that look like measurements.
+
+    ``use_pyradiomics`` has no implementation behind it and must be left ``False``. It was
+    previously accepted and silently ignored (defect #54): a caller asking for pyradiomics-backed
+    texture features received the first-order dictionary instead, with nothing in the return value
+    or the log to say so. Passing ``True`` now raises :class:`NotImplementedError`, on the same
+    principle as ``production=True`` -- refuse rather than return something that looks like the
+    measurement that was asked for.
     """
+    if use_pyradiomics:
+        raise NotImplementedError(
+            "use_pyradiomics=True is not implemented: this module computes first-order dose "
+            "statistics only and has no texture-feature backend (defect #54). Leave it False; "
+            "passing True previously returned first-order features with no indication that the "
+            "request had been ignored."
+        )
     if production:
         assert_production_dose_source(
             dose_source if dose_source is not None else SOURCE_NOT_AVAILABLE,

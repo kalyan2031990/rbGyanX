@@ -22,7 +22,8 @@ This module maintains backward compatibility by delegating to core functions.
     (``parse_dvh_text_file`` / ``parse_multi_structure_dvh_text`` / ``iter_dvh_text_files``).
     That reader is the one the engine, CLI and benchmarks use, the only one under test, and
     the only one with deterministic header-declared dose-unit handling (see
-    docs/AUDIT_REPORT.md A4 — this parser still resolves cGy/Gy heuristically).
+    audit finding A4 — this parser still resolves cGy/Gy heuristically. The audit report
+    was removed from the repository in v1.5.0; it is at the v1.4.0 tag).
 
     This module survives solely because the Tkinter GUI (``rbgyanx_gui.py``) still imports
     ``UniversalDVHParser``. It is scheduled for removal with the Qt migration, at which point
