@@ -113,7 +113,8 @@ def build(cohort_dir: Path) -> str:
         "## Reproducing this run",
         "",
         "Re-running the same command resumes (completed patients are skipped) and rebuilds the cohort "
-        "CSVs identically. See `docs/RUNBOOK.md` for the exact PowerShell per cohort.",
+        "CSVs identically. The per-cohort runbook is not distributed with the software: "
+        "supply your own cohort paths to the same entry points.",
         "",
         "## Files",
         "",

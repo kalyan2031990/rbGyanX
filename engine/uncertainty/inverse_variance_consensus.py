@@ -1,14 +1,18 @@
-"""Consensus combiners for uTCP / uNTCP (paper §2.C).
+"""Consensus combiners for uTCP / uNTCP.
 
-Historically the only combiner was inverse-variance weighting (Eq. 1). Analysis B
-(``analysis/preregistration_B.md``, ``docs/CONSENSUS_B_RESULTS.md``) showed that
-inverse-variance weighting of *same-endpoint* radiobiological models is
-mechanistically fragile: because ``w_i = 1/sigma_i**2``, a single over-confident
-member (narrow parametric band) captures almost all the weight and propagates its
-error into the consensus — up to +0.24 Brier damage in the pre-registered stress
-test — even when it is confidently *wrong*. A rank-based (median) combiner is
-invariant to any single member's quoted confidence and removed that failure at no
-cost on the clean cohort.
+Historically the only combiner was inverse-variance weighting. It is mechanistically
+fragile for *same-endpoint* radiobiological models: because ``w_i = 1/sigma_i**2``,
+a single over-confident member (narrow parametric band) captures almost all the
+weight and propagates its error into the consensus even when it is confidently
+*wrong*. The weight concentration follows from the formula and does not depend on
+any dataset. A rank-based (median) combiner is invariant to any single member's
+quoted confidence and removes that failure mode.
+
+The supporting measurements were made in a pre-registered study analysis whose
+documents are not distributed with this software; they are in the study workspace
+and the deposited archive. The property this module relies on is the algebraic one
+above, which is pinned by ``engine/tests/test_consensus_robustness.py`` against a
+synthetic over-confident member, not against a cohort.
 
 The engine therefore now defaults to the **robust median** combiner. Inverse-variance
 weighting and a disagreement-penalised variant remain available and are selectable via

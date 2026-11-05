@@ -5,7 +5,10 @@ PRODUCTION DOSIOMICS USE REAL RTDOSE ONLY.
 A synthetic voxel generator lives here for test fixtures and development, but it can never be reached
 implicitly: every caller that wants it must pass ``allow_synthetic=True``, which no production code
 path does. When a real dose grid cannot be extracted the extractor returns ``None`` with source
-``NOT_AVAILABLE`` rather than fabricating voxels. See docs/DOSIOMICS_DATA_PROVENANCE.md.
+``NOT_AVAILABLE`` rather than fabricating voxels. The rule is enforced here by
+``assert_production_dose_source`` and pinned by
+``engine_advanced/tests/test_dosiomics_production_safety.py``; the prose note formerly at
+docs/DOSIOMICS_DATA_PROVENANCE.md went with the study-specific material in v1.5.0.
 """
 
 from __future__ import annotations

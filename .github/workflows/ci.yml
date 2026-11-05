@@ -62,13 +62,21 @@ jobs:
         if: runner.os == 'Linux'
         run: mypy engine/radiobiology --config-file pyproject.toml
 
-      - name: Pytest (engine + publication + synthetic + reusable interfaces + validation)
+      # Defect #46. This step used to name six paths -- 65 of the 134 tracked test files inside
+      # `testpaths`. The other 69 (~743 test functions) ran only in the `full` job, which is a
+      # single configuration: ubuntu, 3.12, full ML stack. So the whole tests/ai_* group (~330
+      # functions), the Qt smoke suite, the GUI-path tests and the DVH integrity tests were never
+      # executed on Windows and never on 3.10 or 3.11, and a regression confined to one of those
+      # would have gone unnoticed by a green CI.
+      #
+      # It now runs the default selection from `testpaths` and excludes **only by marker**, so
+      # adding a test file cannot silently leave it out of the matrix, and excluding one requires
+      # marking it where a reader of that file will see the reason.
+      - name: Pytest (default selection, marker exclusions only)
         run: |
-          pytest engine/tests tests/test_publication_suite.py tests/synthetic \
-            tests/test_input_validation.py tests/test_reusable_interfaces.py \
-            tests/test_examples_smoke.py \
+          pytest \
             --import-mode=importlib -q --tb=short \
-            -m "not requires_ml and not requires_torch and not requires_pymc" \
+            -m "not requires_ml and not requires_torch and not requires_pymc and not legacy" \
             --cov=engine/radiobiology --cov-report=xml --cov-fail-under=70
 
       - name: Upload coverage

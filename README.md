@@ -76,10 +76,13 @@ Installing only the `rbgyanx` wheel fails at install time with an unresolved `rb
 requirement. That is deliberate: through v1.2.1 the dependency was undeclared, so the wheel
 installed cleanly and then raised `ModuleNotFoundError` on `import rbgyanx`.
 
-> **On the analysis environment.** `analysis/FINAL_ANALYSIS_CODE_MANIFEST.json` records Python
-> 3.14.2 on Windows with its own package set. That is not a contradiction of the range above: the
-> published analysis drove the engine directly rather than this installed distribution. It is
-> historical provenance for the reported numbers and is deliberately not edited to match.
+> **On the analysis environment.** The study analysis that drove this engine ran on Python 3.14.2
+> on Windows with its own package set, which is not a contradiction of the range above: it drove the
+> engine directly rather than this installed distribution. That record is a code manifest
+> (`analysis/FINAL_ANALYSIS_CODE_MANIFEST.json`) which is **not part of this repository** --
+> `analysis/` was removed in v1.5.0 because it was specific to one study. It is retrievable at the
+> `v1.4.0` tag and in the archive deposited for that release, and it is deliberately not edited to
+> match the range above.
 
 ---
 
@@ -236,10 +239,8 @@ Start here:
 | [`DISCLAIMER.md`](DISCLAIMER.md) | The complete not-a-medical-device statement |
 | [`docs/TECHNICAL_DEVELOPMENT_NOTE.md`](docs/TECHNICAL_DEVELOPMENT_NOTE.md) | Models, parameters, and design rationale |
 | [`docs/RBGYANX_1.0_DESKTOP.md`](docs/RBGYANX_1.0_DESKTOP.md) | Desktop feature guide |
-| [`analysis/README.md`](analysis/README.md) | Which script produced which reported number |
 | [`DATA_AVAILABILITY.md`](DATA_AVAILABILITY.md) | What is and is not distributed, and how to obtain the cohorts |
 | *(external-validation benchmark: methods, seeds, tables)* | Moved to the reproduction capsule (`archived_repo_docs/`), removed from this repository under the no-patient-results policy. It carries real-cohort outcome counts and model metrics, which belong in the capsule, not on GitHub. |
-| [`docs/DOSIOMICS_DATA_PROVENANCE.md`](docs/DOSIOMICS_DATA_PROVENANCE.md) | Real production dosiomics vs synthetic test data |
 | [`SECURITY.md`](SECURITY.md) | Reporting a vulnerability; accepted audit findings |
 | [`CHANGELOG.md`](CHANGELOG.md) · [`CONTRIBUTING.md`](CONTRIBUTING.md) | Release history; how to contribute |
 

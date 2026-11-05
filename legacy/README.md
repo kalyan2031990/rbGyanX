@@ -32,4 +32,5 @@ record, and (b) lets historical numbers be re-derived if asked. Deleting them wo
 lose that, while leaving them at the repo root implied they were part of the tool.
 
 ## Status
-Retired 2026-07-18 (Phase 2 de-duplication). See `docs/AUDIT_REPORT.md` §3 and §7.
+Retired 2026-07-18 (Phase 2 de-duplication). Recorded in the audit report §3 and §7; that
+report was removed from the repository in v1.5.0 and is at the `v1.4.0` tag.

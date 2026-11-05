@@ -5,6 +5,136 @@ All notable changes to this project are documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — Tier B/C: capabilities the docs claimed and the release did not have, and the test-suite blind spot
+
+### Fixed
+
+**The documentation claimed two capabilities this release does not contain (defect #53).**
+
+`docs/KNOWN_LIMITATIONS.md` stated, in the present tense, that "the radiomics implementation is
+benchmarked against the IBSI-1 digital phantom and reproduces **56 of 63** reference features", and
+pointed the reader at `analysis/ibsi/v3_ibsi_benchmark.py`. The CT feature engine and the benchmark
+script were both removed with `analysis/` in "general software only". Measured on this commit:
+searching every tracked file for any IBSI feature name — `glcm_*`, `glrlm_*`, `glszm_*`, `ngldm_*`,
+`ngtdm_*`, `fo_*`, `shape_sphericity` — returns **no files**. **This release computes no CT radiomic
+feature at all**, so the section described absent software and cited a path that resolved to
+nothing. It now says so, attributes the 56-of-63 measurement to the version where that code shipped,
+and states what is here instead. *Compliance* is still not claimed, as before.
+
+`engine_advanced/rbgyanx_advanced/dose3d/dosiomics.py`'s docstring said the 3-D texture dosiomics
+"(GLCM / GLRLM / GLSZM) are computed by this module", directly contradicting the sentence before it,
+which said the module computes first-order dose statistics only. The scope-cleanup commit changed
+exactly one line in that file: a pointer to another directory was re-aimed at the nearest module
+instead of being deleted along with what it described. **The module has never computed a texture
+feature** — it returns 20 first-order dose statistics. The docstring now states the scope
+positively, denies the texture families by name, and records what the false sentence was.
+
+**`use_pyradiomics` was accepted and ignored (defect #54).** `extract_dosiomics_features` declared
+the parameter and never read it; the only related code was an import probe setting
+`_PYRADIOMICS_AVAILABLE`, a name referenced nowhere in the repository. A caller asking for
+pyradiomics-backed texture features received the ordinary first-order dictionary — no exception, no
+warning, nothing in the returned data to say the request had been dropped. No call site passes it,
+so no result was affected; it is fixed because a silently downgraded request is the failure mode
+`assert_production_dose_source` exists in the same package to prevent. `True` now raises
+`NotImplementedError` naming what the module does compute; `False`, the default, is unchanged and
+returns exactly what it did before.
+
+**Twenty-one references pointed at files that are not in the repository (defect #55).** The
+scope cleanup removed 69 paths and left references to twenty of them behind, including: two live
+Markdown links in README's documentation table; a string that `scripts/make_run_report.py` writes
+into **every generated run report**; a line `scripts/build_zenodo_bundle.ps1` prints to the operator;
+a module and its self-described "permanent positive control" test citing a pre-registration a reader
+cannot obtain, as the justification for the module's default; two whole `KNOWN_LIMITATIONS` sections
+written about an absent manifest; and audit findings cited by number to a removed report. Each one
+now either resolves, or names the path together with the fact that it is not in this repository and
+where it is. CHANGELOG entries that name a removed path *in order to record its removal* are left
+alone — a changelog that cannot name what it deleted is not one.
+
+The twenty-first was found by the new test rather than by the sweep, and has a different cause:
+`docs/IMPLEMENTATION_ROADMAP.md` is titled after, and cited as its source, a `CURSOR_FIXES.md` that
+`git log --all` shows **never existed in this repository**. That link never resolved for any reader
+at any version.
+
+`docs/CONSENSUS_B_RESULTS.md` is **removed**: 445 lines of cohort measurements — cohort size and
+event counts, per-model Brier / ECE / AUC and calibration-slope tables, bootstrap confidence
+intervals — which do not belong in general-purpose software. The mechanistic finding it supported
+stays documented in `engine/uncertainty/inverse_variance_consensus.py`, stated as the algebraic
+property it is: inverse-variance weighting uses `w = 1/σ²`, so one over-confident member captures
+almost all the weight regardless of whether it is right. That property follows from the formula and
+needs no dataset, and `engine/tests/test_consensus_robustness.py` pins it against a synthetic
+over-confident member rather than against a cohort.
+
+**CI ran 65 of 134 test files on the matrix (defect #46).** The `core` job — the one that runs on
+ubuntu and windows × 3.10 / 3.11 / 3.12 — named six paths explicitly. The other **69 files, about
+743 test functions**, ran only in the `full` job, which is a single configuration: ubuntu, 3.12,
+full ML stack. So the whole `tests/ai_*` group (≈ 330 functions), the Qt smoke suite, the GUI-path
+tests and the DVH integrity tests were never executed on Windows, and never on 3.10 or 3.11. A
+regression confined to one of those would have passed a green CI.
+
+The job now runs the **default selection** from `testpaths` and excludes **only by marker**. Adding
+a test file can no longer leave it out of the matrix by omission, and excluding one requires marking
+it, where a reader of that file sees the reason — rather than editing a path list in a workflow
+nobody reads alongside the test. A `legacy` marker is declared for that purpose. **Nothing is marked
+with it:** every file in the default selection was measured first, and none needs excluding. The
+widened selection collects 1941 tests, with 13 deselected by the existing `requires_ml` /
+`requires_torch` / `requires_pymc` markers.
+
+How that was established, and the one gap in it: each of the 134 files was run individually on
+Python 3.10.11 / Windows — the configuration the widening newly exposes — giving **133 complete and
+1 that does not finish**, `engine/tests/test_ml_models.py`. That file was already inside the
+previous selection, so this change does not alter its exposure; it deadlocks on the development
+machine after several nested cross-validation fits in one process (the hang point moves between
+runs, each test passes in isolation, and `JOBLIB_MULTIPROCESSING=0` does not prevent it), and it
+does not reproduce on CI. **The cause is not established and no fix is claimed.** The one check not
+performed locally is a single whole-suite run, which would exercise cross-file interaction; it was
+skipped because the machine is memory-constrained, the `full` job already performs exactly that run
+on ubuntu, and the matrix performs it on every cell.
+
+**A quiet flag in `addopts` could hide a failing run completely (defect #49).** pytest sums
+verbosity flags, so `-q` in `addopts` plus `-q` on the command line is `-qq` — which suppresses the
+totals line as well as the per-test output. A run with failures then printed no summary at all and
+read like a run that had done nothing. `-q` is removed from the root `addopts`; CI passes it
+explicitly where it wants it, so `pytest -q` from a shell now means one level of quiet.
+
+**`pytest engine/tests` ran under weaker settings than intended (defect #50).** pytest chooses its
+rootdir by walking **up** from its arguments to the nearest ancestor carrying a pytest
+configuration, so that invocation stops at `engine/pyproject.toml` and never reads the root
+`pyproject.toml`. The root `addopts` and marker list were silently dropped: `--strict-markers` was
+off, so a mistyped marker name would be accepted and the test would run unmarked, and the import
+mode fell back to `prepend`. Nothing failed — the suite just ran under different rules than the
+author wrote, which is the worst form of this bug. The re-rooting is pytest's own documented
+behaviour and is not changed; instead the load-bearing options are duplicated into
+`engine/pyproject.toml`, so the checks are identical whichever configuration wins, and a new test
+asserts the **effective** configuration so the two copies cannot drift apart again.
+`engine/conftest.py`'s comment cited a `pytest.ini` that does not exist in this repository, and an
+import mode that file did not in fact set; corrected.
+
+### Added
+
+- `engine_advanced/tests/test_v150_dosiomics_scope_claims.py` — 5 tests for #53 and #54. Three fail
+  on v1.4.0.
+- `engine/tests/test_v150_pytest_config_trap.py` — 8 tests for #49 and #50, asserting the effective
+  pytest configuration and that both config files carry the same load-bearing options. Five fail
+  against the pre-fix engine configuration.
+- `tests/test_v150_doc_links_resolve.py` — 38 cases, one per tracked Markdown file outside
+  `docs/archive/` and `legacy/`, asserting that every relative Markdown link resolves. This covers
+  the objectively checkable part of #55 and deliberately nothing more: a regex cannot tell prose
+  that names a dead path from prose that names it in order to say it is gone, and the corrected text
+  does the latter on purpose.
+- A `legacy` pytest marker, declared in both configs, as the mechanism for #46's exclusions.
+  Nothing is marked with it today.
+- `tomli>=2.0` in the `dev` extra for `python_version < '3.11'`. Declared rather than inherited
+  from another dev dependency: the configuration test reads both `pyproject.toml` files as TOML,
+  `tomllib` is stdlib only from 3.11, and a skip on 3.10 would be a silent gap in the one test whose
+  purpose is to stop a silent configuration difference.
+
+### Notes
+
+`analysis/` is still listed in the ruff exclusion list although the directory is absent. That is
+deliberate and the comment there now says why: the directory is retrievable from the `v1.4.0` tag,
+and its scripts are pinned by SHA-256 to the exact bytes that produced the reported results, so a
+restored checkout of it must not be silently reformatted.
+
 ## [Unreleased] — refuse to read DICOM through the obsolete `dicom` package
 
 ### Fixed

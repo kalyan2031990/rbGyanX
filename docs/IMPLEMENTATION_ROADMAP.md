@@ -1,6 +1,9 @@
 # rbGyanX — CURSOR_FIXES implementation roadmap
 
-Source: [`CURSOR_FIXES.md`](../CURSOR_FIXES.md).
+Source: a fix list named `CURSOR_FIXES.md`, which was **never committed to this repository** --
+`git log --all -- CURSOR_FIXES.md` returns nothing, so the link that used to be here never
+resolved for any reader (defect #55). The Parts A-F structure below is the only surviving record
+of it; each row stands on its own and is verifiable against the code it names.
 
 ## Status (Parts A–F)
 
@@ -31,7 +34,11 @@ Wiring: `engine.py` calls `enable_advanced_analysis()` when `mode == "advanced"`
 - `rbgyanx_advanced/dose3d/dosiomics.py` (IBSI-style first-order features; `production=True` enforces
   a real dose source)
 - Dosiomics merged into cohort features in ADVANCED runs, only where a real grid was found
-- See `docs/DOSIOMICS_DATA_PROVENANCE.md` for real production dosiomics vs synthetic test data
+- Real production dosiomics vs synthetic test data: enforced in code by
+  `engine_advanced/rbgyanx_advanced/dose3d/dose_grid_extractor.py` (`assert_production_dose_source`)
+  and pinned by `engine_advanced/tests/test_dosiomics_production_safety.py`. The prose note that
+  used to be at `docs/DOSIOMICS_DATA_PROVENANCE.md` was removed in v1.5.0 with the study-specific
+  material it described; the guard it documented is still here.
 
 ## Full test suite
 
