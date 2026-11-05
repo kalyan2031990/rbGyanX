@@ -6,6 +6,15 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+# Defect #46 follow-up. These tests run `legacy/code6_tcp_analysis.py` in a subprocess, and that
+# module imports seaborn, which lives in the `ml` extra. The CI core job installs only `.[dev]`, so
+# the subprocess exits with ModuleNotFoundError there and the assertion on its return code fails.
+# This is the `legacy` marker's declared purpose: the code under test is quarantined lineage code,
+# retired and never imported by the engine, and a contributor should not have to install a plotting
+# library to run the core suite in order to support it. The `full` job installs the extras and
+# applies no marker filter, so these tests still run there -- the coverage moves, it does not go.
+pytestmark = pytest.mark.legacy
+
 
 def test_tcp_with_synthetic_data(synthetic_data_dir, tcp_template, temp_output_dir):
     """Test complete TCP analysis with synthetic data"""

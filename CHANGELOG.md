@@ -74,14 +74,29 @@ regression confined to one of those would have passed a green CI.
 The job now runs the **default selection** from `testpaths` and excludes **only by marker**. Adding
 a test file can no longer leave it out of the matrix by omission, and excluding one requires marking
 it, where a reader of that file sees the reason — rather than editing a path list in a workflow
-nobody reads alongside the test. A `legacy` marker is declared for that purpose. **Nothing is marked
-with it:** every file in the default selection was measured first, and none needs excluding. The
-widened selection collects 1941 tests, with 13 deselected by the existing `requires_ml` /
-`requires_torch` / `requires_pymc` markers.
+nobody reads alongside the test. A `legacy` marker is declared for that purpose and **six tests in
+three files carry it**: everything in `tests/test_tcp_analysis.py`, `tests/test_ntcp_analysis.py`
+and `tests/test_integration.py`, which run `legacy/code3_ntcp_analysis_ml.py` and
+`legacy/code6_tcp_analysis.py` in a subprocess. Those modules import `seaborn`, which is in the `ml`
+extra; the core job installs only `.[dev]`, so the subprocess exits with `ModuleNotFoundError` and
+the assertion on its return code fails. The code under test is retired lineage code the engine never
+imports, and a contributor should not have to install a plotting library to run the core suite in
+order to support it. The `full` job installs the extras and applies no marker filter, so those six
+still run there — **the coverage moves, it does not go**.
 
-How that was established, and the one gap in it: each of the 134 files was run individually on
-Python 3.10.11 / Windows — the configuration the widening newly exposes — giving **133 complete and
-1 that does not finish**, `engine/tests/test_ml_models.py`. That file was already inside the
+How that was established, and where the local measurement was not enough: each of the 134 files
+was run individually on Python 3.10.11 / Windows — the configuration the widening newly exposes —
+giving **133 complete and 1 that does not finish**, `engine/tests/test_ml_models.py`.
+
+**Local completion turned out not to imply a CI pass, and the first CI run on the widened selection
+is what showed it.** The development virtual environment has `seaborn` installed from the `ml`
+extra, so the six subprocess tests above passed locally and were recorded as needing no exclusion.
+On the core job, which installs only `.[dev]`, five of them failed: **5 failed, 1820 passed, 49
+skipped** on windows-latest / 3.11. The widening therefore did exactly what it was for — it surfaced
+a real failure in files the matrix had never executed — and the claim that nothing needed the
+`legacy` marker was wrong. It is corrected above rather than quietly dropped. Measuring a dependency
+difference requires an environment that has the difference, and a venv assembled for development
+does not. That file was already inside the
 previous selection, so this change does not alter its exposure; it deadlocks on the development
 machine after several nested cross-validation fits in one process (the hang point moves between
 runs, each test passes in isolation, and `JOBLIB_MULTIPROCESSING=0` does not prevent it), and it
@@ -109,6 +124,22 @@ asserts the **effective** configuration so the two copies cannot drift apart aga
 `engine/conftest.py`'s comment cited a `pytest.ini` that does not exist in this repository, and an
 import mode that file did not in fact set; corrected.
 
+**A test asserted a guarantee it never checked (defect #57).**
+`tests/test_ntcp_analysis.py::test_ntcp_validation` claimed to check that the clinical-data
+validation rejects a file with missing required columns. Its assertion began
+`result.returncode != 0 or ...`, which **any** non-zero exit satisfies, and the command it ran
+passed `--dvh_dir test_data/DVH_files` — a path that does not exist in this repository. Measured:
+the script prints `DVH directory ... not found` and exits 1 *without ever opening the clinical
+file*. So the test passed because of a missing directory, and on the CI core job because of a
+`ModuleNotFoundError`, and **it would have passed with the validation code deleted**.
+
+It now takes the `synthetic_data_dir` fixture its three siblings already use, so the script reaches
+the clinical file, and asserts two things instead of a disjunction: that the run did *not* exit on a
+missing DVH directory — naming this failure mode, so its return is caught — and that the output
+carries a validation message, with the message stating explicitly that a non-zero return code alone
+is not evidence the validation code ran. The script does reject the file, and the test now
+demonstrates that rather than asserting around it.
+
 ### Added
 
 - `engine_advanced/tests/test_v150_dosiomics_scope_claims.py` — 5 tests for #53 and #54. Three fail
@@ -121,8 +152,8 @@ import mode that file did not in fact set; corrected.
   the objectively checkable part of #55 and deliberately nothing more: a regex cannot tell prose
   that names a dead path from prose that names it in order to say it is gone, and the corrected text
   does the latter on purpose.
-- A `legacy` pytest marker, declared in both configs, as the mechanism for #46's exclusions.
-  Nothing is marked with it today.
+- A `legacy` pytest marker, declared in both configs, as the mechanism for #46's exclusions, and
+  applied to the six subprocess tests that drive retired `legacy/` modules.
 - `tomli>=2.0` in the `dev` extra for `python_version < '3.11'`. Declared rather than inherited
   from another dev dependency: the configuration test reads both `pyproject.toml` files as TOML,
   `tomllib` is stdlib only from 3.11, and a skip on 3.10 would be a silent gap in the one test whose
