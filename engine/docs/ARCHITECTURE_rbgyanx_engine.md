@@ -165,7 +165,7 @@ Parameters: literature defaults + institution override YAML (not hardcoded in GU
 
 1. **Publish** `rbgyanx-engine` 0.1.0-alpha (TCP + DICOM + multi-site, NTCP H&N only).
 2. **Publish** 0.2.0-beta (+ full multi-site NTCP).
-3. **Private** rbGyanX 1.1.0 depends on engine `>=0.2.0,<0.3`.
+3. **Private** rbGyanX 1.1.0 depends on engine `>=0.2.0,<0.3`. (This was the plan as written at the time; the versions here are historical.)
 
 ---
 

@@ -7,7 +7,7 @@
 **Audience:** External reviewers, collaborators, journal supplementary material, and AI-assisted code audit.
 
 **Desktop installer (not in Git — build locally):**  
-`packaging/build_rbGyanX.ps1 -BuildInstaller` → `dist/rbGyanX-1.0.0-full-Setup.exe`
+`packaging/build_rbGyanX.ps1 -BuildInstaller` → `dist/rbGyanX-<version>-Qt-Setup.exe`, where `<version>` is the version the tree declares
 
 ---
 
