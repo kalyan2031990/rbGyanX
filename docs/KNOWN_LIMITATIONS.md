@@ -415,7 +415,27 @@ Where a dose gradient runs along the slice axis, the consequence has a closed fo
 |---|---|---|
 | `Dmax_gy` | low by `slice_thickness / 2 × gradient` | **1.5 Gy low** |
 | `Dmin_gy` | high by the same | **1.5 Gy high** |
-| `Dmean_gy`, gEUD | unaffected to within 0.5 Gy | — |
+| `Dmean_gy`, gEUD at `a = 1` | unaffected to within 0.5 Gy | — |
+
+**How far it reaches, by quantity.** Averaging over the volume damps the end-cap bias, but not
+equally: a generalised mean with a large exponent is dominated by the high-dose tail, which is
+exactly where the bias sits. Signed error at the finest Nelms grid, 40 comparisons each:
+
+| Quantity | Median | Range |
+|---|---|---|
+| `Dmax` | −1.41 % | **−15.24 % to −0.34 %** |
+| `Dmean`, gEUD at `a = 1` | −0.03 % | −1.28 % to −0.001 % |
+| **gEUD at `a = 20`** | **−0.38 %** | **−3.02 % to +0.17 %** |
+
+The third row is the one that matters for NTCP. The shipped head-and-neck set contains three
+strongly serial organs — `SpinalCord` (`geud_a` 20), `Esophagus` (16.7) and `Mandible` (14.3) —
+whose gEUD therefore carries up to **−3 %** of this bias, not the ≤0.03 % that `a = 1` suggests.
+It is damped fivefold from `Dmax`, and it is not nothing. No shipped organ uses a negative
+exponent, so the much wider spread seen at `a = −10` does not reach any reported value.
+
+**So `Dmax_gy` is the reported column materially affected**, by up to −15 %, and serial-organ gEUD
+carries a smaller share of the same bias. Both directions are optimistic: the hottest dose is
+under-reported.
 
 Measured against the analytical DVHs of Nelms et al. 2015 (Med Phys 42(8):4435–4448): **32 of 32**
 along-axis comparisons matched the half-slice prediction to within 0.005 Gy at contour spacings of
