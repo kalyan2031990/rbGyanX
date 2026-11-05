@@ -11,7 +11,11 @@
 
 ### Recommended: Windows installer
 
-1. Run **`rbGyanX-1.0.0-Setup.exe`** (from your IT team or `dist\` after build).
+1. Run the installer **`rbGyanX-<version>-Qt-Setup.exe`** (from your IT team, from the
+   [latest release](https://github.com/kalyan2031990/rbGyanX/releases/latest), or from
+   `dist\` after a local build). The version in the file name is whichever release you
+   downloaded; it is not written out here because a pinned example goes stale at the next
+   release.
 2. Follow the wizard (license → folder → optional desktop shortcut).
 3. Launch **rbGyanX** from the Start Menu.
 
@@ -38,7 +42,7 @@ Build portable app + Windows installer:
 ```powershell
 .\packaging\build_rbGyanX.ps1 -BuildInstaller
 # Portable: dist\rbGyanX\rbGyanX.exe
-# Installer: dist\rbGyanX-1.0.0-Setup.exe
+# Installer: dist\rbGyanX-<version>-Qt-Setup.exe
 ```
 
 Installer only (after app already built):

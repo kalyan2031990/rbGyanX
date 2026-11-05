@@ -66,11 +66,19 @@ pip install -e "./engine" -e ".[dev,ml]"          # add ,qt for the Qt6 desktop 
 ```
 
 Or from the release assets — **both wheels together**, because `rbgyanx` imports `rbgyanx_engine`
-at module scope and the engine is published as a release asset rather than on PyPI:
+at module scope and the engine is published as a release asset rather than on PyPI. Download both
+wheels from the [latest release](https://github.com/kalyan2031990/rbGyanX/releases/latest), then,
+from the directory you downloaded them into:
 
 ```bash
-pip install rbgyanx_engine-1.4.0-py3-none-any.whl rbgyanx-1.4.0-py3-none-any.whl
+pip install rbgyanx_engine-*.whl rbgyanx-*.whl
 ```
+
+The file names are deliberately not written out with a version here. A pinned example goes stale
+the moment a release is cut, and a reader who copies it gets a file-not-found rather than the
+version they just downloaded — which is how `README.md` came to advertise a version two releases
+old. `tests/test_version_consistency.py` now fails if a hard-coded wheel or installer file name
+reappears in the documentation.
 
 Installing only the `rbgyanx` wheel fails at install time with an unresolved `rbgyanx-engine`
 requirement. That is deliberate: through v1.2.1 the dependency was undeclared, so the wheel
@@ -271,8 +279,12 @@ rbGyanX is citable in its own right. Cite the archived release via its **concept
 always resolves to the newest version — see [`CITATION.cff`](CITATION.cff), or:
 
 > Mondal, K., Mandal, A., & Vijay, A. *rbGyanX: A research framework for radiobiological
-> evaluation of radiotherapy plans (TCP/NTCP) from DICOM-RT* (v1.4.0). Zenodo.
+> evaluation of radiotherapy plans (TCP/NTCP) from DICOM-RT*. Zenodo.
 > https://doi.org/10.5281/zenodo.21757163
+
+No version is named in that form on purpose: the DOI above is the **concept** DOI, which already
+resolves to the newest version, so naming one version beside it contradicts the link and goes
+stale. Add the version you ran when you need it — see the next paragraph.
 
 Where reproducibility matters, cite the **version** DOI of the release you actually ran rather
 than the concept DOI, so a reported number stays tied to the code that produced it.

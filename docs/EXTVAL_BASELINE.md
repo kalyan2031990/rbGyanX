@@ -11,7 +11,8 @@ This file records the verified clean-checkout baseline that all downstream exter
 pip install -e ".[dev]"
 ```
 
-Result: editable install succeeds; `rbgyanx 1.0.0` registered. (Engine subpackages resolve via `conftest.py` path
+Result: editable install succeeds; `rbgyanx 1.0.0` registered — that was the version current
+when this baseline was taken, and the recorded output is left as it stood rather than restated. (Engine subpackages resolve via `conftest.py` path
 fallback; `pip install -e ./engine -e ./engine_advanced -e ./engine_advanced_f` is the reproducible alternative.)
 
 ## 2. Test baseline (zero environment variables)

@@ -61,6 +61,132 @@ def test_version_single_source_of_truth():
     assert rbgyanx.__version__ == engine_ver
 
 
+# --------------------------------------------------------- version strings in the docs
+#
+# The five declaration sites above are what `scripts/check_release_version.py` gates a release on.
+# They are not where versions actually go stale. v1.4.0 shipped with a "1.3.0" string, and v1.5.0
+# was about to ship a README whose install command named `rbgyanx_engine-1.4.0-py3-none-any.whl`
+# -- a command that fails with file-not-found for anyone who copies it. Neither was caught, because
+# nothing asserted on prose.
+#
+# These tests close the class rather than the instance.
+
+
+# CHANGELOG.md is excluded by instruction: historical version numbers are the point of it.
+# VERSION.txt likewise carries the rationale for earlier releases on purpose.
+DOC_EXCLUDE = {
+    "CHANGELOG.md",
+    "VERSION.txt",
+}
+DOC_EXCLUDE_DIRS = ("docs/archive/", "legacy/", ".tmp/")
+
+# A distribution artefact with a version baked into its name.
+ARTEFACT_RE = re.compile(
+    r"""(?ix)
+    \b(
+        rbgyanx(?:_engine)?-\d+\.\d+\.\d+[^\s`'"]*\.whl      # wheels
+      | rbgyanx[\w.-]*-\d+\.\d+\.\d+[^\s`'"]*\.(?:tar\.gz|zip|exe)  # sdists, installers
+      | rbGyanX-\d+\.\d+\.\d+-Qt-Setup\.exe                   # the Windows installer
+    )\b
+    """
+)
+
+# A bare "x.y.z" that claims to be THIS project's version, as opposed to a dependency pin, a
+# citation of an older release, or a DOI. Only the forms that assert the current version.
+CLAIMS_VERSION_RE = re.compile(
+    r"""(?ix)
+    (?:
+        rbGyanX\s+(?:version\s+)?v?(\d+\.\d+\.\d+)
+      | ^\s*version\s*[:=]\s*"?v?(\d+\.\d+\.\d+)
+    )
+    """,
+    re.M,
+)
+
+
+def _doc_files() -> list[Path]:
+    """Tracked Markdown only.
+
+    `git ls-files`, not a filesystem glob: the working tree also holds gitignored scratch -- local
+    runbooks, notes, drafts -- which is nobody's business and does not ship. Scanning the tree
+    made this test fail on files that are deliberately not in the repository, which is exactly the
+    false positive that teaches people to ignore a test.
+    """
+    import subprocess
+
+    listed = subprocess.run(
+        ["git", "ls-files", "*.md"],
+        cwd=ROOT, capture_output=True, text=True, check=True,
+    ).stdout.split()
+    out: list[Path] = []
+    for rel in listed:
+        if rel in DOC_EXCLUDE or rel.startswith(DOC_EXCLUDE_DIRS):
+            continue
+        p = ROOT / rel
+        if p.is_file():
+            out.append(p)
+    return sorted(out)
+
+
+def test_the_doc_sweep_actually_finds_documents():
+    """Guard the guard: a glob that matches nothing would make both tests below vacuous."""
+    files = _doc_files()
+    assert len(files) >= 5, f"only {len(files)} documents found: {[f.name for f in files]}"
+    assert any(f.name == "README.md" for f in files)
+
+
+def test_no_hardcoded_wheel_or_installer_name_in_the_docs():
+    """A file name with a version in it is stale the moment the next release is cut.
+
+    Write `rbgyanx_engine-*.whl`, or link to the release page. This is the specific thing that
+    left the README advertising a wheel two versions old.
+    """
+    offenders: list[str] = []
+    for path in _doc_files():
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for lineno, line in enumerate(text.splitlines(), 1):
+            # An exception has to be written down on the line itself. A reference to one
+            # specific past release asset is legitimate -- that file exists, under that name,
+            # on that release -- but it must be a deliberate annotation someone can see and
+            # review, not a silent exclusion in this test.
+            if "pinned-asset: historical" in line:
+                continue
+            for match in ARTEFACT_RE.finditer(line):
+                offenders.append(
+                    f"{path.relative_to(ROOT).as_posix()}:{lineno}: {match.group(0)}"
+                )
+    assert not offenders, (
+        "hard-coded distribution artefact name(s) in the documentation:\n  "
+        + "\n  ".join(offenders)
+        + "\n\nUse a wildcard (rbgyanx_engine-*.whl) or link to the release page."
+    )
+
+
+def test_every_version_claim_in_the_docs_matches_the_engine():
+    """Any text asserting rbGyanX's version must assert the current one."""
+    from rbgyanx_engine import __version__ as engine_ver
+
+    offenders: list[str] = []
+    for path in _doc_files():
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for lineno, line in enumerate(text.splitlines(), 1):
+            # A line about an older release on purpose says so; those read "at the v1.4.0 tag",
+            # "removed in v1.5.0", "through v1.2.1" and so on, and are not version claims.
+            if re.search(r"(?i)\b(tag|removed|through|until|since|earlier|previous|was|"
+                         r"superseded|history|historical|deposited)\b", line):
+                continue
+            for match in CLAIMS_VERSION_RE.finditer(line):
+                found = match.group(1) or match.group(2)
+                if found and found != engine_ver:
+                    offenders.append(
+                        f"{path.relative_to(ROOT).as_posix()}:{lineno}: claims {found}, "
+                        f"engine is {engine_ver}"
+                    )
+    assert not offenders, (
+        "stale version claim(s) in the documentation:\n  " + "\n  ".join(offenders)
+    )
+
+
 # --------------------------------------------------------- analytic control count
 
 
