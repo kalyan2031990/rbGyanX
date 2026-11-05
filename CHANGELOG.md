@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — Tier B/C: documented capabilities that were not there, and the test-config traps
+## [Unreleased] — Tier B/C: capabilities the docs claimed and the release did not have, and the test-suite blind spot
 
 ### Fixed
 
@@ -64,6 +64,32 @@ almost all the weight regardless of whether it is right. That property follows f
 needs no dataset, and `engine/tests/test_consensus_robustness.py` pins it against a synthetic
 over-confident member rather than against a cohort.
 
+**CI ran 65 of 134 test files on the matrix (defect #46).** The `core` job — the one that runs on
+ubuntu and windows × 3.10 / 3.11 / 3.12 — named six paths explicitly. The other **69 files, about
+743 test functions**, ran only in the `full` job, which is a single configuration: ubuntu, 3.12,
+full ML stack. So the whole `tests/ai_*` group (≈ 330 functions), the Qt smoke suite, the GUI-path
+tests and the DVH integrity tests were never executed on Windows, and never on 3.10 or 3.11. A
+regression confined to one of those would have passed a green CI.
+
+The job now runs the **default selection** from `testpaths` and excludes **only by marker**. Adding
+a test file can no longer leave it out of the matrix by omission, and excluding one requires marking
+it, where a reader of that file sees the reason — rather than editing a path list in a workflow
+nobody reads alongside the test. A `legacy` marker is declared for that purpose. **Nothing is marked
+with it:** every file in the default selection was measured first, and none needs excluding. The
+widened selection collects 1941 tests, with 13 deselected by the existing `requires_ml` /
+`requires_torch` / `requires_pymc` markers.
+
+How that was established, and the one gap in it: each of the 134 files was run individually on
+Python 3.10.11 / Windows — the configuration the widening newly exposes — giving **133 complete and
+1 that does not finish**, `engine/tests/test_ml_models.py`. That file was already inside the
+previous selection, so this change does not alter its exposure; it deadlocks on the development
+machine after several nested cross-validation fits in one process (the hang point moves between
+runs, each test passes in isolation, and `JOBLIB_MULTIPROCESSING=0` does not prevent it), and it
+does not reproduce on CI. **The cause is not established and no fix is claimed.** The one check not
+performed locally is a single whole-suite run, which would exercise cross-file interaction; it was
+skipped because the machine is memory-constrained, the `full` job already performs exactly that run
+on ubuntu, and the matrix performs it on every cell.
+
 **A quiet flag in `addopts` could hide a failing run completely (defect #49).** pytest sums
 verbosity flags, so `-q` in `addopts` plus `-q` on the command line is `-qq` — which suppresses the
 totals line as well as the per-test output. A run with failures then printed no summary at all and
@@ -95,6 +121,8 @@ import mode that file did not in fact set; corrected.
   the objectively checkable part of #55 and deliberately nothing more: a regex cannot tell prose
   that names a dead path from prose that names it in order to say it is gone, and the corrected text
   does the latter on purpose.
+- A `legacy` pytest marker, declared in both configs, as the mechanism for #46's exclusions.
+  Nothing is marked with it today.
 - `tomli>=2.0` in the `dev` extra for `python_version < '3.11'`. Declared rather than inherited
   from another dev dependency: the configuration test reads both `pyproject.toml` files as TOML,
   `tomllib` is stdlib only from 3.11, and a skip on 3.10 would be a silent gap in the one test whose

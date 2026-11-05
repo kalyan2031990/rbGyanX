@@ -105,4 +105,9 @@ markers = [
     "requires_xgboost: needs xgboost",
     "requires_lifelines: needs lifelines",
     "dicom: synthetic or real DICOM round-trip",
+    # Added for defect #46. The CI core job used to name 65 of 134 test files explicitly, so
+    # widening it meant editing a path list; with a marker, an exclusion has to be declared on
+    # the test itself and carries a reason in the file that is excluded. Nothing is marked with
+    # it today: every file in the default selection was measured and none needs excluding.
+    "legacy: exercises quarantined lineage code under legacy/; excluded from the CI core job",
 ]
