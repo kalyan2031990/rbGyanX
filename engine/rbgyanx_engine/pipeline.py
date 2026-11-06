@@ -235,6 +235,7 @@ def collect_dicom_tcp(
     user_config: Path | None,
     patient_id: str | None = None,
     allow_lq_extrapolation: bool = False,
+    prescription_table: object | None = None,
 ) -> list[dict]:
     """Phase 1–2: DICOM load, DVH extraction, classical TCP.
 
@@ -244,6 +245,14 @@ def collect_dicom_tcp(
     reader = DicomPlanReader()
     dicom = reader.load_patient_dicom(dicom_dir, patient_id=patient_id)
     meta = reader.extract_plan_metadata(dicom["rt_plan"])
+    # #60: a user-supplied prescription replaces the RT Plan's, for this patient only. This
+    # is the one seam worth doing it at -- everything downstream (TCP's EQD2 and BED, site
+    # detection, the prescription-normalised target metrics) reads this dict, so applying it
+    # here covers all of them and nothing has to know about it twice.
+    if prescription_table is not None:
+        from dicom_io.prescription_table import apply_to_plan_metadata
+
+        meta = apply_to_plan_metadata(meta, patient_id or anon_id, prescription_table)
     structs = get_target_structures(dicom["rt_struct"], meta)
     detection = detect_site(meta, _structures_for_site_detection(dicom["rt_struct"], meta))
     params_key, site_info = resolve_pipeline_site(site_override, detection)

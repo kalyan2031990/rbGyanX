@@ -46,6 +46,9 @@ class RunConfig:
     # These two state them explicitly when the header cannot.
     rx_gy: float | None = None
     n_frac: int | None = None
+    # #60: optional per-patient prescription table (a path). DICOM path only -- the text
+    # path already takes rx_gy/n_frac above. See engine/dicom_io/prescription_table.py.
+    prescription_table: Path | None = None
     cohort: bool = False
     no_uncertainty: bool = False
     # Defect #10: a dose per fraction outside the site's LQ validity range refuses TCP.

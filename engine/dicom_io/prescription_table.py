@@ -169,6 +169,11 @@ def load_prescription_table(path: str | Path) -> PrescriptionTable:
     return PrescriptionTable(path=p, sha256=sha, entries=entries)
 
 
+def _normalise(name: str) -> str:
+    """Loose ROI-name comparison: case and separators are not meaningful here."""
+    return "".join(ch for ch in str(name).lower() if ch.isalnum())
+
+
 def apply_to_plan_metadata(
     meta: dict,
     patient_id: str,
@@ -193,6 +198,43 @@ def apply_to_plan_metadata(
     out["dose_per_fraction_gy"] = entry.dose_per_fraction_gy
     out["prescription_source"] = "user_prescription_table"
     out["prescription_target_roi"] = entry.target_roi
+
+    # The per-target dose levels, not just the plan-level field. Defect #25 gives each target its
+    # own level and reads it from here, so a table that changed only `prescription_dose_gy` would
+    # be silently overruled -- measured on a real patient before this was added.
+    #
+    # `target_roi` blank means "the plan's named target", so every level moves. Naming an ROI
+    # moves only that one, which is what a simultaneous integrated boost needs.
+    levels = [dict(lv) for lv in (meta.get("dose_levels") or [])]
+    out["dose_levels_from_rtplan"] = meta.get("dose_levels")
+    if not levels:
+        out["dose_levels"] = [{
+            "dose_gy": entry.prescription_gy,
+            "description": entry.target_roi or "",
+            "source": "user_prescription_table",
+        }]
+    else:
+        wanted = _normalise(entry.target_roi)
+        touched = 0
+        for lv in levels:
+            if not wanted or _normalise(str(lv.get("description", ""))) == wanted:
+                lv["dose_gy"] = entry.prescription_gy
+                lv["source"] = "user_prescription_table"
+                touched += 1
+        if wanted and touched == 0:
+            # The table names an ROI the plan's levels do not describe. Adding a level for it is
+            # the honest reading: the user is stating a prescription the plan does not carry.
+            levels.append({
+                "dose_gy": entry.prescription_gy,
+                "description": entry.target_roi,
+                "source": "user_prescription_table",
+            })
+            logger.info(
+                "prescription table names target %r, which no dose level describes; "
+                "added it as a level for %s",
+                entry.target_roi, patient_id,
+            )
+        out["dose_levels"] = levels
     logger.info(
         "prescription overridden for %s: RT Plan %s Gy / %s fx -> table %s Gy / %s fx (%s)",
         patient_id,

@@ -273,6 +273,7 @@ def _process_patient(cfg: RunnerConfig, pseudonym: str, unit: dict, patient_dir:
             outcome_csv=cfg.outcome_csv,
             cohort=False, dvh_glob="*.txt", dose_per_fraction=cfg.dose_per_fraction,
             rx_gy=cfg.rx_gy, n_frac=cfg.n_frac,
+            prescription_table=cfg.prescription_table,  # #60
             preserve_txt_canonical=cfg.preserve_txt_canonical,
         )
         # Suppress BOTH console streams and the logging tree. The engine logs the source-header
@@ -675,6 +676,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--preserve-structure-canonical", action="store_true",
                    help="TPS text: keep the ROI's true canonical (Parotid_R, Rectum, ...) instead of "
                         "coercing to a target type, so classical NTCP can be applied to OAR exports")
+    # #60. Without this flag the capability is unreachable the way cohort runs are actually
+    # invoked, which is how the first version of the fix shipped: wired into a function the
+    # cohort path never calls, and with no way to ask for it from the command line.
+    p.add_argument("--prescription-table", type=Path, default=None,
+                   help="DICOM: optional per-patient prescription CSV "
+                        "(patient,target_roi,prescription_gy,n_fractions). A patient absent from "
+                        "it keeps the RT Plan's prescription; the run manifest records which "
+                        "patients were overridden.")
     p.add_argument("--pseudonym-map-dir", type=Path, default=None,
                    help="Where the raw-ID↔pseudonym map lives — MUST be OUTSIDE the repo (gitignored)")
     args = p.parse_args(argv)
@@ -690,6 +699,7 @@ def main(argv: list[str] | None = None) -> int:
         rx_gy=args.rx_gy,
         plan_label=args.plan_label,
         n_frac=args.n_frac,
+        prescription_table=args.prescription_table,
     )
     print(f"[rbGyanX] cohort={cfg.cohort} kind={cfg.input_kind} → {cfg.output_root}", flush=True)
     summary = run_cohort(cfg, progress=True)
