@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.5.0] - 2026-11-06 — minor: sourced parameters, defects that changed written numbers, and general software only
+## [1.5.0] - 2026-11-05 — minor: sourced parameters, defects that changed written numbers, and general software only
 
 A **minor** release. It repairs software defects, replaces unsourced default parameters with
 published fits, corrects documentation that described capabilities the software does not have, and
