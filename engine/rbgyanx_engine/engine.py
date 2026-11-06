@@ -148,6 +148,27 @@ def _config_to_namespace(cfg: RunConfig) -> argparse.Namespace:
     )
 
 
+_PRESCRIPTION_CACHE: dict[str, object] = {}
+
+
+def _prescription_table(cfg) -> object | None:
+    """Load the optional per-patient prescription table once per run (#60).
+
+    Cached on the resolved path: a cohort run calls this once per patient, and re-reading and
+    re-validating the same CSV several hundred times would be wasteful and would repeat its log
+    line once per patient.
+    """
+    path = getattr(cfg, "prescription_table", None)
+    if not path:
+        return None
+    key = str(Path(path).resolve())
+    if key not in _PRESCRIPTION_CACHE:
+        from dicom_io.prescription_table import load_prescription_table
+
+        _PRESCRIPTION_CACHE[key] = load_prescription_table(path)
+    return _PRESCRIPTION_CACHE[key]
+
+
 def run_analysis(cfg: RunConfig) -> EngineResult:
     """
     Run TCP and/or NTCP analysis for one cohort or patient folder.
@@ -180,6 +201,7 @@ def run_analysis(cfg: RunConfig) -> EngineResult:
                             user_tcp,
                             patient_id=pid_filter,
                             allow_lq_extrapolation=cfg.allow_lq_extrapolation,
+                            prescription_table=_prescription_table(cfg),
                         )
                     )
                 if cfg.endpoint in ("ntcp", "both"):
