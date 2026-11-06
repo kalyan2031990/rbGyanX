@@ -61,6 +61,33 @@ def test_version_single_source_of_truth():
     assert rbgyanx.__version__ == engine_ver
 
 
+def test_citation_release_date_matches_the_changelog_entry():
+    """CITATION.cff's `date-released` must be this version's date, not the previous one.
+
+    It said 2026-10-17 -- v1.4.0's release date -- beside `version: "1.5.0"`. Nothing asserted on
+    it, which is the same gap that let a "1.3.0" string ship in v1.4.0.
+    """
+    import re as _re
+
+    from rbgyanx_engine import __version__ as engine_ver
+
+    cff = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
+    m = _re.search(r"^date-released:\s*\"?(\d{4}-\d{2}-\d{2})", cff, _re.M)
+    assert m, "CITATION.cff must carry a date-released"
+    cff_date = m.group(1)
+
+    changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    entry = _re.search(
+        rf"^## \[{_re.escape(engine_ver)}\]\s*-\s*(\d{{4}}-\d{{2}}-\d{{2}})",
+        changelog, _re.M,
+    )
+    assert entry, f"CHANGELOG.md has no dated entry for {engine_ver}"
+    assert cff_date == entry.group(1), (
+        f"CITATION.cff date-released is {cff_date} but CHANGELOG dates {engine_ver} "
+        f"at {entry.group(1)}"
+    )
+
+
 # --------------------------------------------------------- version strings in the docs
 #
 # The five declaration sites above are what `scripts/check_release_version.py` gates a release on.

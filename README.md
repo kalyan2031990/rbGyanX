@@ -5,7 +5,7 @@
 [![CI](https://github.com/kalyan2031990/rbGyanX/actions/workflows/ci.yml/badge.svg)](https://github.com/kalyan2031990/rbGyanX/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10--3.12-blue.svg)](pyproject.toml)
-[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21757163-blue.svg)](https://doi.org/10.5281/zenodo.21757163)
+[![DOI (all versions)](https://img.shields.io/badge/DOI%20(all%20versions)-10.5281%2Fzenodo.21757163-blue.svg)](https://doi.org/10.5281/zenodo.21757163)
 
 rbGyanX is a research framework for radiobiological evaluation of radiotherapy plans (TCP/NTCP)
 from DICOM-RT. It evaluates radiotherapy treatment plans using transparent, classical
@@ -275,8 +275,9 @@ that table, generated from a known model. See [`DATA_AVAILABILITY.md`](DATA_AVAI
 
 ## How to cite
 
-rbGyanX is citable in its own right. Cite the archived release via its **concept DOI**, which
-always resolves to the newest version — see [`CITATION.cff`](CITATION.cff), or:
+rbGyanX is citable in its own right. Cite the archived release via its **concept DOI — all
+versions** (`10.5281/zenodo.21757163`), which always resolves to the newest release and is
+therefore never tied to one version — see [`CITATION.cff`](CITATION.cff), or:
 
 > Mondal, K., Mandal, A., & Vijay, A. *rbGyanX: A research framework for radiobiological
 > evaluation of radiotherapy plans (TCP/NTCP) from DICOM-RT*. Zenodo.
