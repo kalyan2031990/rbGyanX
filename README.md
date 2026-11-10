@@ -18,10 +18,11 @@ consensus, and QUANTEC flags, behind a four-tier validation harness.
 It is written for **medical physicists and radiobiology researchers** who need a number they can
 trace back to an equation, a parameter set, and the commit that produced it.
 
-**Supported inputs.** **DICOM-RT is the supported input path.** In the v1.3.0 public-cohort run,
-235 patients were attempted and 186 completed; all 49 exclusions were uniform `MISSING_RTPLAN` +
-`MISSING_RTDOSE`. **TPS-text (DVH export) input is limited**, with known gaps in site detection
-and in fractionation, both documented in [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md).
+**Supported inputs.** **DICOM-RT is the supported input path.** Patients lacking a required
+DICOM-RT object are excluded and reported individually with a reason code (for example
+`MISSING_RTPLAN`), never silently dropped. **TPS-text (DVH export) input is limited**, with
+known gaps in site detection and in fractionation, both documented in
+[`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md).
 For a text export, state explicitly what the file cannot: pass `--site` to fix the anatomical site
 and `--dose-per-fraction` to fix the fractionation. Every dvh_txt result row records whether its
 total dose, fraction count and dose per fraction were parsed from the file or assumed.
@@ -146,16 +147,24 @@ Desktop: `python -m rbgyanx.qtapp` (Qt6, needs the `qt` extra) or `python rbgyan
 pytest -q
 ```
 
-Each row is one measured run, on the platform and interpreter shown:
+One measured run, at the `v1.5.0` tag:
 
-| Platform | Python | Installed | Result |
-|---|---|---|---|
-| Linux | 3.11 | `.[dev,ml]` + engine | **1351 passed, 24 skipped, 0 failed** |
-| Linux, headless container | 3.11 | the above + `.[qt]` (PySide6, plotly) | **1425 passed, 19 skipped, 1 failed** |
-| Windows 11, desktop session | 3.10.11 | `-e ./engine -e ".[dev,ml,qt]"` | **1515 passed, 19 skipped, 0 failed** |
+| | |
+|---|---|
+| Commit | `6aea1e4` (tag `v1.5.0`; the suite ran on `a84491c`, whose tree is byte-identical) |
+| Platform | Windows 11, desktop session |
+| Python | 3.10.11 |
+| Installed | `pip install -e ./engine -e ".[dev,ml,qt]"` |
+| Scope | the default `testpaths` selection, with `engine/tests/test_ml_models.py` excluded |
+| **Collected** | **2004** |
+| **Passed** | **1985** |
+| **Skipped** | **19** |
+| **Failed / errors** | **0 / 0** |
 
-The rows were measured at different points in the release, so their totals are not directly
-comparable. The Windows row is the v1.3.0 release candidate (1534 tests collected).
+`engine/tests/test_ml_models.py` is excluded from this row because it deadlocks on this machine
+and the cause is not established; it is green on CI. That is recorded as a defect rather than
+presented as a pass.
+
 Your numbers will differ, because whole modules skip when an optional dependency is absent. Run
 `pytest -rs` to see exactly what skipped and why.
 
