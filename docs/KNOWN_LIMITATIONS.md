@@ -557,14 +557,27 @@ An exception raised for one structure propagates out of `collect_txt_tcp` to the
 handler in `cohort_runner.py`, discarding every other structure of that patient, including valid
 targets. Scoping the failure to the structure is v1.4 work.
 
-### PRV expansions canonicalise to the base organ name
+### PRV expansions no longer canonicalise to the base organ name — RESOLVED in v1.5.0 (defect #9)
 
-`SpinalCord_05` maps to `SpinalCord`, so organ NTCP is ambiguous between the organ and its
-planning-risk volume. Measured across 186 public-cohort patients: **median 19%, max 91%**
-difference within colliding NTCP pairs. A PRV is a planning margin, not the organ. On the DICOM
-path colliding structures are each kept as their own row and, from v1.3.0, `structure_mapping.csv`
-records each row's `raw_name` and `roi_number`; downstream aggregation must choose between them by
-a stated rule. Changing the naming policy is v1.4 work.
+**Until v1.5.0**, `SpinalCord_05` mapped to `SpinalCord`, so organ NTCP was ambiguous between the
+organ and its planning-risk volume: each patient could carry two rows under one label, with
+different values and nothing to tell them apart. Measured across 186 public-cohort patients:
+**median 19%, max 91%** difference within colliding NTCP pairs. A PRV is a planning margin, not the
+organ.
+
+**In v1.5.0** a PRV gets its own canonical key — `SpinalCord_05` and `PRV_Cord` map to
+`SpinalCord_PRV`, `BrainStem_03` to `BrainStem_PRV` — so it is no longer scored as the organ. Since
+the shipped organ sets contain no `*_PRV` key, a PRV receives no NTCP rather than a second,
+colliding one. Pinned by `engine/tests/test_v150_organ_key_reachability.py`.
+
+**What that changes for anyone comparing against an earlier run**: NTCP rows that were previously
+emitted for a PRV under the organ's name are gone. On the public head-and-neck cohort that is 2,142
+rows, every one of them a duplicate label rather than a lost measurement. Downstream code that
+aggregated over organ name without checking `raw_name` was averaging an organ with its own margin;
+it no longer can.
+
+Colliding structures are still each kept as their own row, and `structure_mapping.csv` records
+every row's `raw_name` and `roi_number`, as it has since v1.3.0.
 
 ### `PROSTATE_SBRT` has TCP parameters but no NTCP block
 
