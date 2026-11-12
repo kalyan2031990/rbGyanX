@@ -295,7 +295,11 @@ def calibrate_ntcp_from_results(
             pid = str(r.get("AnonPatientID", ""))
             if pid not in by_pid.index:
                 continue
-            dvh_df = r.get("_dvh_df")
+            # The calibration must fit on the same histogram the NTCP used (#63), which is the
+            # EQD2 one whenever a conversion ran. _dvh_df is the physical histogram.
+            dvh_df = r.get("_dvh_df_ntcp")
+            if dvh_df is None:
+                dvh_df = r.get("_dvh_df")
             if dvh_df is None:
                 continue
             dvh_list.append(_dvh_df_to_fit_dict(dvh_df))

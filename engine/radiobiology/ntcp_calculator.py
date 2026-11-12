@@ -161,13 +161,16 @@ class NTCPCalculator:
                 float(p["gamma"]),
                 float(p["s"]),
             )
-        if not dvh_for_ntcp.empty:
+        if not dvh_df.empty:
             from dicom_io.dvh_shape_features import compute_dvh_shape_features
 
             organ_name = getattr(organ_params, "canonical", None) or str(
                 getattr(organ_params, "name", "")
             )
-            row.update(compute_dvh_shape_features(dvh_for_ntcp, organ_name))
+            # PHYSICAL, like Dmean and Dmax beside them (#63). D2/D50/D98 are reported dose
+            # statistics, not NTCP inputs; computing them on the EQD2 histogram would silently
+            # change what those columns mean for every reader downstream.
+            row.update(compute_dvh_shape_features(dvh_df, organ_name))
         row["param_illustrative"] = bool(organ_params.illustrative)
         row["param_source"] = organ_params.source
         row["param_provenance"] = {
@@ -204,5 +207,14 @@ class NTCPCalculator:
                 row[f"NTCP_{model_name}"] = float(ext.get("ntcp", math.nan))
             except Exception as exc:
                 logger.warning("Registered NTCP model %s failed: %s", model_name, exc)
-        row["_dvh_df"] = dvh_for_ntcp
+        # Two histograms, each going where it belongs (#63).
+        #   _dvh_df      -- physical. QUANTEC constraints are stated on physical dose for
+        #                   conventional fractionation, so the constraint checker must see the
+        #                   dose as delivered. Before #63 this was physical for a 2 Gy/fraction
+        #                   plan and EQD2 otherwise, which meant the QUANTEC basis depended on
+        #                   the fractionation without saying so.
+        #   _dvh_df_ntcp -- the histogram the NTCP was actually computed from, for anything that
+        #                   must fit on the same basis the model used (the LKB calibration).
+        row["_dvh_df"] = dvh_df
+        row["_dvh_df_ntcp"] = dvh_for_ntcp
         return row

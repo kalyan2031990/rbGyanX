@@ -151,3 +151,31 @@ def test_the_retired_basis_label_is_gone(monkeypatch):
     for dpf in (2.0, 2.2, 1.8):
         row = _run_one_organ(monkeypatch, dpf_plan=dpf, n_fractions=35)
         assert row["ntcp_dose_basis"] != "physical_2gy_equivalent"
+
+
+def test_the_percentile_dose_statistics_stay_physical(monkeypatch):
+    """#63: D2/D50/D98 are reported dose statistics, not NTCP inputs.
+
+    Computing them on the EQD2 histogram would change what those columns mean without saying so.
+    The two-bin DVH is (35, 70) physical and (28, 70) in EQD2, so a physical D50 sits at 70 and
+    an EQD2 one would not be the same number.
+    """
+    row = _run_one_organ(monkeypatch, dpf_plan=2.0, n_fractions=35)
+    physical = compute_eqd2_dvh  # referenced so the import is obviously in play
+    assert physical is not None
+    # Every percentile must come off the physical bins (35, 70), never (28, 70).
+    assert row["D98_gy"] == pytest.approx(35.0, abs=1e-6)
+    assert row["D2_gy"] == pytest.approx(70.0, abs=1e-6)
+
+
+def test_quantec_sees_the_physical_histogram_and_calibration_sees_the_ntcp_one(monkeypatch):
+    """The two internal histograms go to different consumers, and must not be swapped.
+
+    QUANTEC constraints are stated on physical dose for conventional fractionation; the LKB
+    calibration has to fit on whatever basis the NTCP used.
+    """
+    row = _run_one_organ(monkeypatch, dpf_plan=2.0, n_fractions=35)
+    physical = row["_dvh_df"]
+    for_ntcp = row["_dvh_df_ntcp"]
+    assert physical["dose_gy"].tolist() == pytest.approx([35.0, 70.0])
+    assert for_ntcp["dose_gy"].tolist() == pytest.approx([28.0, 70.0])
