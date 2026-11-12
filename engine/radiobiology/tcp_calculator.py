@@ -85,8 +85,12 @@ class TCPCalculator:
             # reporting on the wrong object -- so a run could be overridden throughout while
             # every artefact said it had not been. "rtplan" when nothing overrode it.
             "prescription_source": str(plan_metadata.get("prescription_source") or "rtplan"),
-            "prescription_dose_gy_from_rtplan": plan_metadata.get(
-                "prescription_dose_gy_from_rtplan"
+            # NaN, not None, when nothing overrode the plan: this is a numeric column and every
+            # other numeric column in this row uses NaN for "no value". Returning None here also
+            # widened the dict's inferred value type, which broke the float() calls below under
+            # mypy -- caught by CI on Linux, where mypy runs, after the Windows jobs went green.
+            "prescription_dose_gy_from_rtplan": float(
+                plan_metadata.get("prescription_dose_gy_from_rtplan") or math.nan
             ),
             "tcp_refused": False,
             "tcp_refusal_reason": "",

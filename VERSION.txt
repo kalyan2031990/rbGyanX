@@ -1,24 +1,33 @@
-rbGyanX Version 1.5.0
+rbGyanX Version 1.5.1
 Release Identifier: FINAL_V3.2
-Release Date: 2026-11-05
+Release Date: 2026-11-12
 Type: Production Release
 
 Two identifiers are in use and they mean different things:
 
-  Software version   1.5.0        semantic version of the codebase (engine + GUI)
+  Software version   1.5.1        semantic version of the codebase (engine + GUI)
   Release identifier FINAL_V3.2   generation of the validation/analysis programme that this
                                   release freezes (V1 -> V2 -> V3 -> V3.1 -> V3.2)
 
-The release identifier is deliberately UNCHANGED at FINAL_V3.2. The 1.2.x, 1.3.x, 1.4.x and 1.5.0
-lines add the AI assistant and repair software defects; they introduce no new scientific result,
-rerun no analysis and alter no reported number. The analysis programme this release freezes is therefore
-the same generation 1.1.0 froze, and saying otherwise would imply a revalidation that did not
-happen. What changed is software, and it is described in CHANGELOG.md.
+The release identifier is deliberately UNCHANGED at FINAL_V3.2. The 1.2.x, 1.3.x and 1.4.x
+lines add the AI assistant and repair software defects; they introduce no new scientific result
+and rerun no analysis. The analysis programme this release freezes is therefore the same
+generation 1.1.0 froze, and saying otherwise would imply a revalidation that did not happen.
+What changed is software, and it is described in CHANGELOG.md.
 
-1.5.0 is a MINOR release. It repairs software defects, corrects documentation that described
-capabilities the software does not have, and narrows what the repository contains to general
-software. It adds no new scientific result and reruns no analysis. The release identifier stays
-FINAL_V3.2 for the reason given above.
+1.5.1 IS DIFFERENT IN ONE RESPECT, AND IT MATTERS. Up to and including 1.5.0 these lines also
+altered no reported number. 1.5.1 does: defect #63 means every release up to 1.5.0 computed NTCP
+on physical dose whenever the plan sat within 0.3 Gy of 2 Gy per fraction -- conventional
+fractionation. The dose-volume histogram is now converted to EQD2 before the NTCP models see it,
+so gEUD and every NTCP computed from it change. Measured on one arm of 116 patients, the gEUD
+median moved by between -5 % and -37 % depending on the organ. The reported physical dose
+statistics are unchanged. The release identifier still does not move: the analysis programme is
+the same, and what changed is a defect in the software that implements it.
+
+1.5.1 is a PATCH release. It repairs four defects found by review of the 1.5.0 evidence, one of
+which (#63) changes every NTCP the software reports. It adds no new scientific result and reruns
+no analysis of its own; the cohort rerun that accompanies it is a re-measurement of the same data
+with the defect fixed. The release identifier stays FINAL_V3.2 for the reason given above.
 
 What changed, in the order it matters:
 
