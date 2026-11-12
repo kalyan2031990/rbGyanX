@@ -260,10 +260,10 @@ def apply_to_plan_metadata(
 # Caching on the resolved path also keeps the load-and-validate log line to once per run rather
 # than once per patient.
 # ---------------------------------------------------------------------------------------------
-_TABLE_CACHE: dict[str, "PrescriptionTable"] = {}
+_TABLE_CACHE: dict[str, PrescriptionTable] = {}
 
 
-def get_prescription_table(path: str | Path | None) -> "PrescriptionTable | None":
+def get_prescription_table(path: str | Path | None) -> PrescriptionTable | None:
     """The one PrescriptionTable for this path, loading it on first use.
 
     Everything that needs the table -- the engine's per-patient override and the cohort runner's

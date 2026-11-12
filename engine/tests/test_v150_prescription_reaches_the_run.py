@@ -98,8 +98,7 @@ def test_no_table_means_no_table():
 
 def test_a_bad_table_fails_at_load_not_mid_cohort(tmp_path):
     """The failure must happen before any patient is read, not after forty of them."""
-    from dicom_io.prescription_table import PrescriptionTableError
-    from dicom_io.prescription_table import clear_prescription_table_cache
+    from dicom_io.prescription_table import PrescriptionTableError, clear_prescription_table_cache
     from rbgyanx_engine import engine
 
     p = tmp_path / "bad.csv"

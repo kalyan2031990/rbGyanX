@@ -58,7 +58,7 @@ def test_two_gy_per_fraction_is_the_identity_only_for_a_bin_at_two_gy_per_fracti
     # The bin at the prescription: 2 Gy/fraction, unchanged.
     assert converted[3] == pytest.approx(70.0)
     # Every lower bin moves, and moves DOWN.
-    for physical, eqd2 in zip(dvh["dose_gy"][:3], converted[:3]):
+    for physical, eqd2 in zip(dvh["dose_gy"][:3], converted[:3], strict=True):
         assert eqd2 < physical, f"{physical} Gy should fall under EQD2, got {eqd2}"
     # The 35 Gy bin is the worked example from the register entry.
     assert converted[1] == pytest.approx(28.0)
