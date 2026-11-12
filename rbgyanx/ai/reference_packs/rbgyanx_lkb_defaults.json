@@ -247,7 +247,7 @@
       "value": 47.3,
       "units": "Gy",
       "risk_pct": null,
-      "citation": "Rancati T, Fiorino C, Fellin G, et al. IJROBP 75:915-923 (2009) — Rancati 2009, p. 919 (LEUD best-fit values; also in the abstract, p. 915) — endpoint: Subacute/late laryngeal edema, RTOG/EORTC grade >= 2, scored by fiberoptic examination — structure: larynx; the fit is to the EUD of EQD2 dose-volume histograms"
+      "citation": "Rancati T, Fiorino C, Sanguineti G. IJROBP 75:915-923 (2009). doi:10.1016/j.ijrobp.2009.04.087 — Rancati 2009, p. 919 (LEUD best-fit values; also in the abstract, p. 915) — endpoint: Subacute/late laryngeal edema, RTOG/EORTC grade >= 2, scored by fiberoptic examination — structure: larynx; the fit is to the EUD of EQD2 dose-volume histograms"
     },
     {
       "organ": "Larynx",
@@ -258,7 +258,7 @@
       "value": 0.23,
       "units": null,
       "risk_pct": null,
-      "citation": "Rancati T, Fiorino C, Fellin G, et al. IJROBP 75:915-923 (2009) — Rancati 2009, p. 919 (LEUD best-fit values; also in the abstract, p. 915) — endpoint: Subacute/late laryngeal edema, RTOG/EORTC grade >= 2, scored by fiberoptic examination — structure: larynx; the fit is to the EUD of EQD2 dose-volume histograms"
+      "citation": "Rancati T, Fiorino C, Sanguineti G. IJROBP 75:915-923 (2009). doi:10.1016/j.ijrobp.2009.04.087 — Rancati 2009, p. 919 (LEUD best-fit values; also in the abstract, p. 915) — endpoint: Subacute/late laryngeal edema, RTOG/EORTC grade >= 2, scored by fiberoptic examination — structure: larynx; the fit is to the EUD of EQD2 dose-volume histograms"
     },
     {
       "organ": "Larynx",
@@ -269,7 +269,7 @@
       "value": 1.17,
       "units": null,
       "risk_pct": null,
-      "citation": "Rancati T, Fiorino C, Fellin G, et al. IJROBP 75:915-923 (2009) — Rancati 2009, p. 919 (LEUD best-fit values; also in the abstract, p. 915) — endpoint: Subacute/late laryngeal edema, RTOG/EORTC grade >= 2, scored by fiberoptic examination — structure: larynx; the fit is to the EUD of EQD2 dose-volume histograms"
+      "citation": "Rancati T, Fiorino C, Sanguineti G. IJROBP 75:915-923 (2009). doi:10.1016/j.ijrobp.2009.04.087 — Rancati 2009, p. 919 (LEUD best-fit values; also in the abstract, p. 915) — endpoint: Subacute/late laryngeal edema, RTOG/EORTC grade >= 2, scored by fiberoptic examination — structure: larynx; the fit is to the EUD of EQD2 dose-volume histograms"
     },
     {
       "organ": "Submandibular_L",

@@ -245,3 +245,39 @@ def apply_to_plan_metadata(
         entry.target_roi or "plan's named target",
     )
     return out
+
+
+# ---------------------------------------------------------------------------------------------
+# One table per path, shared by everything in the process (#64).
+#
+# There used to be two: the cohort runner loaded one to write the run manifest, and the engine
+# loaded another to do the lookups. Only the engine's instance ever saw a patient, so the
+# manifest's instance reported `n_patients_overridden: 0` and listed every entry under
+# `entries_not_matched_to_a_patient` -- on a run where all 54 differing patients were in fact
+# overridden. A manifest that cannot report what it claims to report is worse than no manifest:
+# it was read as evidence that the table had not applied.
+#
+# Caching on the resolved path also keeps the load-and-validate log line to once per run rather
+# than once per patient.
+# ---------------------------------------------------------------------------------------------
+_TABLE_CACHE: dict[str, "PrescriptionTable"] = {}
+
+
+def get_prescription_table(path: str | Path | None) -> "PrescriptionTable | None":
+    """The one PrescriptionTable for this path, loading it on first use.
+
+    Everything that needs the table -- the engine's per-patient override and the cohort runner's
+    manifest record -- must go through here, so the manifest describes the object that actually
+    did the work.
+    """
+    if not path:
+        return None
+    key = str(Path(path).resolve())
+    if key not in _TABLE_CACHE:
+        _TABLE_CACHE[key] = load_prescription_table(path)
+    return _TABLE_CACHE[key]
+
+
+def clear_prescription_table_cache() -> None:
+    """Drop the cache. For tests, and for a process that runs several cohorts in sequence."""
+    _TABLE_CACHE.clear()

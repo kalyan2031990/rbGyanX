@@ -80,6 +80,14 @@ class TCPCalculator:
             "n_fractions": n_fractions,
             "dose_per_fraction": dpf,
             "lq_caution": lq_caution,
+            # #64: where this prescription came from, on the row itself. Without it the only
+            # record of a user-supplied override was the run manifest, and the manifest was
+            # reporting on the wrong object -- so a run could be overridden throughout while
+            # every artefact said it had not been. "rtplan" when nothing overrode it.
+            "prescription_source": str(plan_metadata.get("prescription_source") or "rtplan"),
+            "prescription_dose_gy_from_rtplan": plan_metadata.get(
+                "prescription_dose_gy_from_rtplan"
+            ),
             "tcp_refused": False,
             "tcp_refusal_reason": "",
             "lq_extrapolation_allowed": bool(allow_lq_extrapolation),
@@ -99,6 +107,17 @@ class TCPCalculator:
             "TCP_mean": math.nan,
             "TCP_range": math.nan,
         }
+
+        # Defect #62: these are read off the DVH and depend on neither the prescription, the dose
+        # level, nor any TCP model. They used to be computed only on the path where TCP succeeded,
+        # so a target refused with SIB_LEVEL_UNKNOWN lost D2/D50/D98 as well -- measured on one
+        # arm: 129 of 245 targets refused, and all 129 lost all three. Refusing a TCP whose dose
+        # level is unknown is right; discarding a dose statistic that never needed it is not.
+        # Computed here, before any refusal returns, so every row carries them.
+        if not dvh_df.empty:
+            from dicom_io.dvh_shape_features import compute_dvh_shape_features
+
+            result.update(compute_dvh_shape_features(dvh_df, canonical))
 
         if getattr(dvh_result, "quality_flag", "OK") != "OK":
             logger.warning(
@@ -167,10 +186,7 @@ class TCPCalculator:
         except Exception as exc:
             logger.warning("Logistic TCP failed: %s", exc)
 
-        if not dvh_df.empty:
-            from dicom_io.dvh_shape_features import compute_dvh_shape_features
-
-            result.update(compute_dvh_shape_features(dvh_df, canonical))
+        # (the shape features were computed above, before any refusal return -- #62)
 
         model_tcps: list[float] = [
             float(result["TCP_Poisson"]),

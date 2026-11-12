@@ -12,8 +12,10 @@
 # Sources read for this file:
 #   Burman C, Kutcher GJ, Emami B, Goitein M. Fitting of normal tissue tolerance data to an
 #     analytic function. IJROBP 21:123-135 (1991). Table 1, p. 125.
-#   Rancati T, Fiorino C, Fellin G, et al. NTCP modeling of subacute/late laryngeal edema scored
+#   Rancati T, Fiorino C, Sanguineti G. NTCP modeling of subacute/late laryngeal edema scored
 #     by fiberoptic examination. IJROBP 75:915-923 (2009). p. 919.
+#     doi:10.1016/j.ijrobp.2009.04.087 -- three authors, no 'et al.'. An earlier revision of
+#     this file named 'Fellin G', who is not an author of this paper.
 #   Bakhshandeh M, Hashemi B, Mahdavi SRM, et al. Normal tissue complication probability modeling
 #     of radiation-induced hypothyroidism after head-and-neck radiation therapy. IJROBP
 #     85(2):514-521 (2013). Table 2, p. 517.
@@ -165,7 +167,7 @@ HN:
       illustrative: false
       provenance:
         LKB_probit:
-          source: "Rancati T, Fiorino C, Fellin G, et al. IJROBP 75:915-923 (2009)"
+          source: "Rancati T, Fiorino C, Sanguineti G. IJROBP 75:915-923 (2009). doi:10.1016/j.ijrobp.2009.04.087"
           table_page: "Rancati 2009, p. 919 (LEUD best-fit values; also in the abstract, p. 915)"
           endpoint: "Subacute/late laryngeal edema, RTOG/EORTC grade >= 2, scored by fiberoptic examination"
           fractionation_basis: "EQD2, alpha/beta 3 Gy (Rancati et al. 2009)"

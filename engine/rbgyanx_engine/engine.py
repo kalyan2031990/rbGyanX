@@ -148,25 +148,40 @@ def _config_to_namespace(cfg: RunConfig) -> argparse.Namespace:
     )
 
 
-_PRESCRIPTION_CACHE: dict[str, object] = {}
-
-
 def _prescription_table(cfg) -> object | None:
-    """Load the optional per-patient prescription table once per run (#60).
+    """The optional per-patient prescription table for this run (#60).
 
-    Cached on the resolved path: a cohort run calls this once per patient, and re-reading and
-    re-validating the same CSV several hundred times would be wasteful and would repeat its log
-    line once per patient.
+    Delegates to the shared cache in dicom_io.prescription_table so that the cohort runner's
+    manifest and this lookup describe the SAME object (#64). This used to keep its own cache, so
+    the manifest reported on a table that had never been asked about a patient.
     """
-    path = getattr(cfg, "prescription_table", None)
-    if not path:
-        return None
-    key = str(Path(path).resolve())
-    if key not in _PRESCRIPTION_CACHE:
-        from dicom_io.prescription_table import load_prescription_table
+    from dicom_io.prescription_table import get_prescription_table
 
-        _PRESCRIPTION_CACHE[key] = load_prescription_table(path)
-    return _PRESCRIPTION_CACHE[key]
+    return get_prescription_table(getattr(cfg, "prescription_table", None))
+
+
+def _register_advanced_tcp_models(cfg) -> bool:
+    """Register the ADVANCED TCP models once, at run start (#61).
+
+    Returns True when registration ran. A missing optional dependency is not an error: the run
+    continues without the advanced models, exactly as before, and says so once rather than once
+    per patient.
+    """
+    try:
+        import sys
+        from pathlib import Path as _P
+
+        adv_root = _P(__file__).resolve().parents[2] / "engine_advanced"
+        if str(adv_root) not in sys.path:
+            sys.path.insert(0, str(adv_root))
+        from rbgyanx_advanced.integration import register_pinn_models
+
+        return bool(
+            register_pinn_models(getattr(cfg, "pinn_model_dir", None), cfg.site or "HN")
+        )
+    except Exception as exc:  # pragma: no cover - optional dependency
+        logger.warning("ADVANCED TCP model registration skipped: %s", exc)
+        return False
 
 
 def run_analysis(cfg: RunConfig) -> EngineResult:
@@ -183,6 +198,17 @@ def run_analysis(cfg: RunConfig) -> EngineResult:
 
     tcp_results: list[dict] = []
     ntcp_results: list[dict] = []
+
+    # Defect #61: the advanced TCP models used to be registered as a side effect of
+    # `enable_advanced_analysis`, which runs AFTER the patient loop. The registry is module-global,
+    # so the first patient of a process was scored without them and every later patient in the same
+    # process with them -- which made the row set of tcp_results.csv depend on how a run was
+    # batched. A run resumed in 25 batches produced 25 patients without the row; a run straight
+    # through produced one. No value changed (the stub is NaN without trained weights), but a
+    # cohort's row COUNT is not allowed to depend on process boundaries. Registering once here,
+    # before any patient is processed, makes the row set a property of the data.
+    if cfg.mode == "advanced":
+        _register_advanced_tcp_models(cfg)
 
     if cfg.input_kind == "dicom":
         from rbgyanx_engine.pipeline import iter_dicom_patient_jobs

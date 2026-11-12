@@ -19,10 +19,15 @@ def build_ntcp_table(ntcp_results: list[dict]) -> pd.DataFrame:
                 "AnonPatientID": r.get("AnonPatientID", ""),
                 "Site": r.get("site", ""),
                 "OAR": r.get("structure", ""),
+                # gEUD_Gy is the gEUD of the DVH the NTCP was computed from. When
+                # NTCP_Dose_Basis is "eqd2" that is the EQD2 DVH, so this value is in EQD2 Gy
+                # and is NOT comparable with Dmax_Gy / Dmean_Gy, which stay physical (#63).
                 "gEUD_Gy": r.get("gEUD_gy", float("nan")),
                 "Dmax_Gy": r.get("Dmax_gy", float("nan")),
                 "Dmean_Gy": r.get("Dmean_gy", float("nan")),
                 "bDVH_Applied": r.get("bdvh_applied", False),
+                "NTCP_Dose_Basis": r.get("ntcp_dose_basis", ""),
+                "Alpha_Beta_Gy_Used": r.get("alpha_beta_gy_used", float("nan")),
                 "DPF_plan_Gy": r.get("dose_per_fraction_plan_gy", float("nan")),
                 "NTCP_LKB_loglogit": r.get("NTCP_LKB_loglogit", float("nan")),
                 "NTCP_LKB_probit": r.get("NTCP_LKB_probit", float("nan")),
