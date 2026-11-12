@@ -508,9 +508,11 @@ def run_cohort(cfg: RunnerConfig, progress: bool = False) -> dict:
     # a hard failure here rather than a silent fallback to the RT Plan halfway through a cohort.
     _prescription_table = None
     if getattr(cfg, "prescription_table", None):
-        from dicom_io.prescription_table import load_prescription_table
+        # #64: the SHARED instance, the same one the engine looks up against. Loading a second
+        # copy here meant the manifest described an object that never saw a patient.
+        from dicom_io.prescription_table import get_prescription_table
 
-        _prescription_table = load_prescription_table(cfg.prescription_table)
+        _prescription_table = get_prescription_table(cfg.prescription_table)
         logger.info(
             "prescription table in force: %d patient(s) from %s",
             len(_prescription_table), cfg.prescription_table,

@@ -411,8 +411,14 @@ class TestNTCPCalculatorFull:
         if not math.isnan(ntcp):
             assert 0.0 <= ntcp <= 1.0
 
-    def test_bdvh_applied_for_high_dpf(self):
-        """bDVH correction when DPF > 2.3 Gy (CURSOR_FIXES §3)."""
+    def test_bdvh_applied_whenever_the_fractionation_is_known(self):
+        """The EQD2 transform runs whenever fractionation is known (#63).
+
+        This test used to assert the opposite for a 2 Gy/fraction plan -- `bdvh_applied is
+        False` -- on the belief that the transform is then the identity. It is the identity only
+        for a bin that is itself at 2 Gy per fraction, and a DVH is not one dose. The assertion
+        was pinning defect #63 in place, which is a large part of why it survived to v1.5.0.
+        """
         organ = self._organ("Parotid_L")
         if organ is None:
             pytest.skip("Parotid_L not in HN config")
@@ -422,7 +428,14 @@ class TestNTCPCalculatorFull:
         row_s  = self.calc.compute_all(dvr, {"n_fractions": 35, "dose_per_fraction_gy": 2.0},
                                        organ, "HN")
         assert row_ns.get("bdvh_applied") is True
-        assert row_s.get("bdvh_applied") is False
+        assert row_s.get("bdvh_applied") is True
+        assert row_ns.get("ntcp_dose_basis") == "eqd2"
+        assert row_s.get("ntcp_dose_basis") == "eqd2"
+
+        # Unknown fractionation is still refused rather than assumed (#4/#5).
+        row_unknown = self.calc.compute_all(dvr, {"n_fractions": 1}, organ, "HN")
+        assert row_unknown.get("bdvh_applied") is False
+        assert row_unknown.get("ntcp_dose_basis") == "physical"
 
     def test_empty_dvh_gives_nan_ntcp(self):
         """Empty OAR DVH → NaN NTCP, not spurious zero (CURSOR_FIXES §3)."""

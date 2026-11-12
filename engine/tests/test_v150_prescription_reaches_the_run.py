@@ -77,12 +77,13 @@ def test_the_cohort_runner_passes_it_to_the_engine():
 
 def test_the_loader_is_cached_per_path(tmp_path):
     """A cohort run asks once per patient; re-reading and re-validating each time is waste."""
+    from dicom_io.prescription_table import clear_prescription_table_cache
     from rbgyanx_engine import engine
 
     p = tmp_path / "rx.csv"
     p.write_text(HEADER + "PT-1,PTVHigh,60,35\n", encoding="utf-8")
     cfg = RunConfig(prescription_table=p)
-    engine._PRESCRIPTION_CACHE.clear()
+    clear_prescription_table_cache()  # #64: the cache is shared now, so the manifest and the lookup see one object
     first = engine._prescription_table(cfg)
     second = engine._prescription_table(cfg)
     assert first is second, "the table was re-loaded rather than cached"
@@ -97,12 +98,12 @@ def test_no_table_means_no_table():
 
 def test_a_bad_table_fails_at_load_not_mid_cohort(tmp_path):
     """The failure must happen before any patient is read, not after forty of them."""
-    from dicom_io.prescription_table import PrescriptionTableError
+    from dicom_io.prescription_table import PrescriptionTableError, clear_prescription_table_cache
     from rbgyanx_engine import engine
 
     p = tmp_path / "bad.csv"
     p.write_text(HEADER + "PT-1,PTVHigh,900,35\n", encoding="utf-8")   # 900 Gy
-    engine._PRESCRIPTION_CACHE.clear()
+    clear_prescription_table_cache()  # #64: the cache is shared now, so the manifest and the lookup see one object
     with pytest.raises(PrescriptionTableError):
         engine._prescription_table(RunConfig(prescription_table=p))
 

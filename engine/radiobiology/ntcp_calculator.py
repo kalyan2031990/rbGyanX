@@ -86,20 +86,29 @@ class NTCPCalculator:
         fractionation_known = math.isfinite(dpf_plan) and dpf_plan > 0
 
         bdvh_applied = False
+        alpha_beta_oar = math.nan
         dvh_for_ntcp = dvh_df
-        if (
-            fractionation_known
-            and abs(dpf_plan - 2.0) > 0.3
-            and n_fractions_plan >= 1
-            and not dvh_df.empty
-        ):
+        # Defect #63: this used to skip the EQD2 transform whenever the PLAN was near 2 Gy per
+        # fraction (|dpf_plan - 2| <= 0.3), on the grounds that the transform is "the identity".
+        # It is the identity only for a bin that is itself at 2 Gy per fraction, and a DVH is not
+        # one dose. In a 70 Gy / 35 fraction plan a larynx bin at 35 Gy receives 1 Gy per
+        # fraction, which is 28 Gy EQD2 at alpha/beta = 3 -- a 20 % shift, in the direction that
+        # matters. The published fits these parameters come from (Rancati larynx, Bakhshandeh
+        # thyroid) were made on EQD2 DVHs, so skipping the transform scored those organs on
+        # physical dose against EQD2 parameters. The conversion now runs whenever the
+        # fractionation is known, which is the only condition it ever needed.
+        if fractionation_known and n_fractions_plan >= 1 and not dvh_df.empty:
             alpha_beta_oar = get_alpha_beta_for_organ(
                 canonical, organ_params_alpha_beta=organ_params.alpha_beta_gy
             )
             dvh_for_ntcp = compute_eqd2_dvh(dvh_df, n_fractions_plan, alpha_beta_oar)
             bdvh_applied = True
 
-        metrics = _dvh_metrics(dvh_for_ntcp)
+        # The reported dose statistics stay PHYSICAL, measured on the DVH as delivered. Only the
+        # NTCP input is converted: gEUD below is the gEUD of `dvh_for_ntcp`, which is the EQD2 DVH
+        # whenever one was built. Reporting an EQD2 Dmean in a column named Dmean_gy would quietly
+        # change what every downstream reader of that column means.
+        metrics = _dvh_metrics(dvh_df)
         geud = (
             compute_geud(dvh_for_ntcp, organ_params.geud_a)
             if not dvh_for_ntcp.empty and not math.isnan(metrics.get("mean_dose", math.nan))
@@ -118,14 +127,15 @@ class NTCPCalculator:
             "bdvh_applied": bdvh_applied,
             "n_fractions_plan": n_fractions_plan,
             "dose_per_fraction_plan_gy": dpf_plan,
-            # "physical" when the export did not state its fractionation, so no EQD2 transform
-            # could be applied (#4/#5); "eqd2" when it was, "physical_2gy_equivalent" when the
-            # plan is already at 2 Gy/fraction and the transform would be the identity.
-            "ntcp_dose_basis": (
-                "eqd2"
-                if bdvh_applied
-                else ("physical_2gy_equivalent" if fractionation_known else "physical")
-            ),
+            # Two values only, since #63. "eqd2": the DVH was converted bin-wise and gEUD_gy below
+            # is the gEUD of that converted DVH. "physical": the export did not state its
+            # fractionation, so no transform could be applied (#4/#5) and the NTCP is on physical
+            # dose. The third value this column used to take, "physical_2gy_equivalent", asserted
+            # that a plan at 2 Gy per fraction needs no conversion; that was defect #63.
+            "ntcp_dose_basis": "eqd2" if bdvh_applied else "physical",
+            # The alpha/beta the conversion used, so a reader can reproduce it. NaN when no
+            # conversion ran.
+            "alpha_beta_gy_used": alpha_beta_oar,
         }
 
         if organ_params.lkb_loglogit and not math.isnan(geud):
@@ -151,13 +161,16 @@ class NTCPCalculator:
                 float(p["gamma"]),
                 float(p["s"]),
             )
-        if not dvh_for_ntcp.empty:
+        if not dvh_df.empty:
             from dicom_io.dvh_shape_features import compute_dvh_shape_features
 
             organ_name = getattr(organ_params, "canonical", None) or str(
                 getattr(organ_params, "name", "")
             )
-            row.update(compute_dvh_shape_features(dvh_for_ntcp, organ_name))
+            # PHYSICAL, like Dmean and Dmax beside them (#63). D2/D50/D98 are reported dose
+            # statistics, not NTCP inputs; computing them on the EQD2 histogram would silently
+            # change what those columns mean for every reader downstream.
+            row.update(compute_dvh_shape_features(dvh_df, organ_name))
         row["param_illustrative"] = bool(organ_params.illustrative)
         row["param_source"] = organ_params.source
         row["param_provenance"] = {
@@ -194,5 +207,14 @@ class NTCPCalculator:
                 row[f"NTCP_{model_name}"] = float(ext.get("ntcp", math.nan))
             except Exception as exc:
                 logger.warning("Registered NTCP model %s failed: %s", model_name, exc)
-        row["_dvh_df"] = dvh_for_ntcp
+        # Two histograms, each going where it belongs (#63).
+        #   _dvh_df      -- physical. QUANTEC constraints are stated on physical dose for
+        #                   conventional fractionation, so the constraint checker must see the
+        #                   dose as delivered. Before #63 this was physical for a 2 Gy/fraction
+        #                   plan and EQD2 otherwise, which meant the QUANTEC basis depended on
+        #                   the fractionation without saying so.
+        #   _dvh_df_ntcp -- the histogram the NTCP was actually computed from, for anything that
+        #                   must fit on the same basis the model used (the LKB calibration).
+        row["_dvh_df"] = dvh_df
+        row["_dvh_df_ntcp"] = dvh_for_ntcp
         return row
