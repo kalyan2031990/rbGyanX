@@ -5,6 +5,70 @@ All notable changes to this project are documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2026-11-12 — patch: NTCP is computed on EQD2, and three defects in what the evidence could show
+
+A **patch** release, but **it changes every NTCP the software reports**. Four defects, all found by
+review of the v1.5.0 evidence rather than by the test suite. No new scientific result; no analysis
+rerun of its own.
+
+### Fixed
+
+- **#63 — the EQD2 conversion was skipped whenever the plan sat near 2 Gy per fraction.** The
+  dose-volume histogram was converted to EQD2 only when the **plan's** dose per fraction was more
+  than 0.3 Gy from 2.0, on the stated grounds that the transform was otherwise "the identity". It
+  is the identity only for a bin that is itself at 2 Gy per fraction, and a histogram is not one
+  dose: the conversion is bin-wise, so in a 70 Gy / 35 fraction plan a bin at 35 Gy receives 1 Gy
+  per fraction and is 28 Gy EQD2 at α/β = 3. The published fits these parameters come from were
+  made on EQD2 histograms — the larynx source
+  ([doi:10.1016/j.ijrobp.2009.04.087](https://doi.org/10.1016/j.ijrobp.2009.04.087)) says so in
+  its own methods, and the parameter file's provenance block already recorded it — so the software
+  was scoring those organs on physical dose against EQD2 parameters. The conversion now runs
+  whenever the fractionation is known; an unstated fractionation is still refused rather than
+  assumed (#4/#5).
+- **#62 — a refused target lost its percentile dose statistics.** `D2`, `D50` and `D98` are read
+  off the histogram and depend on neither the prescription nor any model, but were computed only
+  on the path where the model succeeded. They are now computed before any refusal returns.
+- **#61 — the TCP model registry depended on how a run was batched.** The advanced models were
+  registered as a side effect of a stage that runs after the patient loop, into a module-global
+  registry, so the first patient of each process was scored without them and a resumed run
+  produced a different set of rows from a straight-through one. They are registered once at run
+  start. No value changes; the row set stops depending on process boundaries.
+- **#64 — the run manifest reported on a prescription table that had never been consulted.** Two
+  instances existed, one for the manifest and one for the lookups; only the second ever saw a
+  patient, so a run overridden throughout was recorded as `n_patients_overridden: 0`. They now
+  share one object, and every TCP row carries `prescription_source`. No computed value changes —
+  what changes is that the output can now show whether a supplied table was applied.
+- **A citation named someone who is not an author of the paper.** The larynx source read
+  "Rancati T, Fiorino C, Fellin G, et al."; the paper has three authors, Rancati T, Fiorino C and
+  Sanguineti G. Corrected against PubMed (PMID 19747783) and pinned by a test. The parameter
+  values were already correct and are now pinned too.
+
+### Changed — behaviour
+
+- **NTCP is computed on EQD2 for every organ whenever the fractionation is known.** `gEUD_gy` on
+  an NTCP row is the gEUD of the histogram the NTCP used, and the row records `ntcp_dose_basis`
+  (`eqd2` or `physical`) and the α/β applied. The retired third value of that column,
+  `physical_2gy_equivalent`, asserted the very thing that was wrong.
+- **Direction of the change.** EQD2 is **below** physical dose where the dose per fraction is
+  under 2 Gy and **above** it where the dose per fraction is over 2 Gy. NTCP therefore **mostly
+  falls, but can rise**: in the one arm measured (116 patients, 750 patient-organ rows), **16 of
+  750 gEUD values rose, the largest by +0.95 %**, against falls of up to about 50 %. Organ
+  medians moved between −5 % and −37 %.
+- **Reported dose statistics are unchanged.** `Dmean`, `Dmax`, `D2`, `D50`, `D98` and volume stay
+  on the physical histogram; only the NTCP input is converted. Verified: 4,500 such values are
+  bit-identical across a run with and without the fix.
+- **QUANTEC constraints are evaluated on the physical histogram**, explicitly. Before #63 that
+  basis depended on the plan's fractionation without saying so.
+
+### Known limitations
+
+- **Every release up to and including 1.5.0 computed NTCP on physical dose for conventionally
+  fractionated plans.** Absolute NTCP and gEUD values published for 1.3.0, 1.4.0 and 1.5.0 are
+  affected. Earlier version-to-version comparisons are **not** invalidated: both sides of the
+  1.4.0 → 1.5.0 comparison scored on physical dose, so its attributions to the sourced parameters
+  and to #47 stand. What moves is the absolute level, in both.
+- The effect figures above are from a single treatment arm and are not cohort-wide.
+
 ## [1.5.0] - 2026-11-05 — minor: sourced parameters, defects that changed written numbers, and general software only
 
 A **minor** release. It repairs software defects, replaces unsourced default parameters with
