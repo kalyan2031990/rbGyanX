@@ -5,10 +5,12 @@ All notable changes to this project are documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.5.2] - 2026-11-13 — patch: three defects in what a run could report about itself
+## [1.5.2] - 2026-11-14 — patch: four defects in what a run reported about itself
 
-A **patch** release. It changes no value that was being reported: each fix restores or corrects
-something the output withheld or mislabelled. No analysis was rerun to produce it.
+A **patch** release. Three of the four fixes change no value that was being reported: they
+restore or correct something the output withheld or mislabelled. The fourth (#69) **changes the
+reported uncertainty bands**, because they were being computed from the wrong dose basis; the NTCP
+point estimates are unaffected. No analysis was rerun to produce this release.
 
 ### Fixed
 
@@ -21,6 +23,16 @@ something the output withheld or mislabelled. No analysis was rerun to produce i
   and the gEUD-based TCP is evaluated from that same number, so a refused row and a scored row
   report the same gEUD for the same histogram, bit for bit. Pinning tests:
   `engine/tests/test_v152_refusal_geud_manifest_provenance.py::test_defect_67_*`.
+- **#69 — the Monte Carlo NTCP bands were computed from the physical histogram.** The EQD2
+  correction (#63, in 1.5.1) gave each NTCP row two histograms and updated the point-estimate
+  call site; the uncertainty call site kept reading the physical one. The band beside a reported
+  NTCP therefore described the NTCP of a different dose basis: over one evaluation, every point
+  estimate moved between the two releases and not one band statistic did. `apply_ntcp_uncertainty`
+  now takes the histogram the estimate was computed from — which falls back to physical dose when
+  the fractionation is unknown, as the estimate does — and each row records the basis in a new
+  `uNTCP_dose_basis` column. On a deterministic draw the band mean now lands exactly on the point
+  estimate; at the previous tag it landed on the physical-dose value, high by a factor of 3.6 on
+  the test fixture. Pinning tests: `engine/tests/test_v152_untcp_dose_basis.py` (4).
 - **#66 — the run manifest's prescription-table record counted one process, not the run.**
   `n_patients_overridden` was built from the lookups performed by the process that wrote the
   manifest, while `per_patient_status` in the same file was rebuilt from the completed patients
@@ -38,8 +50,10 @@ something the output withheld or mislabelled. No analysis was rerun to produce i
 
 ### Changed
 
-- TCP result rows carry one new column, **`dose_level_matched_by`**. Existing columns keep their
-  names and meanings.
+- TCP result rows carry one new column, **`dose_level_matched_by`**, and NTCP rows one new
+  column, **`uNTCP_dose_basis`**. Existing columns keep their names and meanings.
+- **The reported uNTCP bands change** wherever the fractionation is known, because they are now
+  computed from the same histogram as the estimate. The NTCP point estimates do not change.
 - `docs/KNOWN_LIMITATIONS.md` no longer states patient counts for a corpus. The magnitudes it
   reports are now per-patient rates and ratios, which is what made those claims checkable; the
   denominators belong to the release's evidence package, not to this repository.

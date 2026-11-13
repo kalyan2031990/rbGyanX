@@ -606,7 +606,20 @@ def apply_ntcp_uncertainty(
     cfg = NTCPUncertaintyConfig(n_samples=n_mc, seed=seed)
     for r in ntcp_results:
         organ = r.get("structure", "")
-        dvh_df = r.get("_dvh_df")
+        # Defect #69: this read `_dvh_df`, the PHYSICAL histogram, while the point estimate on
+        # the same row is computed from `_dvh_df_ntcp` -- the EQD2 one, since #63. The band then
+        # described the NTCP of a different dose basis from the number printed beside it: over
+        # one cohort, 2,610 of 2,665 point estimates moved between v1.5.0 and v1.5.1 while not
+        # one of the 7,995 finite band statistics did. The band must be computed from the same
+        # histogram the estimate was, and the row must say which that was -- hence
+        # `uNTCP_dose_basis`, which carries the same value as `ntcp_dose_basis`.
+        #
+        # `_dvh_df_ntcp` falls back to the physical histogram inside the NTCP calculator when the
+        # fractionation is unknown, so reading it needs no second rule here; the `or` only covers
+        # a row written by an older path that never attached it.
+        dvh_df = r.get("_dvh_df_ntcp")
+        if dvh_df is None:
+            dvh_df = r.get("_dvh_df")
         op = ntcp_site.organs.get(organ)
         if dvh_df is None or op is None:
             continue
@@ -615,6 +628,7 @@ def apply_ntcp_uncertainty(
             r["uNTCP_LKB_loglogit"] = mc["uNTCP_LKB_loglogit"]
             r["uNTCP_LKB_probit"] = mc["uNTCP_LKB_probit"]
             r["uNTCP_RS"] = mc["uNTCP_RS"]
+            r["uNTCP_dose_basis"] = str(r.get("ntcp_dose_basis") or "physical")
         except Exception as exc:
             logger.warning("uNTCP failed for %s/%s: %s", r.get("AnonPatientID"), organ, exc)
 
