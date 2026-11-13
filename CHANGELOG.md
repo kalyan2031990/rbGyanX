@@ -5,6 +5,45 @@ All notable changes to this project are documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.2] - 2026-11-13 — patch: three defects in what a run could report about itself
+
+A **patch** release. It changes no value that was being reported: each fix restores or corrects
+something the output withheld or mislabelled. No analysis was rerun to produce it.
+
+### Fixed
+
+- **#67 — a refused target discarded its gEUD.** `gEUD_gy` is a function of the dose-volume
+  histogram and the site's volume exponent alone: it needs no prescription, no dose level and no
+  TCP model. It was nevertheless assigned only on the path where TCP succeeded, so every target
+  refused for any reason reported `NaN` for a value that was computable — the same over-breadth
+  #62 fixed for `D2`/`D50`/`D98` in 1.5.1, left behind because the measurement that found #62
+  tested for `None` and gEUD is `NaN`. The gEUD is now computed once, before any refusal return,
+  and the gEUD-based TCP is evaluated from that same number, so a refused row and a scored row
+  report the same gEUD for the same histogram, bit for bit. Pinning tests:
+  `engine/tests/test_v152_refusal_geud_manifest_provenance.py::test_defect_67_*`.
+- **#66 — the run manifest's prescription-table record counted one process, not the run.**
+  `n_patients_overridden` was built from the lookups performed by the process that wrote the
+  manifest, while `per_patient_status` in the same file was rebuilt from the completed patients
+  on disk. A run resumed in batches therefore reported its last batch as though it were the whole
+  cohort. The count and the patient list are now rebuilt from the per-patient outputs on disk;
+  the per-process figures are kept under `n_patients_overridden_this_process` and
+  `patients_overridden_this_process`. Pinning tests: `::test_defect_66_*`.
+- **#68 — a supplied prescription was reported as having come from the plan.**
+  `dose_level_source` named the DICOM field the level had been *matched against*, not where the
+  level's value came from, so a run given a prescription table reported its scored targets as
+  `DoseReferenceSequence.DoseReferenceDescription` although no DICOM value had changed. The
+  column now names the origin of the value — `user_prescription_table` when a table set it — and
+  the field matched moves to a new column, `dose_level_matched_by`. Pinning tests:
+  `::test_defect_68_*`.
+
+### Changed
+
+- TCP result rows carry one new column, **`dose_level_matched_by`**. Existing columns keep their
+  names and meanings.
+- `docs/KNOWN_LIMITATIONS.md` no longer states patient counts for a corpus. The magnitudes it
+  reports are now per-patient rates and ratios, which is what made those claims checkable; the
+  denominators belong to the release's evidence package, not to this repository.
+
 ## [1.5.1] - 2026-11-12 — patch: NTCP is computed on EQD2, and three defects in what the evidence could show
 
 A **patch** release, but **it changes every NTCP the software reports**. Four defects, all found by

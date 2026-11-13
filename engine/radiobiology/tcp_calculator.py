@@ -10,7 +10,11 @@ import numpy as np
 import pandas as pd
 
 from radiobiology import dvh_object_to_dataframe, lq_model
-from radiobiology.geud_tcp import GEUDTCPCalculator
+from radiobiology.geud_tcp import (
+    GEUDTCPCalculator,
+    compute_geud_with_reason,
+    geud_tcp_niemierko,
+)
 from radiobiology.logistic_tcp import LogisticTCPCalculator
 from radiobiology.model_registry import iter_tcp_models, register_tcp_model  # noqa: F401
 from radiobiology.poisson_tcp import PoissonTCPCalculator, _dvh_dmean
@@ -123,6 +127,17 @@ class TCPCalculator:
 
             result.update(compute_dvh_shape_features(dvh_df, canonical))
 
+            # Defect #67: gEUD belongs with them and was left behind. It is a function of the
+            # DVH and the site's `a` alone -- no prescription, no dose level, no TCP model -- yet
+            # it was assigned only on the success path, so every refused target reported NaN for
+            # a value that was computable. Measured on one arm: 129 of 129 refused targets lost
+            # it while D2/D50/D98 survived. It is computed once here and the gEUD TCP below is
+            # evaluated FROM this value, so a refused row and a scored row report the same
+            # number for the same histogram, bit for bit.
+            result["gEUD_gy"], result["gEUD_reason"] = compute_geud_with_reason(
+                dvh_df, site_params.geud_a
+            )
+
         if getattr(dvh_result, "quality_flag", "OK") != "OK":
             logger.warning(
                 "DVH quality flag %s for %s; TCP models may return NaN",
@@ -177,10 +192,11 @@ class TCPCalculator:
             logger.warning("Z-M TCP failed: %s", exc)
 
         try:
-            geud = self._geud.compute_tcp(dvh_df, site_params)
-            result["TCP_gEUD"] = geud["tcp"]
-            result["gEUD_gy"] = geud["geud_gy"]
-            result["gEUD_reason"] = geud.get("geud_reason", "")
+            # #67: the gEUD itself was computed above, before the refusal returns. Only the TCP
+            # that reads it is computed here, from that same value.
+            result["TCP_gEUD"] = geud_tcp_niemierko(
+                float(result["gEUD_gy"]), site_params.TCD50_gy, site_params.gamma50
+            )
         except Exception as exc:
             logger.warning("gEUD TCP failed: %s", exc)
 

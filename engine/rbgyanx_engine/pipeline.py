@@ -92,12 +92,22 @@ def _target_plan_metadata(meta: dict, dvh_r) -> dict:
 
     chosen: float | None = None
     source = ""
+    # Defect #68: `source` below names the DICOM field this level was MATCHED against, which is
+    # not where the level's value came from. A user-supplied prescription table writes its own
+    # levels and marks each `source: user_prescription_table`, and that marking was discarded:
+    # an overridden run reported every scored target as
+    # `DoseReferenceSequence.DoseReferenceDescription`, on a run where no DoseReferenceSequence
+    # value changed. The two are now reported separately -- `dose_level_source` says where the
+    # VALUE came from, `dose_level_matched_by` how this target was tied to it.
+    matched_by = ""
+    chosen_level: dict | None = None
     by_roi = next(
         (lv for lv in levels if roi_number is not None and lv.get("roi_number") == roi_number),
         None,
     )
     if by_roi is not None:
         chosen, source = by_roi["dose_gy"], "DoseReferenceSequence.ReferencedROINumber"
+        chosen_level = by_roi
     else:
         normalised = _normalise_for_match(raw_name)
         by_description = next(
@@ -114,6 +124,7 @@ def _target_plan_metadata(meta: dict, dvh_r) -> dict:
                 by_description["dose_gy"],
                 "DoseReferenceSequence.DoseReferenceDescription",
             )
+            chosen_level = by_description
 
     if chosen is None:
         from_name = dose_level_from_target_name(raw_name)
@@ -122,14 +133,25 @@ def _target_plan_metadata(meta: dict, dvh_r) -> dict:
 
     if chosen is None and len(levels) == 1:
         chosen, source = levels[0]["dose_gy"], "single plan level"
+        chosen_level = levels[0]
     if chosen is None and not levels and meta.get("prescription_dose_gy"):
         chosen, source = float(meta["prescription_dose_gy"]), "plan prescription"
+        # #68: the plan-level prescription may itself have been overridden by a supplied table.
+        if str(meta.get("prescription_source") or "") == "user_prescription_table":
+            source = "user_prescription_table"
+
+    # #68: a level carries its own provenance when something other than the RT Plan wrote it.
+    # `matched_by` keeps the DICOM field this target was tied to, so nothing is lost.
+    if chosen_level is not None and chosen_level.get("source"):
+        matched_by = source
+        source = str(chosen_level["source"])
 
     target_meta = dict(meta)
     reasons = [str(r) for r in (meta.get("tcp_refusal_reasons") or []) if r]
     if chosen is None:
         target_meta["tcp_refusal_reasons"] = [*reasons, SIB_LEVEL_UNKNOWN]
         target_meta["dose_level_source"] = "unknown"
+        target_meta["dose_level_matched_by"] = ""
         logger.warning(
             "%s: the plan states %d prescription levels and none can be tied to this target; "
             "TCP refused (%s). Rename the ROI with its level (PTV63) or give the plan a "
@@ -144,6 +166,7 @@ def _target_plan_metadata(meta: dict, dvh_r) -> dict:
     target_meta["prescription_dose_gy"] = chosen
     target_meta["dose_level_gy"] = chosen
     target_meta["dose_level_source"] = source
+    target_meta["dose_level_matched_by"] = matched_by
     target_meta["tcp_refusal_reasons"] = reasons
     if n_fractions > 0:
         target_meta["dose_per_fraction_gy"] = chosen / n_fractions
@@ -285,6 +308,8 @@ def collect_dicom_tcp(
         )
         row["dose_level_gy"] = target_meta.get("dose_level_gy", float("nan"))
         row["dose_level_source"] = target_meta.get("dose_level_source", "")
+        # #68: how this target was tied to that level, kept apart from where the level came from
+        row["dose_level_matched_by"] = target_meta.get("dose_level_matched_by", "")
         row["AnonPatientID"] = anon_id
         row["site"] = params_key
         # Identity of the ROI behind this row, so structure_mapping.csv can tie canonical back to raw.

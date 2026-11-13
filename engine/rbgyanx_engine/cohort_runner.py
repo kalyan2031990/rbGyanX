@@ -366,6 +366,43 @@ def _structure_of(r: dict) -> str:
     return str(r.get("canonical_name") or r.get("Structure_Canonical") or r.get("structure") or "")
 
 
+def _harvest_used_the_table(harvest: dict) -> bool:
+    """Did this patient's stored output come from a supplied prescription? (defect #66)
+
+    Read from the harvest on disk, not from the table object, so a patient processed by an
+    earlier batch counts exactly as one processed now.
+    """
+    return any(str(r.get("prescription_source") or "") == "user_prescription_table"
+               for r in (harvest.get("tcp") or []))
+
+
+def _prescription_record(table: object | None, overridden_raw: set[str],
+                         overridden_labels: set[str]) -> dict | None:
+    """The run manifest's prescription-table record, cumulative over a resumed run (#66).
+
+    The per-process numbers are kept, under names that say so. The plain
+    ``n_patients_overridden`` is the cohort figure, rebuilt from the harvests on disk; a reader
+    who quotes it is then quoting the run, not the last batch. The cumulative list is given as
+    study labels rather than source identifiers.
+    """
+    if table is None:
+        return None
+    rec = dict(table.manifest_record())  # type: ignore[attr-defined]
+    rec["n_patients_overridden_this_process"] = rec.pop("n_patients_overridden")
+    rec["patients_overridden_this_process"] = rec.pop("patients_overridden")
+    rec["entries_not_matched_this_process"] = rec.pop("entries_not_matched_to_a_patient")
+    rec["n_patients_overridden"] = len(overridden_raw)
+    rec["patients_overridden_labels"] = sorted(overridden_labels)
+    rec["n_entries_not_matched"] = max(int(rec.get("entries", 0)) - len(overridden_raw), 0)
+    rec["cumulative_source"] = (
+        "n_patients_overridden and patients_overridden_labels are rebuilt from the per-patient "
+        "harvests on disk, so they cover every patient in the output tree. The *_this_process "
+        "fields cover only the lookups this process performed -- on a resumed run they are a "
+        "subset, which is defect #66."
+    )
+    return rec
+
+
 def _accumulate(cfg: RunnerConfig, pseudonym: str, rec: PatientRecord, harvest: dict,
                 accum: dict[str, list[dict]], reason_counts: dict[str, int]) -> None:
     """Build PHI-free cohort rows from one patient's harvested engine rows. Deterministic order."""
@@ -526,6 +563,13 @@ def run_cohort(cfg: RunnerConfig, progress: bool = False) -> dict:
     accum: dict[str, list[dict]] = {name: [] for name in COHORT_CSVS}
     records: list[PatientRecord] = []
     reason_counts: dict[str, int] = {}
+    # Defect #66: PrescriptionTable.matched only knows the lookups THIS process performed, so a
+    # resumed run reported the last batch as if it were the cohort -- 24 of 116, in a manifest
+    # whose per_patient_status said 116 completed. The cumulative set is rebuilt here from the
+    # per-patient harvests on disk, which is the same thing per_patient_status does, so a
+    # resumed run and a straight-through run report the same number.
+    overridden_raw: set[str] = set()
+    overridden_labels: set[str] = set()
 
     for i, (raw_key, unit) in enumerate(units, 1):
         pseudonym = mapping[raw_key]
@@ -548,6 +592,9 @@ def run_cohort(cfg: RunnerConfig, progress: bool = False) -> dict:
             cached = False
 
         records.append(rec)
+        if _prescription_table is not None and _harvest_used_the_table(harvest):
+            overridden_raw.add(raw_key)
+            overridden_labels.add(pseudonym)
         _accumulate(cfg, pseudonym, rec, harvest, accum, reason_counts)
         if progress:
             tag = "cached" if cached else f"{rec.status} ({rec.processing_seconds}s)"
@@ -584,8 +631,8 @@ def run_cohort(cfg: RunnerConfig, progress: bool = False) -> dict:
         "per_patient_status": {r.pseudonym: r.status for r in records},
         # #60: whether a user-supplied prescription table was in force, and for whom. Absent
         # means every prescription came from its RT Plan.
-        "prescription_table": (
-            _prescription_table.manifest_record() if _prescription_table is not None else None
+        "prescription_table": _prescription_record(
+            _prescription_table, overridden_raw, overridden_labels
         ),
         "pseudonym_map_location": str(map_dir.resolve()),
         "note": "No PHI in this tree; raw IDs live only in the gitignored pseudonym map above.",

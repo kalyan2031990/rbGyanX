@@ -1,6 +1,6 @@
-rbGyanX Version 1.5.1
+rbGyanX Version 1.5.2
 Release Identifier: FINAL_V3.2
-Release Date: 2026-11-12
+Release Date: 2026-11-13
 Type: Production Release
 
 Two identifiers are in use and they mean different things:
@@ -14,6 +14,25 @@ lines add the AI assistant and repair software defects; they introduce no new sc
 and rerun no analysis. The analysis programme this release freezes is therefore the same
 generation 1.1.0 froze, and saying otherwise would imply a revalidation that did not happen.
 What changed is software, and it is described in CHANGELOG.md.
+
+1.5.2 IS A PATCH RELEASE, AND IT CHANGES NO REPORTED NUMBER THAT WAS BEING REPORTED. It repairs
+three defects found while redoing the prescription-sensitivity measurement on one tag, all of them
+in what the output could show rather than in what it computed:
+
+  A target whose TCP is refused now keeps gEUD_gy. gEUD is a function of the dose-volume histogram
+  and the site's volume exponent alone, so refusing a TCP never needed to discard it. Every
+  refused target previously reported NaN for a computable value. Scored targets are unaffected:
+  the gEUD is computed once and the gEUD-based TCP is evaluated from that same number.
+
+  The run manifest's prescription-table record is cumulative. It counted only the lookups the
+  process that wrote it had performed, so a run resumed in batches reported its last batch as
+  though it were the whole cohort, in the same file whose per-patient status was cumulative.
+
+  A supplied prescription is reported as the source of the dose level it sets. The row named the
+  DICOM field the level had been matched against, which is not where the value came from; the
+  field matched now has a column of its own.
+
+No analysis was rerun to produce this release, and the release identifier stays FINAL_V3.2.
 
 1.5.1 IS DIFFERENT IN ONE RESPECT, AND IT MATTERS. Up to and including 1.5.0 these lines also
 altered no reported number. 1.5.1 does: defect #63 means every release up to 1.5.0 computed NTCP
