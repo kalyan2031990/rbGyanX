@@ -393,7 +393,9 @@ does exactly that for target rows and `collect_txt_ntcp` does it for text-path O
 and `classify_definition()` compares the canonical against itself.
 
 The guard consequently cannot distinguish an organ from its own PRV expansion — `SpinalCord` from
-`SpinalCord_05`, which across 186 patients differ by a median of 19% and a maximum of 91% in NTCP
+`SpinalCord_05`, whose NTCP differs from the base organ's by a median of 19% and a maximum
+of 91% over a multi-patient DICOM corpus (the corpus size and the per-organ figures are in the
+release's evidence package, not here)
 (see "PRV expansions canonicalise to the base organ name" below). It will not refuse a
 planning-risk volume being reported as the organ, because it cannot see that it is one. This is a
 false negative in the applicability check, on the primary supported input path.
@@ -536,11 +538,11 @@ working path on this cohort: it fails for every patient, and the flag relocates 
 than removing it.
 
 `--site` makes detection inert as a failure source and is the current workaround: with
-`--site PROSTATE --dose-per-fraction 2.0` the same 41 patients all complete, at the cost described
-two entries below — every structure is coerced to a target, so no OAR receives NTCP. That arm also
-shows the collision fix working: the same 41 patients yield **1,084 TCP rows on current code
-against 369 before the fix** (26.4 versus 9.0 rows per patient), so **715 rows that previously
-overwrote one another now survive as their own rows**.
+`--site PROSTATE --dose-per-fraction 2.0` every input of that corpus completes, at the cost
+described two entries below — every structure is coerced to a target, so no OAR receives NTCP.
+That arm also shows the collision fix working: the same inputs yield **26.4 TCP rows per patient
+on current code against 9.0 before the fix**, so **roughly two of every three rows previously
+overwrote one another and now survive as their own**.
 
 *Historical, superseded:* before the v1.3.0 canonical-key collision fix, the un-flagged arm was
 measured at **6 of 41 completed**. Those 6 were not successes — the fix showed they were single
@@ -561,8 +563,9 @@ targets. Scoping the failure to the structure is v1.4 work.
 
 **Until v1.5.0**, `SpinalCord_05` mapped to `SpinalCord`, so organ NTCP was ambiguous between the
 organ and its planning-risk volume: each patient could carry two rows under one label, with
-different values and nothing to tell them apart. Measured across 186 public-cohort patients:
-**median 19%, max 91%** difference within colliding NTCP pairs. A PRV is a planning margin, not the
+different values and nothing to tell them apart. Measured over a multi-patient DICOM corpus:
+**median 19%, max 91%** difference within colliding NTCP pairs (the corpus size is in the
+release's evidence package, not here). A PRV is a planning margin, not the
 organ.
 
 **In v1.5.0** a PRV gets its own canonical key — `SpinalCord_05` and `PRV_Cord` map to
@@ -586,11 +589,11 @@ no `PROSTATE_SBRT` site, so no organ receives NTCP under that key.
 
 ### `--site X` without `--preserve-structure-canonical` coerces every structure to a pseudo-target
 
-Every structure is coerced to a target type, so no OAR receives NTCP. Verified on current code
-across all 41 patients of the multi-structure prostate cohort: **41 of 41 complete, 1,084 TCP rows
-and 0 NTCP rows.** Since the v1.3.0 collision fix each structure is kept as its own row, which
-also means OARs now appear as TCP rows labelled `PTV` — 920 of those 1,084 rows are `PTV` and 164
-are `CTV`, against 360 and 9 before the fix, on the same input. The OARs are therefore not merely
+Every structure is coerced to a target type, so no OAR receives NTCP. Verified on current
+code over a multi-structure prostate corpus: **every input completes, with TCP rows for every
+structure and no NTCP row at all.** Since the v1.3.0 collision fix each structure is kept as its
+own row, which also means OARs now appear as TCP rows labelled `PTV` — **85% of the TCP rows are
+`PTV` and 15% `CTV`**, against a 98/2 split before the fix, on the same input. The OARs are therefore not merely
 absent from NTCP; they are present in TCP under a target label. Use
 `--preserve-structure-canonical` for any file that contains OARs.
 
